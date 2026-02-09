@@ -1,2 +1,2 @@
-\# Individual Project
+# Individual Project
 
