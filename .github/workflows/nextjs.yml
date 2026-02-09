@@ -44,7 +44,8 @@ jobs:
         working-directory: ./src
         run: |
           bun next build
-          touch ./out/.nojekyll
+          ls
+          touch out/.nojekyll
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
