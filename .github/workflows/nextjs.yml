@@ -44,11 +44,11 @@ jobs:
         working-directory: src
         run: |
           bun next build
-          touch /out/.nojekyll
+          touch out/.nojekyll
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: out
+          path: src/out
 
   # Deployment job
   deploy:
