@@ -38,18 +38,17 @@ jobs:
       - name: Setup Pages
         uses: actions/configure-pages@v5
       - name: Install dependencies
-        working-directory: ./src
+        working-directory: src
         run: bun i
       - name: Build with Next.js
-        working-directory: ./src
+        working-directory: src
         run: |
           bun next build
-          ls
-          touch out/.nojekyll
+          touch /out/.nojekyll
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: ./src/out
+          path: out
 
   # Deployment job
   deploy:
