@@ -42,7 +42,9 @@ jobs:
         run: bun i
       - name: Build with Next.js
         working-directory: ./src
-        run: bun next build && touch ./out/.nojekyll
+        run: |
+          bun next build
+          touch ./out/.nojekyll
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
