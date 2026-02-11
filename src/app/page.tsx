@@ -1,16 +1,24 @@
 "use client";
 
 import Editor from "./components/editor";
+import Registers from "./components/registers";
 import useRuntime from "./hooks/useRuntime";
 
 export default function Home() {
-	const { running, run, halt, setCode } = useRuntime();
+	const { running, registers, memory, run, halt, setCode, setRegister, setMemory } = useRuntime();
 
 	return (
-		<div className="w-full h-screen p-100">
+		<div className="w-screen h-screen py-20 px-80 flex gap-4">
 			<Editor onCodeChange={setCode} />
-			<button onClick={run} className={`m-2 p-2 rounded ${running ? "bg-gray-500" : "bg-blue-500"} text-white hover:cursor-pointer`}>Start Audio</button>
-			<button onClick={halt} className={`m-2 p-2 rounded ${!running ? "bg-gray-500" : "bg-red-500"} text-white hover:cursor-pointer`}>Stop Audio</button>
+			<div className="w-full h-full flex flex-1 flex-col">
+				<span className="flex justify-end mb-6">
+					<button onClick={run} className={`p-2 min-w-[100px] rounded ${running ? "bg-gray-500" : "bg-blue-500"} text-white hover:cursor-pointer`}>Start Audio</button>
+					<button onClick={halt} className={`ml-4 p-2 min-w-[100px] rounded ${!running ? "bg-gray-500" : "bg-red-500"} text-white hover:cursor-pointer`}>Stop Audio</button>
+				</span>
+				<span className="flex justify-end">
+					<Registers registers={registers} onRegisterChange={setRegister} />
+				</span>
+			</div>
 		</div>
 	);
 }

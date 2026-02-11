@@ -12,7 +12,7 @@ export default function Editor({onCodeChange}: { onCodeChange?: (code: string) =
 		if (!editorRef.current) return;
 
 		const view = new EditorView({
-			doc: "SET BPM 200\nPLAY DRUM KICK\nWAIT 4\n",
+			doc: "SET BPM 120\nPLAY DRUM KICK\nWAIT 4\n",
 			parent: editorRef.current,
 			extensions: [
 				basicSetup,
@@ -33,5 +33,5 @@ export default function Editor({onCodeChange}: { onCodeChange?: (code: string) =
 	}, []);
 
 
-	return (<div ref={editorRef}/>);
+	return (<div className="h-full w-full border-2 rounded" ref={editorRef}/>);
 }
