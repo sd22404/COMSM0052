@@ -1,0 +1,23 @@
+@top Program { statement* }
+
+statement { (Label | Instruction) newline }
+
+Instruction { Opcode Operand+ }
+
+Operand { Instrument | Register | Number | Note | Identifier }
+
+@tokens {
+	Opcode { "PLAY" | "WAIT" | "JUMP" | "SET" }
+	Instrument { "DRUM" | "SYNTH" | "BASS" }
+	Register { "BPM" | "VOL" | "BAR" | "BEAT" | "R" @digit+ }
+	Label { Identifier ":" }
+	Note { "KICK" | "SNARE" | $[a-gA-G] ($[#b])? @digit+ }
+	Number { @digit+ }
+	Identifier { @asciiLetter+ }
+	space { $[ \t\r]+ }
+	newline { "\n" }
+	Comment { ";" ![\n]* }
+	@precedence { Opcode, Instrument, Register, Label, Note, Identifier }
+}
+
+@skip { space | Comment }

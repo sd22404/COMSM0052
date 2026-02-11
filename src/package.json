@@ -17,6 +17,7 @@
     "tone": "^15.1.22"
   },
   "devDependencies": {
+    "@lezer/generator": "^1.8.0",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
