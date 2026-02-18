@@ -10,6 +10,10 @@ export interface SequencerState {
 const DEFAULT_REGISTERS: Record<Register, number> = {
 	[Register.BPM]: 120,
 	[Register.VOL]: 100,
+	[Register.REG1]: 0,
+	[Register.REG2]: 0,
+	[Register.REG3]: 0,
+	[Register.REG4]: 0,
 };
 
 export class Sequencer {

@@ -2,6 +2,7 @@
 
 import Editor from "./components/editor";
 import Registers from "./components/registers";
+import Memory from "./components/memory";
 import useRuntime from "./hooks/useRuntime";
 
 export default function Home() {
@@ -15,9 +16,10 @@ export default function Home() {
 					<button onClick={run} className={`p-2 min-w-[100px] rounded ${running ? "bg-gray-500" : "bg-blue-500"} text-white hover:cursor-pointer`}>Start Audio</button>
 					<button onClick={halt} className={`ml-4 p-2 min-w-[100px] rounded ${!running ? "bg-gray-500" : "bg-red-500"} text-white hover:cursor-pointer`}>Stop Audio</button>
 				</span>
-				<span className="flex justify-end">
+				<div className="overflow-auto flex flex-col gap-4">
 					<Registers registers={registers} onRegisterChange={setRegister} />
-				</span>
+					<Memory memory={memory} onMemoryChange={setMemory} />
+				</div>
 			</div>
 		</div>
 	);

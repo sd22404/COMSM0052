@@ -14,6 +14,10 @@ export enum Instrument {
 export enum Register {
 	BPM = "BPM",
 	VOL = "VOL",
+	REG1 = "REG1",
+	REG2 = "REG2",
+	REG3 = "REG3",
+	REG4 = "REG4",
 }
 
 export interface Instruction {

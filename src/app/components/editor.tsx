@@ -12,7 +12,7 @@ export default function Editor({onCodeChange}: { onCodeChange?: (code: string) =
 		if (!editorRef.current) return;
 
 		const view = new EditorView({
-			doc: "SET BPM 120\nPLAY DRUM KICK\nWAIT 4\n",
+			doc: "SET BPM 120\nPLAY DRUM KICK\nWAIT 2\nPLAY DRUM HAT\nWAIT 2\nPLAY DRUM SNARE\nWAIT 2\nPLAY DRUM HAT\nWAIT 2",
 			parent: editorRef.current,
 			extensions: [
 				basicSetup,

@@ -11,7 +11,7 @@ Operand { Instrument | Register | Number | Note | Identifier }
 	Instrument { "DRUM" | "SYNTH" | "BASS" }
 	Register { "BPM" | "VOL" | "BAR" | "BEAT" | "R" @digit+ }
 	Label { Identifier ":" }
-	Note { "KICK" | "SNARE" | $[a-gA-G] ($[#b])? @digit+ }
+	Note { "KICK" | "SNARE" | "HAT" | $[a-gA-G] ($[#b])? @digit+ }
 	Number { @digit+ }
 	Identifier { @asciiLetter+ }
 	space { $[ \t\r]+ }

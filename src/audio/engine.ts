@@ -42,6 +42,9 @@ export class AudioEngine {
 					case "SNARE":
 						new Tone.NoiseSynth().toDestination().triggerAttackRelease("8n");
 						break;
+					case "HAT":
+						new Tone.MetalSynth().toDestination().triggerAttackRelease("C4", "32n", undefined, 0.1);
+						break;
 				} break;
 			default:
 				break;
