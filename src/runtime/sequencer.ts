@@ -54,6 +54,7 @@ export class Sequencer {
 
 	private _applyRegister(reg: Register, val: number) {
 		if (!(reg in this._registers)) return;
+		if (val < 0) return;
 		this._registers[reg] = val;
 		switch (reg) {
 			case Register.BPM: this._audio.bpm = val; break;
@@ -90,10 +91,13 @@ export class Sequencer {
 					this._cursor = this._program.labels[instruction.operands[0] as string] ?? this._cursor;
 					break;
 				case Opcode.SET:
-					this.setRegister(
-						instruction.operands[0] as Register,
-						(instruction.operands[1] as number) ?? 0
-					);
+					let reg = instruction.operands[0] as Register;
+					let operand = instruction.operands[1] as Register;
+					let isReg = operand in this._registers;
+					let val = isReg ? this._registers[operand] : parseInt(operand);
+					this.setRegister(reg, val);
+					console.log(`Set ${Register[reg]} to ${val}`);
+					console.log(instruction)
 					break;
 			}
 

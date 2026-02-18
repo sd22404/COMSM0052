@@ -8,6 +8,8 @@ export function compile(code: string): Program {
 	let instr: Instruction = { opcode: Opcode.NOP, operands: [] };
 	let hasInstruction = false;
 
+	console.log(tree.toString());
+
 	do {
 		const nodeText = code.slice(cursor.from, cursor.to);
 		switch (cursor.node.type.name) {

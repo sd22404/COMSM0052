@@ -46,6 +46,9 @@ export class AudioEngine {
 						new Tone.MetalSynth().toDestination().triggerAttackRelease("C4", "32n", undefined, 0.1);
 						break;
 				} break;
+			case Instrument.SYNTH:
+				new Tone.Synth().toDestination().triggerAttackRelease(note, "8n");
+				break;
 			default:
 				break;
 		}

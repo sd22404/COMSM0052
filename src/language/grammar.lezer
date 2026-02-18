@@ -9,15 +9,15 @@ Operand { Instrument | Register | Number | Note | Identifier }
 @tokens {
 	Opcode { "PLAY" | "WAIT" | "JUMP" | "SET" }
 	Instrument { "DRUM" | "SYNTH" | "BASS" }
-	Register { "BPM" | "VOL" | "BAR" | "BEAT" | "R" @digit+ }
+	Register { "BPM" | "VOL" | "BAR" | "BEAT" | "REG" @digit+ }
 	Label { Identifier ":" }
 	Note { "KICK" | "SNARE" | "HAT" | $[a-gA-G] ($[#b])? @digit+ }
 	Number { @digit+ }
-	Identifier { @asciiLetter+ }
+	Identifier { @asciiLetter+ @digit* }
 	space { $[ \t\r]+ }
 	newline { "\n" }
 	Comment { ";" ![\n]* }
-	@precedence { Opcode, Instrument, Register, Label, Note, Identifier }
+	@precedence { Opcode, Instrument, Register, Label, Note, Identifier, Number }
 }
 
 @skip { space | Comment }

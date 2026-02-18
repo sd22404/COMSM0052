@@ -8,7 +8,7 @@ export enum Opcode {
 
 export enum Instrument {
 	DRUM = "DRUM",
-	PIANO = "PIANO",
+	SYNTH = "SYNTH",
 }
 
 export enum Register {
