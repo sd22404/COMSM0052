@@ -5,6 +5,7 @@ export interface SequencerState {
 	registers: Record<Register, number>;
 	memory: number[];
 	running: boolean;
+	cursor: number;
 }
 
 const DEFAULT_REGISTERS: Record<Register, number> = {
@@ -34,7 +35,7 @@ export class Sequencer {
 	}
 
 	get state(): SequencerState {
-		return { registers: { ...this._registers }, memory: [...this._memory], running: this._running };
+		return { registers: { ...this._registers }, memory: [...this._memory], running: this._running, cursor: this._cursor };
 	}
 
 	setProgram(program: Program) {
@@ -49,6 +50,12 @@ export class Sequencer {
 
 	setRegister(reg: Register, val: number) {
 		this._applyRegister(reg, val);
+		this._notify();
+	}
+
+	setCursor(pos: number) {
+		pos %= this._program.instructions.length;
+		this._cursor = pos;
 		this._notify();
 	}
 
@@ -67,7 +74,6 @@ export class Sequencer {
 	}
 
 	async run() {
-		this._audio.start();
 		this._running = true;
 		this._notify();
 
@@ -83,9 +89,7 @@ export class Sequencer {
 					);
 					break;
 				case Opcode.WAIT:
-					await new Promise(resolve =>
-						setTimeout(resolve, (instruction.operands[0] as number) * this._audio.clickMs)
-					);
+					await this._audio.rest(instruction.operands[0] as number);
 					break;
 				case Opcode.JUMP:
 					this._cursor = this._program.labels[instruction.operands[0] as string] ?? this._cursor;
@@ -101,7 +105,7 @@ export class Sequencer {
 					break;
 			}
 
-			this._cursor = (this._cursor + 1) % this._program.instructions.length;
+			this.setCursor(this._cursor + 1);
 		}
 
 		this._running = false;

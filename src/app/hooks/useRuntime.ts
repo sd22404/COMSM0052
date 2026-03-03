@@ -19,6 +19,7 @@ export default function useRuntime() {
 		running: state.running,
 		registers: state.registers,
 		memory: state.memory,
+		cursor: state.cursor,
 		run: () => seq.run(),
 		halt: () => seq.halt(),
 		setCode: (code: string) => seq.setProgram(compile(code)),
