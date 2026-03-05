@@ -10,14 +10,15 @@ const setCursorEffect = StateEffect.define<number>();
 const cursorHighlight = StateField.define({
 	create() { return Decoration.none; },
 	update(_, tr) {
+		const decorations: any[] = [];
 		for (const e of tr.effects) {
 			if (!e.is(setCursorEffect)) continue;
-			if (e.value < 0 || e.value >= tr.state.doc.lines) continue;
-			const line = tr.state.doc.line(e.value + 1);
-			return Decoration.set([Decoration.line({ class: "bg-gray-600" }).range(line.from)]);
+			if (e.value < 1 || e.value > tr.state.doc.lines) continue;
+			const line = tr.state.doc.line(e.value);
+			decorations.push(Decoration.line({ class: "bg-gray-600" }).range(line.from));
 		}
 
-		return Decoration.none;
+		return decorations.length ? Decoration.set(decorations, true) : Decoration.none;
 	},
 	provide: f => EditorView.decorations.from(f),
 });

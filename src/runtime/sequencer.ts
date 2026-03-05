@@ -65,11 +65,19 @@ export class Sequencer {
 	}
 
 	setRegister(reg: Register, val: number) {
-		if (!(reg in this._registers)) return;
-		this._registers[reg] = val;
-		if (reg === Register.BPM) this._audio.bpm = val;
-		if (reg === Register.VOL) this._audio.volume = val;
+		this._applyRegister(reg, val);
 		this._notify();
+	}
+
+	private _applyRegister(reg: Register, val: number) {
+		if (!(reg in this._registers)) return;
+		if (this._registers[reg] === val) return;
+		this._registers[reg] = val;
+		if (reg === Register.BPM) {
+			this._audio.bpm = val;
+			if (this._running) this._restartInterval();
+		}
+		if (reg === Register.VOL) this._audio.volume = val;
 	}
 
 	private _notify() {
@@ -104,13 +112,13 @@ export class Sequencer {
 			switch (instr.opcode) {
 				case Opcode.PLAY:
 					this._audio.play(operandOne as Instrument, this._resolveNote(operandTwo as string));
-					this._advanceCursor(track);
 					this._notify();
+					this._advanceCursor(track);
 					return;
 				case Opcode.REST:
 					track.waitRemaining += (operandOne as number) - 1;
-					this._advanceCursor(track);
 					this._notify();
+					this._advanceCursor(track);
 					return;
 				case Opcode.JUMP:
 					track.cursor = track.program.labels[operandOne as string] ?? track.cursor;
@@ -122,22 +130,20 @@ export class Sequencer {
 					}
 					break;
 				case Opcode.SET:
-					this.setRegister(operandOne as Register, this._resolveValue(operandTwo as string));
+					this._applyRegister(operandOne as Register, this._resolveValue(operandTwo as string));
 					break;
 				case Opcode.LOAD: {
 					const val = parseInt(this._memory[this._resolveValue(operandTwo as string)] as string);
-					if (!isNaN(val)) this.setRegister(operandOne as Register, val);
+					if (!isNaN(val)) this._applyRegister(operandOne as Register, val);
 					break;
 				}
 				case Opcode.ADD:
-					this.setRegister(operandOne as Register, this._registers[operandOne as Register] + this._resolveValue(operandTwo as string));
+					this._applyRegister(operandOne as Register, this._registers[operandOne as Register] + this._resolveValue(operandTwo as string));
 					break;
 			}
 
 			this._advanceCursor(track);
 		}
-
-		this._notify();
 	}
 
 	private _resetTracks() {
@@ -147,11 +153,16 @@ export class Sequencer {
 		});
 	}
 
+	private _restartInterval() {
+		clearInterval(this._interval);
+		this._interval = setInterval(() => this._tracks.forEach(t => this._stepTrack(t)), this._audio.clickMs);
+	}
+
 	run() {
 		if (this._running) return;
 		this._audio.init();
 		this._running = true;
-		this._interval = setInterval(() => this._tracks.forEach(t => this._stepTrack(t)), this._audio.clickMs);
+		this._restartInterval();
 		this._notify();
 	}
 
