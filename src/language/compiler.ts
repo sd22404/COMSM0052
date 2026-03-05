@@ -1,65 +1,63 @@
 import { parser } from "./parser";
 import { Track, Instrument, Register, Opcode, Instruction, Program } from "@/core/types";
 
+function newTrack(name: string): Track {
+	return { name, program: { instructions: [], labels: {} }, cursor: 0, waitRemaining: 0 };
+}
+
+function newInstr(line: number): Instruction {
+	return { opcode: Opcode.NOP, operands: [], line };
+}
+
 export function compile(code: string): Track[] {
 	const tree = parser.parse(code);
 	const cursor = tree.cursor();
 	const tracks: Track[] = [];
-	let track: Track = { name: "default", start: 1, program: { instructions: [], labels: {} }, cursor: 0, currentBeat: 0 };
-	let instr: Instruction = { opcode: Opcode.NOP, operands: [] };
-	let hasInstruction = false;
+	let track = newTrack("default");
 
 	console.log(tree.toString());
 
 	do {
 		const nodeText = code.slice(cursor.from, cursor.to);
+		const instr = track.program.instructions.at(-1);
+
 		switch (cursor.node.type.name) {
 			case "Track": {
-				if (hasInstruction) {
-					track.program.instructions.push(instr);
-					instr = { opcode: Opcode.NOP, operands: [] };
-					hasInstruction = false;
-				}
-
 				if (track.program.instructions.length > 0) tracks.push(track);
-				
 				let trackName = nodeText.split(" ")[1].replace(RegExp(/:\n/g), "");
-				track = { name: trackName, start: code.slice(0, cursor.to).split("\n").length - 1, program: { instructions: [], labels: {} }, cursor: 0, currentBeat: 0 };
+				track = newTrack(trackName);
 				break;
 			}
-			case "Instruction":
-				if (hasInstruction) {
-					track.program.instructions.push(instr);
-					instr = { opcode: Opcode.NOP, operands: [] };
-				} hasInstruction = true;
+			case "Instruction": {
+				const line = code.slice(0, cursor.from).split('\n').length;
+				track.program.instructions.push(newInstr(line));
 				break;
+			}
 			case "Label":
-				let label = nodeText.split(":")[0]
-				track.program.labels[label] = track.program.instructions.length + (hasInstruction ? 1 : 0);
+				const label = nodeText.split(":")[0]
+				track.program.labels[label] = track.program.instructions.length;
 				break;
 			case "Opcode":
-				instr.opcode = nodeText as Opcode;
+				if (instr) instr.opcode = nodeText as Opcode;
 				break;
 			case "Instrument":
-				instr.operands.push(nodeText as Instrument);
+				if (instr) instr.operands.push(nodeText as Instrument);
 				break;
 			case "Register":
-				instr.operands.push(nodeText as Register);
+				if (instr) instr.operands.push(nodeText as Register);
 				break;
 			case "Number":
-				instr.operands.push(parseInt(nodeText));
+				if (instr) instr.operands.push(parseInt(nodeText));
 				break;
 			case "Note":
 			case "Identifier":
-				instr.operands.push(nodeText);
-				break;
-			default:
+				if (instr) instr.operands.push(nodeText);
 				break;
 		}
 	} while (cursor.next());
 
-	if (hasInstruction) { track.program.instructions.push(instr); }
 	tracks.push(track);
+	console.log(tracks);
 
 	return tracks;
 }

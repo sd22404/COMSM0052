@@ -1,7 +1,7 @@
 export enum Opcode {
 	NOP = "NOP",
 	PLAY = "PLAY",
-	WAIT = "WAIT",
+	REST = "REST",
 	JUMP = "JUMP",
 	SET = "SET",
 	LOAD = "LOAD",
@@ -23,6 +23,7 @@ export enum Register {
 export interface Instruction {
 	opcode: Opcode;
 	operands: (Register | Instrument | number | string)[];
+	line: number;
 }
 
 export interface Program {
@@ -32,8 +33,7 @@ export interface Program {
 
 export interface Track {
 	name: string;
-	start: number;
 	program: Program;
 	cursor: number;
-	currentBeat: number;
+	waitRemaining: number;
 }

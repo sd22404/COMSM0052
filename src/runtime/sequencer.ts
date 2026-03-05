@@ -1,4 +1,4 @@
-import { Track, Program, Opcode, Instrument, Register } from "@/core/types";
+import { Track, Opcode, Instrument, Register } from "@/core/types";
 import { AudioEngine } from "@/audio/engine";
 
 export interface SequencerState {
@@ -21,6 +21,7 @@ export class Sequencer {
 	private _memory: (number | string)[] = new Array(256).fill("");
 	private _tracks: Track[] = [];
 	private _running = false;
+	private _interval?: NodeJS.Timeout;
 	private _onStateChange?: (state: SequencerState) => void;
 
 	constructor(audio: AudioEngine) {
@@ -32,12 +33,16 @@ export class Sequencer {
 	}
 
 	get state(): SequencerState {
-		return { registers: { ...this._registers }, memory: [...this._memory], running: this._running, cursors: this._tracks.map(t => t.cursor + t.start) };
+		return {
+			registers: { ...this._registers },
+			memory: [...this._memory],
+			running: this._running,
+			cursors: this._tracks.map(t => t.program.instructions[t.cursor].line),
+		};
 	}
 
 	setTracks(tracks: Track[]) {
 		this._tracks = tracks;
-		console.log(tracks);
 		this._notify();
 	}
 
@@ -47,111 +52,85 @@ export class Sequencer {
 	}
 
 	setRegister(reg: Register, val: number) {
-		this._applyRegister(reg, val);
-		this._notify();
-	}
-
-	private _applyRegister(reg: Register, val: number) {
 		if (!(reg in this._registers)) return;
 		this._registers[reg] = val;
-		switch (reg) {
-			case Register.BPM: this._audio.bpm = val; break;
-			case Register.VOL: this._audio.volume = val; break;
-		}
+		if (reg === Register.BPM) this._audio.bpm = val;
+		if (reg === Register.VOL) this._audio.volume = val;
+		this._notify();
 	}
 
 	private _notify() {
 		this._onStateChange?.(this.state);
 	}
 
-	private _secondsToBeats(seconds: number) {
-		return seconds / (this._audio.clickMs / 1000);
+	private _resolveValue(operand: string | number): number {
+		return this._registers[operand as Register] ?? Number(operand);
 	}
 
-	async run() {
-		this._running = true;
-		this._notify();
+	// to be sorted
+	private _resolveNote(operand: string): string {
+		const asInt = parseInt(operand);
+		if (!isNaN(asInt)) return this._memory[asInt] as string;
+		if (operand in this._registers) return this._memory[this._registers[operand as Register]] as string;
+		return operand;
+	}
 
-		const scheduleSeconds = 0.3;
-		const tickMs = 150;
-
-		while (this._running) {
-			const beatLimit = this._secondsToBeats(this._audio.currentTime() + scheduleSeconds);
-			this._tracks.forEach(t => {
-				let safety = 0;
-				while (t.currentBeat < beatLimit && safety++ < 10000) { this._stepTrack(t); }
-			});
-
-			this._notify();
-			await new Promise(r => setTimeout(r, tickMs));
-		}
-
-		this._running = false;
-		this._notify();
+	private _advanceCursor(track: Track) {
+		track.cursor++;
+		track.cursor %= track.program.instructions.length;
 	}
 
 	private _stepTrack(track: Track) {
-		const instruction = track.program.instructions[track.cursor];
-		if (!instruction) return;
+		if (!this._running) return;
+		if (track.waitRemaining > 0) { track.waitRemaining--; return; }
 
-		switch (instruction.opcode) {
-			case Opcode.PLAY:
-				let instrument = instruction.operands[0] as Instrument;
-				let note = instruction.operands[1] as string;
-				let intNote = parseInt(note);
-				if (!isNaN(intNote)) note = this._memory[intNote] as string;
-				else if (note in this._registers) note = this._memory[this._registers[note as Register]] as string;
-				this._audio.play(
-					instrument,
-					note,
-					undefined,
-					track.currentBeat,
-				);
-				track.currentBeat++;
-				break;
-			case Opcode.WAIT:
-				track.currentBeat += instruction.operands[0] as number;
-				break;
-			case Opcode.JUMP: {
-				track.cursor = track.program.labels[instruction.operands[0] as string] ?? track.cursor;
-				this._notify();
-				return;
+		let safety = 0;
+		while (safety++ < 1000) {
+			const instr = track.program.instructions[track.cursor];
+			const [operandOne, operandTwo] = instr.operands;
+
+			switch (instr.opcode) {
+				case Opcode.PLAY:
+					this._audio.play(operandOne as Instrument, this._resolveNote(operandTwo as string));
+					this._advanceCursor(track);
+					this._notify();
+					return;
+				case Opcode.REST:
+					track.waitRemaining += (operandOne as number) - 1;
+					this._advanceCursor(track);
+					this._notify();
+					return;
+				case Opcode.JUMP:
+					track.cursor = track.program.labels[operandOne as string] ?? track.cursor;
+					continue;
+				case Opcode.SET:
+					this.setRegister(operandOne as Register, this._resolveValue(operandTwo as string));
+					break;
+				case Opcode.LOAD: {
+					const val = parseInt(this._memory[this._resolveValue(operandTwo as string)] as string);
+					if (!isNaN(val)) this.setRegister(operandOne as Register, val);
+					break;
+				}
+				case Opcode.ADD:
+					this.setRegister(operandOne as Register, this._registers[operandOne as Register] + this._resolveValue(operandTwo as string));
+					break;
 			}
-			case Opcode.SET: {
-				let reg = instruction.operands[0] as Register;
-				let operand = instruction.operands[1] as Register;
-				let val = this._registers[operand] ?? parseInt(operand);
-				this.setRegister(reg, val);
-				break;
-			}
-			case Opcode.LOAD: {
-				let dest = instruction.operands[0] as Register;
-				let src = instruction.operands[1] as Register;
-				let imm = instruction.operands[1] as number;
-				let val = this._memory[this._registers[src] ?? imm];
-				let intVal = parseInt(val as string);
-				if (!isNaN(intVal)) this.setRegister(dest, intVal);
-				break;
-			}
-			case Opcode.ADD: {
-				let dest = instruction.operands[0] as Register;
-				let src = instruction.operands[1] as Register;
-				let imm = instruction.operands[1] as number;
-				let val = this._registers[src] ?? imm;
-				this.setRegister(dest, this._registers[dest] + val);
-				break;
-			}
+
+			this._advanceCursor(track);
 		}
 
-		track.cursor++;
-		track.cursor %= track.program.instructions.length;
+		this._notify();
+	}
+
+	run() {
+		this._running = true;
+		this._interval = setInterval(() => this._tracks.forEach(t => this._stepTrack(t)), this._audio.clickMs);
 		this._notify();
 	}
 
 	halt() {
 		this._running = false;
-		this._applyRegister(Register.BPM, DEFAULT_REGISTERS[Register.BPM]);
-		this._applyRegister(Register.VOL, DEFAULT_REGISTERS[Register.VOL]);
+		clearInterval(this._interval);
 		this._notify();
 	}
 }
