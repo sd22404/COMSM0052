@@ -41,7 +41,7 @@ export default function Editor({onCodeChange, cursors}: { onCodeChange?: (code: 
 		if (!editorRef.current) return;
 
 		const view = new EditorView({
-			doc: "; Ctrl+Enter to apply code updates\n\nSET BPM 120\n\nTRACK one:\nPLAY DRUM KICK\nWAIT 2\nPLAY DRUM HAT\nWAIT 2\nPLAY DRUM SNARE\nWAIT 2\nPLAY DRUM HAT\nWAIT 2\n\nTRACK two:\nPLAY SYNTH Bb3\nWAIT 4\n",
+			doc: "; Ctrl+Enter to apply code updates\n\nSET BPM 120\n\nTRACK one:\nPLAY DRUM KICK\nREST 1\nPLAY DRUM HAT\nREST 1\nPLAY DRUM SNARE\nREST 1\nPLAY DRUM HAT\nREST 1\n\nTRACK two:\nPLAY SYNTH Bb3\nREST 3\n",
 			parent: editorRef.current,
 			extensions: [
 				basicSetup,
