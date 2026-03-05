@@ -3,9 +3,9 @@ import { Instrument } from "@/core/types";
 var freq = require('notes-to-frequencies');
 
 const SAMPLE_PATHS: Record<string, string> = {
-	KICK: "COMSM0052/samples/kick.wav",
-	SNARE: "COMSM0052/samples/snare.wav",
-	HAT: "COMSM0052/samples/hat.wav",
+	KICK: "/COMSM0052/samples/kick.wav",
+	SNARE: "/COMSM0052/samples/snare.wav",
+	HAT: "/COMSM0052/samples/hat.wav",
 };
 
 export class AudioEngine {
