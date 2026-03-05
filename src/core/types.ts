@@ -3,6 +3,7 @@ export enum Opcode {
 	PLAY = "PLAY",
 	REST = "REST",
 	JUMP = "JUMP",
+	BRZ = "BRZ",
 	SET = "SET",
 	LOAD = "LOAD",
 	ADD = "ADD",

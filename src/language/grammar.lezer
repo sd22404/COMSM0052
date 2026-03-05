@@ -9,12 +9,12 @@ Track { "TRACK" Label }
 Operand { Instrument | Register | Number | Note | Identifier }
 
 @tokens {
-	Opcode { "PLAY" | "REST" | "JUMP" | "SET" | "LOAD" | "ADD" }
+	Opcode { "PLAY" | "REST" | "JUMP" | "BRZ" | "SET" | "LOAD" | "ADD" }
 	Instrument { "DRUM" | "SYNTH" | "BASS" }
 	Register { "BPM" | "VOL" | "BAR" | "BEAT" | "REG" @digit+ }
 	Label { Identifier ":" }
 	Note { "KICK" | "SNARE" | "HAT" | $[a-gA-G] ($[#b])? @digit+ }
-	Number { @digit+ }
+	Number { "-"? @digit+ }
 	Identifier { @asciiLetter+ @digit* }
 	space { $[ \t\r]+ }
 	newline { "\n" }

@@ -15,10 +15,16 @@ const DEFAULT_REGISTERS: Record<Register, number> = {
 	[Register.REG2]: 0,
 };
 
+let DEFAULT_MEMORY = new Array(256).fill("");
+DEFAULT_MEMORY[0] = "C4";
+DEFAULT_MEMORY[1] = "D4";
+DEFAULT_MEMORY[2] = "Eb4";
+DEFAULT_MEMORY[3] = "F4";
+
 export class Sequencer {
 	private _audio: AudioEngine;
 	private _registers: Record<Register, number> = { ...DEFAULT_REGISTERS };
-	private _memory: (number | string)[] = new Array(256).fill("");
+	private _memory: (number | string)[] = [...DEFAULT_MEMORY];
 	private _tracks: Track[] = [];
 	private _running = false;
 	private _interval?: NodeJS.Timeout;
@@ -42,7 +48,14 @@ export class Sequencer {
 	}
 
 	setTracks(tracks: Track[]) {
-		this._tracks = tracks;
+		this._tracks = tracks.map(t => {
+			const old = this._tracks.find(o => o.name === t.name);
+			if (!old) return t;
+			t.cursor = Math.min(old.cursor, t.program.instructions.length - 1);
+			t.waitRemaining = old.waitRemaining;
+			return t;
+		});
+
 		this._notify();
 	}
 
@@ -67,7 +80,6 @@ export class Sequencer {
 		return this._registers[operand as Register] ?? Number(operand);
 	}
 
-	// to be sorted
 	private _resolveNote(operand: string): string {
 		const asInt = parseInt(operand);
 		if (!isNaN(asInt)) return this._memory[asInt] as string;
@@ -103,6 +115,12 @@ export class Sequencer {
 				case Opcode.JUMP:
 					track.cursor = track.program.labels[operandOne as string] ?? track.cursor;
 					continue;
+				case Opcode.BRZ:
+					if (this._resolveValue(operandOne as string) === 0) {
+						track.cursor = track.program.labels[operandTwo as string] ?? track.cursor;
+						continue;
+					}
+					break;
 				case Opcode.SET:
 					this.setRegister(operandOne as Register, this._resolveValue(operandTwo as string));
 					break;
@@ -122,7 +140,15 @@ export class Sequencer {
 		this._notify();
 	}
 
+	private _resetTracks() {
+		this._tracks.forEach(t => {
+			t.cursor = 0;
+			t.waitRemaining = 0;
+		});
+	}
+
 	run() {
+		if (this._running) return;
 		this._audio.init();
 		this._running = true;
 		this._interval = setInterval(() => this._tracks.forEach(t => this._stepTrack(t)), this._audio.clickMs);
@@ -132,6 +158,7 @@ export class Sequencer {
 	halt() {
 		this._running = false;
 		clearInterval(this._interval);
+		this._resetTracks();
 		this._notify();
 	}
 }

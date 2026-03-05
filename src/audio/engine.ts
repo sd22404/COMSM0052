@@ -1,6 +1,5 @@
 import { Instrument } from "@/core/types";
-
-var freq = require('notes-to-frequencies');
+const freq = require('notes-to-frequencies');
 
 const SAMPLE_PATHS: Record<string, string> = {
 	KICK: "/COMSM0052/samples/kick.wav",

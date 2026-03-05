@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { Register } from "@/core/types";
 
 interface RegisterProps {
@@ -5,23 +6,32 @@ interface RegisterProps {
 	onRegisterChange?: (reg: Register, val: number) => void;
 }
 
+function RegisterInput({ regKey, val, onChange }: { regKey: Register; val: number; onChange?: (reg: Register, val: number) => void }) {
+	const [raw, setRaw] = useState(val.toString());
+
+	useEffect(() => { setRaw(val.toString()); }, [val]);
+
+	return (
+		<div className="flex items-center gap-4">
+			<span className="font-bold text-yellow-500">{regKey}</span>
+			<input type="text"
+				value={raw}
+				onChange={(e) => {
+					setRaw(e.target.value);
+					const intVal = parseInt(e.target.value, 10);
+					if (!isNaN(intVal)) onChange?.(regKey, intVal);
+				}}
+				className="w-16 h-12 text-center border border-neutral-700 bg-transparent focus:outline-none focus:border-blue-500"
+			/>
+		</div>
+	);
+}
+
 export default function Registers({ registers, onRegisterChange }: RegisterProps) {
 	return (
 		<div className="flex gap-6 font-mono">
 			{Object.entries(registers).map(([key, val]) => (
-				<div key={key} className="flex items-center gap-4">
-					<span className="font-bold text-yellow-500">{key}</span>
-					<input type="text"
-						value={val.toString(10).padStart(2, "0")}
-						onChange={(e) => {
-							const value = parseInt(e.target.value, 10);
-							if (!isNaN(value) && value >= 0 && value <= 255 && onRegisterChange) {
-								onRegisterChange(key as Register, value);
-							}
-						}}
-						className="w-16 h-12 text-center border border-neutral-700 bg-transparent focus:outline-none focus:border-blue-500"
-					/>
-				</div>
+				<RegisterInput key={key} regKey={key as Register} val={val} onChange={onRegisterChange} />
 			))}
 		</div>
 	);
