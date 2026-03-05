@@ -11,16 +11,19 @@ const SAMPLE_PATHS: Record<string, string> = {
 export class AudioEngine {
 	private _samples: Record<string, AudioBuffer> = {};
 	private _volume: number = 100;
-	private _gain: GainNode;
+	private _gain!: GainNode;
 	private _bpm: number = 120;
 	private _clickMs: number = 60000 / this._bpm / 4;
-	private _audioContext: AudioContext;
+	private _audioContext!: AudioContext;
+	private _initialized = false;
 
-	constructor() {
+	init() {
+		if (this._initialized) return;
 		this._audioContext = new AudioContext();
 		this._gain = this._audioContext.createGain();
 		this._gain.connect(this._audioContext.destination);
 		this._loadSamples();
+		this._initialized = true;
 	}
 
 	private async _loadSamples() {
@@ -68,12 +71,6 @@ export class AudioEngine {
 
 	currentTime() {
 		return this._audioContext.currentTime;
-	}
-
-	rest(duration: number) {
-		return new Promise(resolve =>
-			setTimeout(resolve, duration * this._clickMs)
-		);
 	}
 
 	play(instrument: Instrument, note: string, beatDuration?: number, beatDelay?: number) {

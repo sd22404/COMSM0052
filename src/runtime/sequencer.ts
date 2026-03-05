@@ -123,6 +123,7 @@ export class Sequencer {
 	}
 
 	run() {
+		this._audio.init();
 		this._running = true;
 		this._interval = setInterval(() => this._tracks.forEach(t => this._stepTrack(t)), this._audio.clickMs);
 		this._notify();
