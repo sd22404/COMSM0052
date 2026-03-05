@@ -19,11 +19,11 @@ export default function useRuntime() {
 		running: state.running,
 		registers: state.registers,
 		memory: state.memory,
-		cursor: state.cursor,
+		cursors: state.cursors,
 		run: () => seq.run(),
 		halt: () => seq.halt(),
-		setCode: (code: string) => seq.setProgram(compile(code)),
+		setCode: (code: string) => seq.setTracks(compile(code)),
 		setRegister: (reg: Register, val: number) => seq.setRegister(reg, val),
-		setMemory: (addr: number, val: number) => seq.setMemory(addr, val),
+		setMemory: (addr: number, val: number | string) => seq.setMemory(addr, val),
 	};
 }

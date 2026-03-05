@@ -8,6 +8,7 @@ const parserWithHighlighting = parser.configure({
 			Comment: tags.lineComment,
 			Label: tags.labelName,
 			Opcode: tags.keyword,
+			Track: tags.keyword,
 			Register: tags.variableName,
 			Instrument: tags.typeName,
 			Note: tags.string,

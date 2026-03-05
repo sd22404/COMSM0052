@@ -1,13 +1,15 @@
 @top Program { statement* }
 
-statement { (Label | Instruction) newline }
+statement { (Track | Label | Instruction) newline+ }
 
 Instruction { Opcode Operand+ }
+
+Track { "TRACK" Label }
 
 Operand { Instrument | Register | Number | Note | Identifier }
 
 @tokens {
-	Opcode { "PLAY" | "WAIT" | "JUMP" | "SET" }
+	Opcode { "PLAY" | "WAIT" | "JUMP" | "SET" | "LOAD" | "ADD" }
 	Instrument { "DRUM" | "SYNTH" | "BASS" }
 	Register { "BPM" | "VOL" | "BAR" | "BEAT" | "REG" @digit+ }
 	Label { Identifier ":" }
@@ -16,7 +18,7 @@ Operand { Instrument | Register | Number | Note | Identifier }
 	Identifier { @asciiLetter+ @digit* }
 	space { $[ \t\r]+ }
 	newline { "\n" }
-	Comment { ";" ![\n]* }
+	Comment { ";" ![\n]* newline+ }
 	@precedence { Opcode, Instrument, Register, Label, Note, Identifier, Number }
 }
 

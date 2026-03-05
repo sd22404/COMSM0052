@@ -12,6 +12,7 @@
     "codemirror": "^6.0.2",
     "lezer": "^0.13.5",
     "next": "16.1.6",
+    "notes-to-frequencies": "^1.0.0",
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "tone": "^15.1.22"

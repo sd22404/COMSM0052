@@ -4,6 +4,8 @@ export enum Opcode {
 	WAIT = "WAIT",
 	JUMP = "JUMP",
 	SET = "SET",
+	LOAD = "LOAD",
+	ADD = "ADD",
 }
 
 export enum Instrument {
@@ -16,8 +18,6 @@ export enum Register {
 	VOL = "VOL",
 	REG1 = "REG1",
 	REG2 = "REG2",
-	REG3 = "REG3",
-	REG4 = "REG4",
 }
 
 export interface Instruction {
@@ -28,4 +28,12 @@ export interface Instruction {
 export interface Program {
 	instructions: Instruction[];
 	labels: Record<string, number>;
+}
+
+export interface Track {
+	name: string;
+	start: number;
+	program: Program;
+	cursor: number;
+	currentBeat: number;
 }

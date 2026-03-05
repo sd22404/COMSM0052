@@ -1,7 +1,15 @@
 import { Instrument } from "@/core/types";
-import * as Tone from "tone";
+
+var freq = require('notes-to-frequencies');
+
+const SAMPLE_PATHS: Record<string, string> = {
+	KICK: "COMSM0052/samples/kick.wav",
+	SNARE: "COMSM0052/samples/snare.wav",
+	HAT: "COMSM0052/samples/hat.wav",
+};
 
 export class AudioEngine {
+	private _samples: Record<string, AudioBuffer> = {};
 	private _volume: number = 100;
 	private _gain: GainNode;
 	private _bpm: number = 120;
@@ -12,6 +20,28 @@ export class AudioEngine {
 		this._audioContext = new AudioContext();
 		this._gain = this._audioContext.createGain();
 		this._gain.connect(this._audioContext.destination);
+		this._loadSamples();
+	}
+
+	private async _loadSamples() {
+		for (const [name, path] of Object.entries(SAMPLE_PATHS)) {
+			try {
+				const res = await fetch(path);
+				const buf = await res.arrayBuffer();
+				this._samples[name] = await this._audioContext.decodeAudioData(buf);
+			} catch (e) {
+				console.error(`Failed to load sample ${name}:`, e);
+			}
+		}
+	}
+
+	private _playSample(name: string, time: number) {
+		const buffer = this._samples[name];
+		if (!buffer) return;
+		const source = this._audioContext.createBufferSource();
+		source.buffer = buffer;
+		source.connect(this._gain);
+		source.start(time);
 	}
 
 	get volume() {
@@ -36,37 +66,33 @@ export class AudioEngine {
 		return this._clickMs;
 	}
 
+	currentTime() {
+		return this._audioContext.currentTime;
+	}
+
 	rest(duration: number) {
 		return new Promise(resolve =>
 			setTimeout(resolve, duration * this._clickMs)
 		);
 	}
 
-	play(instrument: Instrument, note: string) {
-		const osc = this._audioContext.createOscillator();
-		osc.connect(this._gain);
+	play(instrument: Instrument, note: string, beatDuration?: number, beatDelay?: number) {
+		const startTime = this._audioContext.currentTime + (beatDelay || 0) * this._clickMs / 1000;
 
 		switch (instrument) {
 			case Instrument.DRUM:
-				switch (note) {
-					case "KICK":
-						osc.frequency.value = 200;
-						break;
-					case "SNARE":
-						osc.frequency.value = 5000;
-						break;
-					case "HAT":
-						osc.frequency.value = 10000;
-						break;
-				} break;
-			case Instrument.SYNTH:
-				osc.frequency.value = Tone.Frequency(note).toFrequency();
+				this._playSample(note, startTime);
 				break;
+			case Instrument.SYNTH: {
+				const osc = this._audioContext.createOscillator();
+				osc.connect(this._gain);
+				osc.frequency.value = freq(note);
+				osc.start(startTime);
+				osc.stop(startTime + (beatDuration || 1) * this._clickMs / 1000);
+				break;
+			}
 			default:
 				break;
 		}
-		
-		osc.start();
-		osc.stop(this._audioContext.currentTime + this._clickMs / 1000);
 	}
 }

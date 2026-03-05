@@ -1,6 +1,6 @@
 import { basicSetup } from "codemirror";
-import { EditorView, Decoration, keymap } from "@codemirror/view";
-import { StateEffect, StateField } from "@codemirror/state";
+import { EditorView, Decoration, keymap, KeyBinding } from "@codemirror/view";
+import { StateEffect, StateField, Prec } from "@codemirror/state";
 import { indentWithTab } from "@codemirror/commands";
 import { musiclang } from "@/language/musiclang";
 import { useEffect, useRef } from "react";
@@ -22,24 +22,33 @@ const cursorHighlight = StateField.define({
 	provide: f => EditorView.decorations.from(f),
 });
 
-export default function Editor({onCodeChange, cursor}: { onCodeChange?: (code: string) => void, cursor?: number }) {
+export default function Editor({onCodeChange, cursors}: { onCodeChange?: (code: string) => void, cursors?: number[] }) {
 	const editorRef = useRef<HTMLDivElement>(null);
 	const viewRef = useRef<EditorView | null>(null);
+	const onCodeChangeRef = useRef(onCodeChange);
+	onCodeChangeRef.current = onCodeChange;
+
+	const runKeymap: KeyBinding = {
+		key: "Mod-Enter",
+		run: (view) => {
+			onCodeChangeRef.current?.(view.state.doc.toString());
+			console.log("Run code");
+			return true;
+		},
+	};
 
 	useEffect(() => {
 		if (!editorRef.current) return;
 
 		const view = new EditorView({
-			doc: "SET BPM 120\nPLAY DRUM KICK\nWAIT 2\nPLAY DRUM HAT\nWAIT 2\nPLAY DRUM SNARE\nWAIT 2\nPLAY DRUM HAT\nWAIT 2",
+			doc: "; Ctrl+Enter to apply code updates\n\nSET BPM 120\n\nTRACK one:\nPLAY DRUM KICK\nWAIT 2\nPLAY DRUM HAT\nWAIT 2\nPLAY DRUM SNARE\nWAIT 2\nPLAY DRUM HAT\nWAIT 2\n\nTRACK two:\nPLAY SYNTH Bb3\nWAIT 4\n",
 			parent: editorRef.current,
 			extensions: [
 				basicSetup,
+				Prec.highest(keymap.of([runKeymap])),
 				keymap.of([indentWithTab]),
 				musiclang(),
 				cursorHighlight,
-				EditorView.updateListener.of((update) => {
-					if (update.docChanged) onCodeChange?.(update.state.doc.toString());
-				}),
 			],
 		});
 
@@ -49,10 +58,10 @@ export default function Editor({onCodeChange, cursor}: { onCodeChange?: (code: s
 	}, []);
 
 	useEffect(() => {
-		if (viewRef.current && (cursor || cursor == 0)) {
-			viewRef.current.dispatch({ effects: setCursorEffect.of(cursor) });
+		if (viewRef.current && cursors && cursors.length) {
+			viewRef.current.dispatch({ effects: cursors.map(c => setCursorEffect.of(c)) });
 		}
-	}, [cursor]);
+	}, [cursors]);
 
 	return (<div className="h-full w-full border-2 rounded" ref={editorRef}/>);
 }

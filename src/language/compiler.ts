@@ -1,10 +1,11 @@
 import { parser } from "./parser";
-import { Instrument, Register, Opcode, Instruction, Program } from "@/core/types";
+import { Track, Instrument, Register, Opcode, Instruction, Program } from "@/core/types";
 
-export function compile(code: string): Program {
+export function compile(code: string): Track[] {
 	const tree = parser.parse(code);
 	const cursor = tree.cursor();
-	const program: Program = { instructions: [], labels: {} };
+	const tracks: Track[] = [];
+	let track: Track = { name: "default", start: 1, program: { instructions: [], labels: {} }, cursor: 0, currentBeat: 0 };
 	let instr: Instruction = { opcode: Opcode.NOP, operands: [] };
 	let hasInstruction = false;
 
@@ -13,15 +14,28 @@ export function compile(code: string): Program {
 	do {
 		const nodeText = code.slice(cursor.from, cursor.to);
 		switch (cursor.node.type.name) {
+			case "Track": {
+				if (hasInstruction) {
+					track.program.instructions.push(instr);
+					instr = { opcode: Opcode.NOP, operands: [] };
+					hasInstruction = false;
+				}
+
+				if (track.program.instructions.length > 0) tracks.push(track);
+				
+				let trackName = nodeText.split(" ")[1].replace(RegExp(/:\n/g), "");
+				track = { name: trackName, start: code.slice(0, cursor.to).split("\n").length - 1, program: { instructions: [], labels: {} }, cursor: 0, currentBeat: 0 };
+				break;
+			}
 			case "Instruction":
 				if (hasInstruction) {
-					program.instructions.push(instr);
+					track.program.instructions.push(instr);
 					instr = { opcode: Opcode.NOP, operands: [] };
 				} hasInstruction = true;
 				break;
 			case "Label":
 				let label = nodeText.split(":")[0]
-				program.labels[label] = program.instructions.length;
+				track.program.labels[label] = track.program.instructions.length + (hasInstruction ? 1 : 0);
 				break;
 			case "Opcode":
 				instr.opcode = nodeText as Opcode;
@@ -44,6 +58,8 @@ export function compile(code: string): Program {
 		}
 	} while (cursor.next());
 
-	if (hasInstruction) { program.instructions.push(instr); }
-	return program;
+	if (hasInstruction) { track.program.instructions.push(instr); }
+	tracks.push(track);
+
+	return tracks;
 }
