@@ -13,7 +13,6 @@ export default function Home() {
 		<div className="w-screen h-screen py-20 px-20 flex gap-8 font-mono">
 			<div className="w-full h-full flex flex-1 flex-col gap-8">
 				<Editor onCodeChange={setCode} cursors={cursors} />
-				<Help />
 			</div>
 			<div className="w-full h-full flex flex-1 flex-col gap-8">
 				<div className="overflow-auto flex flex-col gap-8 items-end">
@@ -21,6 +20,7 @@ export default function Home() {
 					<Memory memory={memory} onMemoryChange={setMemory} />
 				</div>
 				<span className="flex justify-end gap-4">
+					<Help />
 					<button onClick={running ? halt : run} className={`p-2 min-w-[100px] rounded ${running ? "bg-red-500 hover:bg-red-600" : "bg-blue-500 hover:bg-blue-600"} hover:cursor-pointer`}>
 						{running ? "Stop Audio" : "Start Audio"}
 					</button>
