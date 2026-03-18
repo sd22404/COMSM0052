@@ -1,14 +1,34 @@
 import { Instrument } from "@/core/types";
-const freq = require('notes-to-frequencies');
 
-const SAMPLE_PATHS: Record<string, string> = {
-	KICK: "/COMSM0052/samples/kick.wav",
-	SNARE: "/COMSM0052/samples/snare.wav",
-	HAT: "/COMSM0052/samples/hat.wav",
-};
+const midiToFreq = function(note: number): number {
+	const A = 440;
+	const freq = (A / 32) * (2 ** ((note - 9) / 12));
+	return freq;
+}
+
+const noteToSemitone: Record<string, number> = {
+	'C': 0, 'C#': 1, 'Db': 1, 'D': 2, 'D#': 3, 'Eb': 3,
+	'E': 4, 'F': 5, 'F#': 6, 'Gb': 6, 'G': 7, 'G#': 8,
+	'Ab': 8, 'A': 9, 'A#': 10, 'Bb': 10, 'B': 11
+}
+
+const semitoneToNote = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+
+export const midiToNote = function(midi: number): string {
+	const noteIndex = midi % 12;
+	const octave = Math.floor(midi / 12) - 1;
+	if (octave < 0) return "0";
+	return semitoneToNote[noteIndex] + octave.toString();
+}
+
+const SAMPLE_PATHS: string[] = [
+	"/COMSM0052/samples/kick.wav",
+	"/COMSM0052/samples/snare.wav",
+	"/COMSM0052/samples/hat.wav",
+];
 
 export class AudioEngine {
-	private _samples: Record<string, AudioBuffer> = {};
+	private _samples: AudioBuffer[] = [];
 	private _volume: number = 100;
 	private _gain!: GainNode;
 	private _bpm: number = 120;
@@ -26,19 +46,19 @@ export class AudioEngine {
 	}
 
 	private async _loadSamples() {
-		for (const [name, path] of Object.entries(SAMPLE_PATHS)) {
+		for (const path of SAMPLE_PATHS) {
 			try {
 				const res = await fetch(path);
 				const buf = await res.arrayBuffer();
-				this._samples[name] = await this._audioContext.decodeAudioData(buf);
+				this._samples.push(await this._audioContext.decodeAudioData(buf));
 			} catch (e) {
-				console.error(`Failed to load sample ${name}:`, e);
+				console.error(`Failed to load sample #${SAMPLE_PATHS.indexOf(path)}:`, e);
 			}
 		}
 	}
 
-	private _playSample(name: string, time: number) {
-		const buffer = this._samples[name];
+	private _playSample(index: number, time: number) {
+		const buffer = this._samples[index];
 		if (!buffer) return;
 		const source = this._audioContext.createBufferSource();
 		source.buffer = buffer;
@@ -72,17 +92,17 @@ export class AudioEngine {
 		return this._audioContext.currentTime;
 	}
 
-	play(instrument: Instrument, note: string, beatDuration?: number, beatDelay?: number) {
+	play(instrument: Instrument, note: number, beatDuration?: number, beatDelay?: number) {
 		const startTime = this._audioContext.currentTime + (beatDelay || 0) * this._clickMs / 1000;
 
 		switch (instrument) {
-			case Instrument.DRUM:
+			case Instrument.SAMPLE:
 				this._playSample(note, startTime);
 				break;
 			case Instrument.SYNTH: {
 				const osc = this._audioContext.createOscillator();
 				osc.connect(this._gain);
-				osc.frequency.value = freq(note);
+				osc.frequency.value = midiToFreq(note);
 				osc.start(startTime);
 				osc.stop(startTime + (beatDuration || 1) * this._clickMs / 1000);
 				break;

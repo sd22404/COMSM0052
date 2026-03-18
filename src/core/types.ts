@@ -10,7 +10,7 @@ export enum Opcode {
 }
 
 export enum Instrument {
-	DRUM = "DRUM",
+	SAMPLE = "SAMPLE",
 	SYNTH = "SYNTH",
 }
 
@@ -21,9 +21,15 @@ export enum Register {
 	REG2 = "REG2",
 }
 
+export interface Operand {
+	mode: "immediate" | "register" | "memory";
+	type: "instrument" | "number" | "register" | "identifier";
+	value: string | number;
+}
+
 export interface Instruction {
 	opcode: Opcode;
-	operands: (Register | Instrument | number | string)[];
+	operands: Operand[];
 	line: number;
 }
 

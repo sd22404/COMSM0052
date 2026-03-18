@@ -6,20 +6,23 @@ Instruction { Opcode Operand+ }
 
 Track { "TRACK" Label }
 
-Operand { Instrument | Register | Number | Note | Identifier }
+Operand { Instrument | Register | Value | Identifier }
+
+Value { Immediate | Memory }
 
 @tokens {
 	Opcode { "PLAY" | "REST" | "JUMP" | "BRZ" | "SET" | "LOAD" | "ADD" }
-	Instrument { "DRUM" | "SYNTH" | "BASS" }
+	Instrument { "SAMPLE" | "SYNTH" }
 	Register { "BPM" | "VOL" | "BAR" | "BEAT" | "REG" @digit+ }
 	Label { Identifier ":" }
-	Note { "KICK" | "SNARE" | "HAT" | $[a-gA-G] ($[#b])? @digit+ }
-	Number { "-"? @digit+ }
+	Immediate { number }
+	Memory { "[" (number | Register) "]" }
 	Identifier { @asciiLetter+ @digit* }
+	number { "-"? @digit+ }
 	space { $[ \t\r]+ }
 	newline { "\n" }
 	Comment { ";" ![\n]* newline+ }
-	@precedence { Opcode, Instrument, Register, Label, Note, Identifier, Number }
+	@precedence { Opcode, Instrument, Register, Label, Identifier, Immediate, Memory }
 }
 
 @skip { space | Comment }

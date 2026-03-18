@@ -24,6 +24,6 @@ export default function useRuntime() {
 		halt: () => seq.halt(),
 		setCode: (code: string) => seq.setTracks(compile(code)),
 		setRegister: (reg: Register, val: number) => seq.setRegister(reg, val),
-		setMemory: (addr: number, val: number | string) => seq.setMemory(addr, val),
+		setMemory: (addr: number, val: number) => seq.setMemory(addr, val),
 	};
 }

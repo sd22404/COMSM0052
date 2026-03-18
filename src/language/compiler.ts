@@ -1,5 +1,5 @@
 import { parser } from "./parser";
-import { Track, Instrument, Register, Opcode, Instruction, Program } from "@/core/types";
+import { Track, Instrument, Register, Opcode, Instruction } from "@/core/types";
 
 function newTrack(name: string): Track {
 	return { name, program: { instructions: [], labels: {} }, cursor: 0, waitRemaining: 0 };
@@ -41,17 +41,25 @@ export function compile(code: string): Track[] {
 				if (instr) instr.opcode = nodeText as Opcode;
 				break;
 			case "Instrument":
-				if (instr) instr.operands.push(nodeText as Instrument);
+				if (instr) instr.operands.push({ mode: "immediate", type: "instrument", value: nodeText as Instrument });
 				break;
 			case "Register":
-				if (instr) instr.operands.push(nodeText as Register);
+				if (instr) instr.operands.push({ mode: "register", type: "register", value: nodeText as Register });
 				break;
-			case "Number":
-				if (instr) instr.operands.push(parseInt(nodeText));
+			case "Immediate":
+				if (instr) instr.operands.push({ mode: "immediate", type: "number", value: parseInt(nodeText) });
+				break;
+			case "Memory":
+				if (instr) {
+					const address = nodeText.slice(1, -1).trim();
+					const asNum = parseInt(address);
+					if (isNaN(asNum)) instr.operands.push({ mode: "memory", type: "register", value: address as Register });
+					else instr.operands.push({ mode: "memory", type: "number", value: asNum });
+				}
 				break;
 			case "Note":
 			case "Identifier":
-				if (instr) instr.operands.push(nodeText);
+				if (instr) instr.operands.push({ mode: "immediate", type: "identifier", value: nodeText });
 				break;
 		}
 	} while (cursor.next());

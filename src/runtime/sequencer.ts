@@ -1,9 +1,9 @@
-import { Track, Opcode, Instrument, Register } from "@/core/types";
+import { Track, Opcode, Instrument, Register, Operand } from "@/core/types";
 import { AudioEngine } from "@/audio/engine";
 
 export interface SequencerState {
 	registers: Record<Register, number>;
-	memory: (number | string)[];
+	memory: number[];
 	running: boolean;
 	cursors: number[];
 }
@@ -15,16 +15,20 @@ const DEFAULT_REGISTERS: Record<Register, number> = {
 	[Register.REG2]: 0,
 };
 
-let DEFAULT_MEMORY = new Array(256).fill("");
-DEFAULT_MEMORY[0] = "C4";
-DEFAULT_MEMORY[1] = "D4";
-DEFAULT_MEMORY[2] = "Eb4";
-DEFAULT_MEMORY[3] = "F4";
+let DEFAULT_MEMORY = new Array(256).fill(0);
+DEFAULT_MEMORY[0] = 58;
+DEFAULT_MEMORY[1] = 62;
+DEFAULT_MEMORY[2] = 63;
+DEFAULT_MEMORY[3] = 65;
+DEFAULT_MEMORY[8] = 60;
+DEFAULT_MEMORY[9] = 64;
+DEFAULT_MEMORY[10] = 65;
+DEFAULT_MEMORY[11] = 67;
 
 export class Sequencer {
 	private _audio: AudioEngine;
 	private _registers: Record<Register, number> = { ...DEFAULT_REGISTERS };
-	private _memory: (number | string)[] = [...DEFAULT_MEMORY];
+	private _memory: number[] = [...DEFAULT_MEMORY];
 	private _tracks: Track[] = [];
 	private _running = false;
 	private _interval?: NodeJS.Timeout;
@@ -59,7 +63,7 @@ export class Sequencer {
 		this._notify();
 	}
 
-	setMemory(addr: number, val: number | string) {
+	setMemory(addr: number, val: number) {
 		this._memory[addr] = val;
 		this._notify();
 	}
@@ -84,15 +88,20 @@ export class Sequencer {
 		this._onStateChange?.(this.state);
 	}
 
-	private _resolveValue(operand: string | number): number {
-		return this._registers[operand as Register] ?? Number(operand);
-	}
-
-	private _resolveNote(operand: string): string {
-		const asInt = parseInt(operand);
-		if (!isNaN(asInt)) return this._memory[asInt] as string;
-		if (operand in this._registers) return this._memory[this._registers[operand as Register]] as string;
-		return operand;
+	private _resolveNumberOperand(operand?: Operand): number {
+		if (!operand) return 0;
+		switch (operand.mode) {
+			case "immediate":
+				return operand.value as number;
+			case "register":
+				return this._registers[operand.value as Register];
+			case "memory": {
+				const address = operand.type === "register"
+					? this._registers[operand.value as Register]
+					: operand.value as number;
+				return this._memory[address];
+			}
+		}
 	}
 
 	private _advanceCursor(track: Track) {
@@ -108,37 +117,45 @@ export class Sequencer {
 		while (safety++ < 1000) {
 			const instr = track.program.instructions[track.cursor];
 			const [operandOne, operandTwo] = instr.operands;
+			const valueOne = this._resolveNumberOperand(operandOne);
+			const valueTwo = this._resolveNumberOperand(operandTwo);
 
 			switch (instr.opcode) {
 				case Opcode.PLAY:
-					this._audio.play(operandOne as Instrument, this._resolveNote(operandTwo as string));
+					this._audio.play(operandOne.value as Instrument, valueTwo);
 					this._notify();
 					this._advanceCursor(track);
 					return;
 				case Opcode.REST:
-					track.waitRemaining += (operandOne as number) - 1;
+					track.waitRemaining += valueOne - 1;
 					this._notify();
 					this._advanceCursor(track);
 					return;
 				case Opcode.JUMP:
-					track.cursor = track.program.labels[operandOne as string] ?? track.cursor;
+					track.cursor = track.program.labels[operandOne.value as string] ?? track.cursor;
 					continue;
 				case Opcode.BRZ:
-					if (this._resolveValue(operandOne as string) === 0) {
-						track.cursor = track.program.labels[operandTwo as string] ?? track.cursor;
+					if (valueOne === 0) {
+						track.cursor = track.program.labels[operandTwo.value as string] ?? track.cursor;
 						continue;
 					}
 					break;
 				case Opcode.SET:
-					this._applyRegister(operandOne as Register, this._resolveValue(operandTwo as string));
+					this._applyRegister(operandOne.value as Register, valueTwo);
 					break;
 				case Opcode.LOAD: {
-					const val = parseInt(this._memory[this._resolveValue(operandTwo as string)] as string);
-					if (!isNaN(val)) this._applyRegister(operandOne as Register, val);
+					const val = this._memory[valueTwo];
+					this._applyRegister(operandOne.value as Register, val);
 					break;
 				}
+				// case Opcode.STORE: {
+				// 	const val = this._resolveValue(operandTwo);
+				// 	this._memory[this._resolveValue(operandOne)] = val;
+				// 	this._notify();
+				// 	break;
+				// }
 				case Opcode.ADD:
-					this._applyRegister(operandOne as Register, this._registers[operandOne as Register] + this._resolveValue(operandTwo as string));
+					this._applyRegister(operandOne.value as Register, this._registers[operandOne.value as Register] + valueTwo);
 					break;
 			}
 

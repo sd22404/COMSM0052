@@ -42,7 +42,46 @@ export default function Editor({onCodeChange, cursors}: { onCodeChange?: (code: 
 		if (!editorRef.current) return;
 
 		const view = new EditorView({
-			doc: "; Ctrl+Enter to apply code updates\n\nSET BPM 120\n\nTRACK one:\nPLAY DRUM KICK\nREST 1\nPLAY DRUM HAT\nREST 1\nPLAY DRUM SNARE\nREST 1\nPLAY DRUM HAT\nREST 1\n\nTRACK two:\nPLAY SYNTH Bb3\nREST 7\n",
+			doc:
+`; CTRL + ENTER while typing to update code.
+
+SET BPM 120
+SET VOL 20
+
+TRACK regs:
+SET REG1 0 ; try adding eight to this!
+SET REG2 3
+top:
+REST 4
+BRZ REG2 regs
+ADD REG1 1
+ADD REG2 -1
+JUMP top
+
+TRACK synth:
+PLAY SYNTH [REG1]
+REST 1
+
+TRACK drums:
+a:
+PLAY SAMPLE 0
+REST 1
+PLAY SAMPLE 2
+REST 1
+PLAY SAMPLE 1
+REST 1
+PLAY SAMPLE 2
+PLAY SAMPLE 2
+; BRZ REG2 b
+; JUMP a
+PLAY SAMPLE 0
+REST 1
+PLAY SAMPLE 2
+REST 1
+PLAY SAMPLE 1
+REST 1
+PLAY SAMPLE 2
+REST 1`,
 			parent: editorRef.current,
 			extensions: [
 				basicSetup,
@@ -64,5 +103,5 @@ export default function Editor({onCodeChange, cursors}: { onCodeChange?: (code: 
 		}
 	}, [cursors]);
 
-	return (<div className="h-full w-full border-2 rounded" ref={editorRef}/>);
+	return (<div className="h-full w-full border-2 rounded overflow-scroll" ref={editorRef}/>);
 }
