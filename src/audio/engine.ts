@@ -30,6 +30,7 @@ const SAMPLE_PATHS: string[] = [
 export class AudioEngine {
 	private _samples: AudioBuffer[] = [];
 	private _gain!: GainNode;
+	private _compressor!: DynamicsCompressorNode;
 	private _volume: number = 100;
 	private _bpm: number = 120;
 	private _clickMs: number = 60000 / this._bpm;
@@ -44,8 +45,15 @@ export class AudioEngine {
 		}
 		this._audioContext = new AudioContext();
 		this._gain = this._audioContext.createGain();
-		this._gain.connect(this._audioContext.destination);
+		this._compressor = this._audioContext.createDynamicsCompressor();
+		this._gain.connect(this._compressor);
+		this._compressor.connect(this._audioContext.destination);
 		this._gain.gain.value = this._volume / 100;
+		this._compressor.threshold.value = -24;
+		this._compressor.knee.value = 30;
+		this._compressor.ratio.value = 12;
+		this._compressor.attack.value = 0.003;
+		this._compressor.release.value = 0.25;
 		this._loadSamples();
 		this._initialized = true;
 	}
@@ -65,12 +73,17 @@ export class AudioEngine {
 	private _playSample(index: number, time: number) {
 		const buffer = this._samples[index];
 		if (!buffer) return;
+		const noteKey = `${Instrument.DRUM}:${index}`;
 		const source = this._audioContext.createBufferSource();
 		source.buffer = buffer;
 		source.connect(this._gain);
-		if (this._activeNotes.has(`${Instrument.DRUM}:${index}`))
-			source.stop();
-		this._activeNotes.set(`${Instrument.DRUM}:${index}`, source);
+		const prev = this._activeNotes.get(noteKey);
+		if (prev) {
+			try { prev.stop(time); } catch {}
+			try { prev.disconnect(time); } catch {}
+			this._activeNotes.delete(noteKey);
+		}
+		this._activeNotes.set(noteKey, source);
 		source.start(time);
 	}
 
@@ -80,7 +93,7 @@ export class AudioEngine {
 
 	set volume(volume: number) {
 		this._volume = volume;
-		this._gain.gain.value = volume / 100;
+		this._gain.gain.value = (volume / 100) * 0.2;
 	}
 
 	get bpm() {
@@ -100,7 +113,7 @@ export class AudioEngine {
 		return this._audioContext.currentTime;
 	}
 
-	play(instrument: Instrument, note: number, velocity?: number, time?: number) {
+	play(instrument: Instrument, note: number, duration?: number, time?: number) {
 		const now = this._audioContext.currentTime;
 		const startTime = Math.max(time ?? now, now + 0.001);
 
@@ -112,26 +125,26 @@ export class AudioEngine {
 				const osc = this._audioContext.createOscillator();
 				osc.connect(this._gain);
 				osc.frequency.value = midiToFreq(note);
-				this._activeNotes.set(`${Instrument.SYNTH}:${note}`, osc);
+				const noteKey = `${Instrument.SYNTH}:${note}`;
+				const prev = this._activeNotes.get(noteKey);
+				if (prev) {
+					try { prev.stop(startTime); } catch {}
+					try { prev.disconnect(startTime); } catch {}
+					this._activeNotes.delete(noteKey);
+				}
+				this._activeNotes.set(noteKey, osc);
+				// const gain = this._audioContext.createGain();
+				// gain.gain.setValueAtTime(0, startTime);
+				// gain.gain.linearRampToValueAtTime(0.2, startTime + 0.1); // attack
+				// gain.gain.linearRampToValueAtTime(0, startTime + (duration ?? this._clickMs / 1000)); // release
+				// osc.connect(gain);
+				// gain.connect(this._gain);
 				osc.start(startTime);
-
-				console.log(`Playing note ${midiToNote(note)} (MIDI ${note}) at time ${startTime.toFixed(2)}s`);
-				console.log(this._activeNotes);
+				osc.stop(startTime + (duration ?? this._clickMs / 1000));
 				break;
 			}
 			default:
 				break;
-		}
-	}
-
-	stop(instrument: Instrument, note: number, time?: number) {
-		const now = this._audioContext.currentTime;
-		const stopTime = Math.max(time ?? now, now + 0.001);
-		const key = `${instrument}:${note}`;
-		const source = this._activeNotes.get(key);
-		if (source) {
-			source.stop(stopTime);
-			this._activeNotes.delete(key);
 		}
 	}
 
@@ -140,5 +153,6 @@ export class AudioEngine {
 			source.stop();
 		}
 		this._activeNotes.clear();
+		this._audioContext.suspend();
 	}
 }

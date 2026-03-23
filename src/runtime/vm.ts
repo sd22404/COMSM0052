@@ -1,4 +1,4 @@
-import { Opcode, Operand, Track, MIDIEvent, Register, Instrument } from "@/core/types";
+import { Opcode, Operand, Track, NoteEvent, Register, Instrument } from "@/core/types";
 
 interface State {
 	registers: Record<Register, number>;
@@ -76,8 +76,8 @@ export class VM {
 		return this.state.registers[reg] ?? 0;
 	}
 
-	seek(until: number): MIDIEvent[] {
-		const events: MIDIEvent[] = [];
+	seek(until: number): NoteEvent[] {
+		const events: NoteEvent[] = [];
 		for (const track of Object.values(this.tracks)) {
 			let iterations = 0;
 			while (track.time < until && iterations++ < 1000) {
@@ -90,7 +90,7 @@ export class VM {
 		return events.sort((a, b) => b.time - a.time);
 	}
 
-	private stepTrack(track: Track): MIDIEvent | null {
+	private stepTrack(track: Track): NoteEvent | null {
 		if (track.instrs.length === 0) return null;
 
 		const instr = track.instrs[track.pc++];
@@ -99,10 +99,8 @@ export class VM {
 		const [op1, op2] = instr.operands.map(op => this.eval(op));
 
 		switch(instr.opcode) {
-			case Opcode.NOTE_ON:
-				return { instrument: op1 as Instrument, type: "note_on", pitch: op2 as number, time: track.time, line: instr.line };
-			case Opcode.NOTE_OFF:
-				return { instrument: op1 as Instrument, type: "note_off", pitch: op2 as number, time: track.time, line: instr.line };
+			case Opcode.PLAY:
+				return { instrument: op1 as Instrument, pitch: op2 as number, duration: undefined, time: track.time, line: instr.line };
 			case Opcode.REST:
 				const beats = op1 as number;
 				const ticks = 2;

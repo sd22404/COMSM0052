@@ -1,6 +1,6 @@
 import { VM } from "./vm";
 import { AudioEngine } from "@/audio/engine";
-import { Register, MIDIEvent, Track } from "@/core/types";
+import { Register, NoteEvent, Track } from "@/core/types";
 
 export interface SequencerState {
 	running: boolean;
@@ -102,13 +102,8 @@ export class Sequencer {
 		if (played) this.notify();
 	}
 
-	private handleEvent(event: MIDIEvent) {
-		console.log(`Handling event: ${event.type} ${event.instrument} ${event.pitch} at time ${event.time.toFixed(2)}s (line ${event.line})`);
-		if (event.type === "note_on") {
-			this.audio.play(event.instrument, event.pitch, event.velocity, this.startTime + event.time);
-		} else {
-			this.audio.stop(event.instrument, event.pitch, this.startTime + event.time);
-		}
+	private handleEvent(event: NoteEvent) {
+		this.audio.play(event.instrument, event.pitch, event.duration, this.startTime + event.time);
 		this.highlights.push({ line: event.line, time: event.time });
 	}
 }

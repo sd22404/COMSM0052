@@ -12,7 +12,7 @@ export default function Home() {
 	return (
 		<div className="w-screen h-screen py-20 px-20 flex gap-8 font-mono">
 			<div className="w-full h-full flex flex-1 flex-col gap-8">
-				<Editor onCodeChange={setCode} />
+				<Editor onCodeChange={(code) => { setCode(code); run(); }} />
 			</div>
 			<div className="w-full h-full flex flex-1 flex-col gap-8">
 				<div className="overflow-auto flex flex-col gap-8 items-end">
