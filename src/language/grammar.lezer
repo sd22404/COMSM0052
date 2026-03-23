@@ -11,7 +11,7 @@ Operand { Instrument | Register | Value | Identifier }
 Value { Immediate | Memory }
 
 @tokens {
-	Opcode { "PLAY" | "REST" | "JUMP" | "BRZ" | "ADD" | "LOAD" | "STORE" }
+	Opcode { "NOTE_ON" | "NOTE_OFF" | "REST" | "JUMP" | "BRZ" | "ADD" | "LOAD" | "STORE" }
 	Instrument { "DRUM" | "SYNTH" }
 	Register { "BPM" | "VOL" | "REG" @digit+ }
 	Label { Identifier ":" }

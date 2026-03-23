@@ -34,7 +34,7 @@ export class AudioEngine {
 	private _bpm: number = 120;
 	private _clickMs: number = 60000 / this._bpm;
 	private _audioContext!: AudioContext;
-	private _activeSources = new Set<AudioBufferSourceNode | OscillatorNode>();
+	private _activeNotes = new Map<string, AudioBufferSourceNode | OscillatorNode>()
 	private _initialized = false;
 
 	init() {
@@ -68,8 +68,9 @@ export class AudioEngine {
 		const source = this._audioContext.createBufferSource();
 		source.buffer = buffer;
 		source.connect(this._gain);
-		this._activeSources.add(source);
-		source.onended = () => this._activeSources.delete(source);
+		if (this._activeNotes.has(`${Instrument.DRUM}:${index}`))
+			source.stop();
+		this._activeNotes.set(`${Instrument.DRUM}:${index}`, source);
 		source.start(time);
 	}
 
@@ -99,7 +100,7 @@ export class AudioEngine {
 		return this._audioContext.currentTime;
 	}
 
-	play(instrument: Instrument, note: number, duration?: number, time?: number) {
+	play(instrument: Instrument, note: number, velocity?: number, time?: number) {
 		const now = this._audioContext.currentTime;
 		const startTime = Math.max(time ?? now, now + 0.001);
 
@@ -111,10 +112,11 @@ export class AudioEngine {
 				const osc = this._audioContext.createOscillator();
 				osc.connect(this._gain);
 				osc.frequency.value = midiToFreq(note);
-				this._activeSources.add(osc);
-				osc.onended = () => this._activeSources.delete(osc);
+				this._activeNotes.set(`${Instrument.SYNTH}:${note}`, osc);
 				osc.start(startTime);
-				osc.stop(startTime + (duration ?? this._clickMs / 1000));
+
+				console.log(`Playing note ${midiToNote(note)} (MIDI ${note}) at time ${startTime.toFixed(2)}s`);
+				console.log(this._activeNotes);
 				break;
 			}
 			default:
@@ -122,15 +124,21 @@ export class AudioEngine {
 		}
 	}
 
-	stop() {
-		for (const source of this._activeSources) {
-			try {
-				source.stop();
-			} catch {
-				// ignore nodes that have already ended
-			}
-			source.disconnect();
+	stop(instrument: Instrument, note: number, time?: number) {
+		const now = this._audioContext.currentTime;
+		const stopTime = Math.max(time ?? now, now + 0.001);
+		const key = `${instrument}:${note}`;
+		const source = this._activeNotes.get(key);
+		if (source) {
+			source.stop(stopTime);
+			this._activeNotes.delete(key);
 		}
-		this._activeSources.clear();
+	}
+
+	stopAll() {
+		for (const source of this._activeNotes.values()) {
+			source.stop();
+		}
+		this._activeNotes.clear();
 	}
 }

@@ -1,6 +1,7 @@
 export enum Opcode {
 	NOP = "NOP",
-	PLAY = "PLAY",
+	NOTE_ON = "NOTE_ON",
+	NOTE_OFF = "NOTE_OFF",
 	REST = "REST",
 	JUMP = "JUMP",
 	BRZ = "BRZ",
@@ -41,9 +42,11 @@ export interface Track {
 	time: number;
 }
 
-export interface SoundEvent {
+export interface MIDIEvent {
+	type: "note_on" | "note_off";
 	instrument: Instrument;
-	note: number;
+	pitch: number;
+	velocity?: number;
 	time: number;
 	line: number;
 }
