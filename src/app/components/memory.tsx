@@ -16,7 +16,7 @@ export default function Memory({
 	return (
 		<div className="font-mono overflow-scroll flex flex-col gap-2 items-end">
 			<button className="bg-blue-500 hover:bg-blue-600 text-sm p-2 rounded" onClick={() => setStringView(v => !v)}>
-				Toggle View
+				Toggle Note View
 			</button>
 			{Array.from({ length: rows }, (_, rowIndex) => {
 				const startAddress = rowIndex * 8;

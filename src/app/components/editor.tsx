@@ -1,29 +1,11 @@
 import { basicSetup } from "codemirror";
-import { EditorView, Decoration, keymap, KeyBinding } from "@codemirror/view";
-import { StateEffect, StateField, Prec } from "@codemirror/state";
+import { EditorView, keymap, KeyBinding } from "@codemirror/view";
+import { Prec } from "@codemirror/state";
 import { indentWithTab } from "@codemirror/commands";
 import { musiclang } from "@/language/musiclang";
 import { useEffect, useRef } from "react";
 
-const setCursorEffect = StateEffect.define<number>();
-
-const cursorHighlight = StateField.define({
-	create() { return Decoration.none; },
-	update(_, tr) {
-		const decorations: any[] = [];
-		for (const e of tr.effects) {
-			if (!e.is(setCursorEffect)) continue;
-			if (e.value < 1 || e.value > tr.state.doc.lines) continue;
-			const line = tr.state.doc.line(e.value);
-			decorations.push(Decoration.line({ class: "bg-gray-600" }).range(line.from));
-		}
-
-		return decorations.length ? Decoration.set(decorations, true) : Decoration.none;
-	},
-	provide: f => EditorView.decorations.from(f),
-});
-
-export default function Editor({onCodeChange, cursors}: { onCodeChange?: (code: string) => void, cursors?: number[] }) {
+export default function Editor({onCodeChange}: { onCodeChange?: (code: string) => void }) {
 	const editorRef = useRef<HTMLDivElement>(null);
 	const viewRef = useRef<EditorView | null>(null);
 	const onCodeChangeRef = useRef(onCodeChange);
@@ -33,7 +15,6 @@ export default function Editor({onCodeChange, cursors}: { onCodeChange?: (code: 
 		key: "Mod-Enter",
 		run: (view) => {
 			onCodeChangeRef.current?.(view.state.doc.toString());
-			console.log("Run code");
 			return true;
 		},
 	};
@@ -45,12 +26,12 @@ export default function Editor({onCodeChange, cursors}: { onCodeChange?: (code: 
 			doc:
 `; CTRL + ENTER while typing to update code.
 
-SET BPM 120
-SET VOL 20
+LOAD BPM 120
+LOAD VOL 20
 
 TRACK regs:
-SET REG1 0 ; try adding eight to this!
-SET REG2 3
+LOAD REG1 0 ; try adding eight to this!
+LOAD REG2 3
 top:
 REST 4
 BRZ REG2 regs
@@ -60,35 +41,36 @@ JUMP top
 
 TRACK synth:
 PLAY SYNTH [REG1]
-REST 1
+REST 2
 
 TRACK drums:
 a:
-PLAY SAMPLE 0
+PLAY DRUM 0
+REST 2
+PLAY DRUM 2
+REST 2
+PLAY DRUM 1
+REST 2
+PLAY DRUM 2
 REST 1
-PLAY SAMPLE 2
+PLAY DRUM 2
 REST 1
-PLAY SAMPLE 1
-REST 1
-PLAY SAMPLE 2
-PLAY SAMPLE 2
 ; BRZ REG2 b
 ; JUMP a
-PLAY SAMPLE 0
-REST 1
-PLAY SAMPLE 2
-REST 1
-PLAY SAMPLE 1
-REST 1
-PLAY SAMPLE 2
-REST 1`,
+PLAY DRUM 0
+REST 2
+PLAY DRUM 2
+REST 2
+PLAY DRUM 1
+REST 2
+PLAY DRUM 2
+REST 2`,
 			parent: editorRef.current,
 			extensions: [
 				basicSetup,
 				Prec.highest(keymap.of([runKeymap])),
 				keymap.of([indentWithTab]),
 				musiclang(),
-				cursorHighlight,
 			],
 		});
 
@@ -96,12 +78,6 @@ REST 1`,
 		onCodeChange?.(view.state.doc.toString());
 		return () => view.destroy();
 	}, []);
-
-	useEffect(() => {
-		if (viewRef.current && cursors && cursors.length) {
-			viewRef.current.dispatch({ effects: cursors.map(c => setCursorEffect.of(c)) });
-		}
-	}, [cursors]);
 
 	return (<div className="h-full w-full border-2 rounded overflow-scroll" ref={editorRef}/>);
 }

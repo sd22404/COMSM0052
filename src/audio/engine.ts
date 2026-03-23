@@ -29,18 +29,23 @@ const SAMPLE_PATHS: string[] = [
 
 export class AudioEngine {
 	private _samples: AudioBuffer[] = [];
-	private _volume: number = 100;
 	private _gain!: GainNode;
+	private _volume: number = 100;
 	private _bpm: number = 120;
-	private _clickMs: number = 60000 / this._bpm / 4;
+	private _clickMs: number = 60000 / this._bpm;
 	private _audioContext!: AudioContext;
+	private _activeSources = new Set<AudioBufferSourceNode | OscillatorNode>();
 	private _initialized = false;
 
 	init() {
-		if (this._initialized) return;
+		if (this._initialized) {
+			if (this._audioContext.state === "suspended") void this._audioContext.resume();
+			return;
+		}
 		this._audioContext = new AudioContext();
 		this._gain = this._audioContext.createGain();
 		this._gain.connect(this._audioContext.destination);
+		this._gain.gain.value = this._volume / 100;
 		this._loadSamples();
 		this._initialized = true;
 	}
@@ -63,6 +68,8 @@ export class AudioEngine {
 		const source = this._audioContext.createBufferSource();
 		source.buffer = buffer;
 		source.connect(this._gain);
+		this._activeSources.add(source);
+		source.onended = () => this._activeSources.delete(source);
 		source.start(time);
 	}
 
@@ -81,7 +88,7 @@ export class AudioEngine {
 
 	set bpm(bpm: number) {
 		this._bpm = bpm;
-		this._clickMs = 60000 / this._bpm / 4;
+		this._clickMs = 60000 / this._bpm;
 	}
 
 	get clickMs() {
@@ -92,23 +99,38 @@ export class AudioEngine {
 		return this._audioContext.currentTime;
 	}
 
-	play(instrument: Instrument, note: number, beatDuration?: number, beatDelay?: number) {
-		const startTime = this._audioContext.currentTime + (beatDelay || 0) * this._clickMs / 1000;
+	play(instrument: Instrument, note: number, duration?: number, time?: number) {
+		const now = this._audioContext.currentTime;
+		const startTime = Math.max(time ?? now, now + 0.001);
 
 		switch (instrument) {
-			case Instrument.SAMPLE:
+			case Instrument.DRUM:
 				this._playSample(note, startTime);
 				break;
 			case Instrument.SYNTH: {
 				const osc = this._audioContext.createOscillator();
 				osc.connect(this._gain);
 				osc.frequency.value = midiToFreq(note);
+				this._activeSources.add(osc);
+				osc.onended = () => this._activeSources.delete(osc);
 				osc.start(startTime);
-				osc.stop(startTime + (beatDuration || 1) * this._clickMs / 1000);
+				osc.stop(startTime + (duration ?? this._clickMs / 1000));
 				break;
 			}
 			default:
 				break;
 		}
+	}
+
+	stop() {
+		for (const source of this._activeSources) {
+			try {
+				source.stop();
+			} catch {
+				// ignore nodes that have already ended
+			}
+			source.disconnect();
+		}
+		this._activeSources.clear();
 	}
 }

@@ -4,13 +4,13 @@ export enum Opcode {
 	REST = "REST",
 	JUMP = "JUMP",
 	BRZ = "BRZ",
-	SET = "SET",
-	LOAD = "LOAD",
 	ADD = "ADD",
+	LOAD = "LOAD",
+	STORE = "STORE",
 }
 
 export enum Instrument {
-	SAMPLE = "SAMPLE",
+	DRUM = "DRUM",
 	SYNTH = "SYNTH",
 }
 
@@ -22,8 +22,8 @@ export enum Register {
 }
 
 export interface Operand {
-	mode: "immediate" | "register" | "memory";
-	type: "instrument" | "number" | "register" | "identifier";
+	mode: "immediate" | "memory";
+	type: "instrument" | "register" | "number" | "string";
 	value: string | number;
 }
 
@@ -33,14 +33,17 @@ export interface Instruction {
 	line: number;
 }
 
-export interface Program {
-	instructions: Instruction[];
-	labels: Record<string, number>;
-}
-
 export interface Track {
 	name: string;
-	program: Program;
-	cursor: number;
-	waitRemaining: number;
+	instrs: Instruction[];
+	labels: Record<string, number>;
+	pc: number;
+	time: number;
+}
+
+export interface SoundEvent {
+	instrument: Instrument;
+	note: number;
+	time: number;
+	line: number;
 }

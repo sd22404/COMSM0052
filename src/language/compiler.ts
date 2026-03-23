@@ -2,7 +2,7 @@ import { parser } from "./parser";
 import { Track, Instrument, Register, Opcode, Instruction } from "@/core/types";
 
 function newTrack(name: string): Track {
-	return { name, program: { instructions: [], labels: {} }, cursor: 0, waitRemaining: 0 };
+	return { name, instrs: [], labels: {}, pc: 0, time: 0 };
 }
 
 function newInstr(line: number): Instruction {
@@ -15,27 +15,25 @@ export function compile(code: string): Track[] {
 	const tracks: Track[] = [];
 	let track = newTrack("default");
 
-	console.log(tree.toString());
-
 	do {
 		const nodeText = code.slice(cursor.from, cursor.to);
-		const instr = track.program.instructions.at(-1);
+		const instr = track.instrs.at(-1);
 
 		switch (cursor.node.type.name) {
 			case "Track": {
-				if (track.program.instructions.length > 0) tracks.push(track);
-				let trackName = nodeText.split(" ")[1].replace(RegExp(/:\n/g), "");
+				if (track.instrs.length > 0) tracks.push(track);
+				const trackName = nodeText.split(" ")[1].replace(RegExp(/:\n/g), "");
 				track = newTrack(trackName);
 				break;
 			}
 			case "Instruction": {
 				const line = code.slice(0, cursor.from).split('\n').length;
-				track.program.instructions.push(newInstr(line));
+				track.instrs.push(newInstr(line));
 				break;
 			}
 			case "Label":
 				const label = nodeText.split(":")[0]
-				track.program.labels[label] = track.program.instructions.length;
+				track.labels[label] = track.instrs.length;
 				break;
 			case "Opcode":
 				if (instr) instr.opcode = nodeText as Opcode;
@@ -44,7 +42,7 @@ export function compile(code: string): Track[] {
 				if (instr) instr.operands.push({ mode: "immediate", type: "instrument", value: nodeText as Instrument });
 				break;
 			case "Register":
-				if (instr) instr.operands.push({ mode: "register", type: "register", value: nodeText as Register });
+				if (instr) instr.operands.push({ mode: "immediate", type: "register", value: nodeText as Register });
 				break;
 			case "Immediate":
 				if (instr) instr.operands.push({ mode: "immediate", type: "number", value: parseInt(nodeText) });
@@ -59,13 +57,12 @@ export function compile(code: string): Track[] {
 				break;
 			case "Note":
 			case "Identifier":
-				if (instr) instr.operands.push({ mode: "immediate", type: "identifier", value: nodeText });
+				if (instr) instr.operands.push({ mode: "immediate", type: "string", value: nodeText });
 				break;
 		}
 	} while (cursor.next());
 
 	tracks.push(track);
-	console.log(tracks);
 
 	return tracks;
 }
