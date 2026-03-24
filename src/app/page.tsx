@@ -7,16 +7,16 @@ import Help from "./components/help";
 import useRuntime from "./hooks/useRuntime";
 
 export default function Home() {
-	const { running, registers, memory, cursors, run, halt, setCode, setRegister, setMemory } = useRuntime();
+	const { runtime: { running, memory, cores }, run, halt, setCode, setMemory } = useRuntime();
 
 	return (
 		<div className="w-screen h-screen py-20 px-20 flex gap-8 font-mono">
 			<div className="w-full h-full flex flex-1 flex-col gap-8">
-				<Editor onCodeChange={setCode} cursors={cursors} />
+				<Editor onCodeChange={setCode} />
 			</div>
 			<div className="w-full h-full flex flex-1 flex-col gap-8">
 				<div className="overflow-auto flex flex-col gap-8 items-end">
-					<Registers registers={registers} onRegisterChange={setRegister} />
+					{/* <Registers registers={registers} onRegisterChange={setRegister} /> */}
 					<Memory memory={memory} onMemoryChange={setMemory} />
 				</div>
 				<span className="flex justify-end gap-4">

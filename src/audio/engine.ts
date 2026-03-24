@@ -1,15 +1,9 @@
-import { Instrument } from "@/core/types";
+import { Instrument } from "@/common/types";
 
 const midiToFreq = function(note: number): number {
 	const A = 440;
 	const freq = (A / 32) * (2 ** ((note - 9) / 12));
 	return freq;
-}
-
-const noteToSemitone: Record<string, number> = {
-	'C': 0, 'C#': 1, 'Db': 1, 'D': 2, 'D#': 3, 'Eb': 3,
-	'E': 4, 'F': 5, 'F#': 6, 'Gb': 6, 'G': 7, 'G#': 8,
-	'Ab': 8, 'A': 9, 'A#': 10, 'Bb': 10, 'B': 11
 }
 
 const semitoneToNote = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
@@ -21,58 +15,65 @@ export const midiToNote = function(midi: number): string {
 	return semitoneToNote[noteIndex] + octave.toString();
 }
 
-const SAMPLE_PATHS: string[] = [
-	"/COMSM0052/samples/kick.wav",
-	"/COMSM0052/samples/snare.wav",
-	"/COMSM0052/samples/hat.wav",
-];
+const SAMPLE_MAP: Map<number, string> = new Map([
+	[58, "/COMSM0052/samples/kick.wav"],
+	[59, "/COMSM0052/samples/snare.wav"],
+	[60, "/COMSM0052/samples/hat.wav"],
+]);
 
 export class AudioEngine {
-	private _samples: AudioBuffer[] = [];
-	private _volume: number = 100;
-	private _gain!: GainNode;
+	private samples: Map<number, AudioBuffer> = new Map();
+	private _vol: number = 100;
 	private _bpm: number = 120;
-	private _clickMs: number = 60000 / this._bpm / 4;
-	private _audioContext!: AudioContext;
-	private _initialized = false;
+	private gain!: GainNode;
+	private ctx!: AudioContext;
+	private init: boolean = false;
 
-	init() {
-		if (this._initialized) return;
-		this._audioContext = new AudioContext();
-		this._gain = this._audioContext.createGain();
-		this._gain.connect(this._audioContext.destination);
-		this._loadSamples();
-		this._initialized = true;
+	start() {
+		if (this.init) return;
+		this.ctx = new AudioContext();
+		this.gain = this.ctx.createGain();
+		this.gain.connect(this.ctx.destination);
+		this.vol = this._vol;
+		this.loadSamples();
+		this.init = true;
 	}
 
-	private async _loadSamples() {
-		for (const path of SAMPLE_PATHS) {
+	stop() {
+		if (!this.init) return;
+		this.ctx.close();
+		this.init = false;
+	}
+
+	private async loadSamples() {
+		for (const [midiNote, path] of SAMPLE_MAP.entries()) {
 			try {
 				const res = await fetch(path);
 				const buf = await res.arrayBuffer();
-				this._samples.push(await this._audioContext.decodeAudioData(buf));
+				this.samples.set(midiNote, await this.ctx.decodeAudioData(buf));
 			} catch (e) {
-				console.error(`Failed to load sample #${SAMPLE_PATHS.indexOf(path)}:`, e);
+				console.error(`Failed to load sample #${midiNote}:`, e);
 			}
 		}
 	}
 
-	private _playSample(index: number, time: number) {
-		const buffer = this._samples[index];
+	private playSample(note: number, time: number) {
+		const buffer = this.samples.get(note);
 		if (!buffer) return;
-		const source = this._audioContext.createBufferSource();
+		console.log(`Playing sample for MIDI note ${note} at time ${time}`);
+		const source = this.ctx.createBufferSource();
 		source.buffer = buffer;
-		source.connect(this._gain);
+		source.connect(this.gain);
 		source.start(time);
 	}
 
-	get volume() {
-		return this._volume;
+	get vol() {
+		return this._vol;
 	}
 
-	set volume(volume: number) {
-		this._volume = volume;
-		this._gain.gain.value = volume / 100;
+	set vol(vol: number) {
+		this._vol = vol;
+		this.gain.gain.value = vol / 100 * 0.2;
 	}
 
 	get bpm() {
@@ -81,30 +82,32 @@ export class AudioEngine {
 
 	set bpm(bpm: number) {
 		this._bpm = bpm;
-		this._clickMs = 60000 / this._bpm / 4;
 	}
 
-	get clickMs() {
-		return this._clickMs;
+	get currentTime() {
+		return this.ctx.currentTime;
 	}
 
-	currentTime() {
-		return this._audioContext.currentTime;
-	}
-
-	play(instrument: Instrument, note: number, beatDuration?: number, beatDelay?: number) {
-		const startTime = this._audioContext.currentTime + (beatDelay || 0) * this._clickMs / 1000;
+	play(instrument: Instrument, note: number, duration?: number, time?: number) {
+		const startTime = this.ctx.currentTime + (time || 0);
+		const noteLength = duration || 1;
 
 		switch (instrument) {
-			case Instrument.SAMPLE:
-				this._playSample(note, startTime);
+			case Instrument.DRUMS:
+				this.playSample(note, startTime);
 				break;
 			case Instrument.SYNTH: {
-				const osc = this._audioContext.createOscillator();
-				osc.connect(this._gain);
+				const gain = this.ctx.createGain();
+				gain.gain.setValueAtTime(1, startTime);
+				gain.gain.exponentialRampToValueAtTime(0.001, startTime + noteLength);
+				gain.connect(this.gain);
+				
+				const osc = this.ctx.createOscillator();
 				osc.frequency.value = midiToFreq(note);
+				osc.connect(gain);
+				
 				osc.start(startTime);
-				osc.stop(startTime + (beatDuration || 1) * this._clickMs / 1000);
+				osc.stop(startTime + noteLength);
 				break;
 			}
 			default:

@@ -9,7 +9,6 @@ export const
   Operand = 7,
   Instrument = 8,
   Register = 9,
-  Value = 10,
-  Immediate = 11,
-  Memory = 12,
-  Identifier = 13
+  Immediate = 10,
+  Memory = 11,
+  LabelRef = 12

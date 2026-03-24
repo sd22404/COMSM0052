@@ -1,12 +1,12 @@
 import { useState, useEffect } from "react";
-import { Register } from "@/core/types";
+import { RegisterStr } from "@/common/types";
 
 interface RegisterProps {
-	registers: Record<Register, number>;
-	onRegisterChange?: (reg: Register, val: number) => void;
+	registers: Record<RegisterStr, number>;
+	onRegisterChange?: (reg: RegisterStr, val: number) => void;
 }
 
-function RegisterInput({ regKey, val, onChange }: { regKey: Register; val: number; onChange?: (reg: Register, val: number) => void }) {
+function RegisterInput({ regKey, val, onChange }: { regKey: RegisterStr; val: number; onChange?: (reg: RegisterStr, val: number) => void }) {
 	const [raw, setRaw] = useState(val.toString());
 
 	useEffect(() => { setRaw(val.toString()); }, [val]);
@@ -31,7 +31,7 @@ export default function Registers({ registers, onRegisterChange }: RegisterProps
 	return (
 		<div className="flex gap-6 font-mono">
 			{Object.entries(registers).map(([key, val]) => (
-				<RegisterInput key={key} regKey={key as Register} val={val} onChange={onRegisterChange} />
+				<RegisterInput key={key} regKey={key as RegisterStr} val={val} onChange={onRegisterChange} />
 			))}
 		</div>
 	);

@@ -1,28 +1,27 @@
-@top Program { statement* }
+@top Program { newline* (statement newline+)* statement? }
 
-statement { (Track | Label | Instruction) newline+ }
+statement { (Track | Label | Instruction) }
 
 Instruction { Opcode Operand+ }
 
 Track { "TRACK" Label }
 
-Operand { Instrument | Register | Value | Identifier }
-
-Value { Immediate | Memory }
+Operand { Instrument | Register | Immediate | Memory | LabelRef }
 
 @tokens {
-	Opcode { "PLAY" | "REST" | "JUMP" | "BRZ" | "SET" | "LOAD" | "ADD" }
-	Instrument { "SAMPLE" | "SYNTH" }
+	Opcode { "PLAY" | "REST" | "JUMP" | "JMPZ" | "LOAD" | "STORE" | "ADD" }
+	Instrument { "DRUMS" | "BASS" | "PIANO" | "SYNTH" }
 	Register { "BPM" | "VOL" | "BAR" | "BEAT" | "REG" @digit+ }
-	Label { Identifier ":" }
+	Label { identifier ":" }
+	LabelRef { identifier }
 	Immediate { number }
 	Memory { "[" (number | Register) "]" }
-	Identifier { @asciiLetter+ @digit* }
+	identifier { @asciiLetter+ @digit* }
 	number { "-"? @digit+ }
 	space { $[ \t\r]+ }
 	newline { "\n" }
-	Comment { ";" ![\n]* newline+ }
-	@precedence { Opcode, Instrument, Register, Label, Identifier, Immediate, Memory }
+	Comment { ";" ![\n]* }
+	@precedence { Opcode, Instrument, Memory, Immediate, Register, Label, LabelRef }
 }
 
 @skip { space | Comment }

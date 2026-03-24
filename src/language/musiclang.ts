@@ -14,7 +14,7 @@ const parserWithHighlighting = parser.configure({
 			Note: tags.string,
 			Immediate: tags.number,
 			Memory: tags.quote,
-			Identifier: tags.name,
+			LabelRef: tags.name,
 		}),
 	],
 });
