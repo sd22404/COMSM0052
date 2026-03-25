@@ -14,7 +14,7 @@ export default function Memory({
 	const rows = Math.ceil(memory.length / 8);
 	
 	return (
-		<div className="overflow-scroll flex flex-col gap-2 items-end">
+		<div className="overflow-scroll flex flex-col gap-2 items-end h-full w-full">
 			<button className="bg-blue-500 hover:bg-blue-600 text-sm p-2 rounded" onClick={() => setStringView(v => !v)}>
 				Toggle Note View
 			</button>

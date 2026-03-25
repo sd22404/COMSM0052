@@ -10,16 +10,22 @@ export class Core {
 		this.registers = registers ?? new RegisterFile();
 	}
 
-	private active: boolean = false;
+	private enabled: boolean = false;
 	private counter: number = 0;
 	private program: Program;
 	private memory: Memory;
 	private registers: RegisterFile;
 	private event_q: NoteEvent[];
-	private interval?: NodeJS.Timeout;
+	private step_interval?: NodeJS.Timeout;
 
-	enable() { this.active = true; }
-	disable() { this.active = false; }
+	get active() {
+		return this.enabled;
+	}
+
+	set active(enabled: boolean) {
+		this.enabled = enabled;
+		if (!enabled) this.halt();
+	}
 
 	get pc() {
 		return this.counter;
@@ -98,19 +104,19 @@ export class Core {
 	}
 
 	private step() {
-		if (!this.active) return;
+		if (!this.enabled) return;
 		this.execute(this.decode(this.fetch(this.counter++)));
 		this.counter %= this.program.instrs.length;
 	}
 
 	run() {
-		this.interval = setInterval(() => this.step(), STEP_INTERVAL);
+		this.step_interval = setInterval(() => this.step(), STEP_INTERVAL);
 	}
 
 	halt() {
-		if (this.interval) {
-			clearInterval(this.interval);
-			this.interval = undefined;
+		if (this.step_interval) {
+			clearInterval(this.step_interval);
+			this.step_interval = undefined;
 		}
 
 		this.counter = 0;

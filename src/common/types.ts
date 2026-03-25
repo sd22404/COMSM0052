@@ -66,3 +66,15 @@ export interface NoteEvent {
 	duration: number;
 	time?: number;
 }
+
+export interface CoreState {
+	active: boolean;
+	pc: number;
+	regs: number[];
+}
+
+export interface RuntimeState {
+	running: boolean;
+	memory: number[];
+	cores: CoreState[];
+}

@@ -19,7 +19,14 @@ const parserWithHighlighting = parser.configure({
 	],
 });
 
-const musicLanguage = LRLanguage.define({ parser: parserWithHighlighting });
+const musicLanguage = LRLanguage.define(
+	{
+		parser: parserWithHighlighting,
+		languageData: {
+			commentTokens: { line: ";" },
+		},
+	}
+);
 
 const musicHighlightStyle = HighlightStyle.define([
 	{ tag: tags.keyword, color: "#c678dd", fontWeight: "600" },
