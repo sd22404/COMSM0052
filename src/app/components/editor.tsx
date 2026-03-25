@@ -63,9 +63,9 @@ PLAY SYNTH [REG1] ; uses register as memory address
 REST 3 ; try adjusting this!
 
 TRACK synth2:
-REST 1
-PLAY SYNTH 60 ; uses immediate value
 REST 2
+PLAY SYNTH 60 ; uses immediate value
+REST 1
 
 TRACK drums:
 PLAY DRUMS 60 ; uses immediate value
