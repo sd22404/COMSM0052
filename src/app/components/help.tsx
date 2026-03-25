@@ -1,61 +1,37 @@
-import { useEffect, useState } from "react";
-import { createPortal } from "react-dom";
-
 export default function Help() {
-	const [showHelp, setShowHelp] = useState(false);
-
-	useEffect(() => {
-		function onKeyDown(e: KeyboardEvent) {
-			if (e.key === "Escape") {
-				e.preventDefault();
-				setShowHelp(false);
-			}
-		}
-		
-		window.addEventListener("keydown", onKeyDown);
-		return () => window.removeEventListener("keydown", onKeyDown);
-	}, []);
-
-	function HelpModal() {
-		return createPortal(
-			<div onClick={() => setShowHelp(false)} className="font-mono fixed inset-0 z-50 bg-black/50 flex items-center justify-center">
-				<div className="bg-gray-800 p-8 rounded max-w-3/4 max-h-3/4 overflow-scroll flex flex-col gap-8" onClick={(e) => e.stopPropagation()}>
-					<div className="flex flex-col gap-2">
-						<h1 className="text-[150%]">Controls</h1>
-						<span><strong>Ctrl+Enter</strong>: Update code.</span>
-						<span><strong>Escape</strong>: Close this popup.</span>
-					</div>
-					<div className="flex flex-col gap-2">
-						<h1 className="text-[150%]">Instruments</h1>
-						<span><strong>DRUM</strong>: A drum machine with kick, snare, and hat sounds.</span>
-						<span><strong>SYNTH</strong>: A synthesizer that can play chromatic notes across multiple octaves.</span>
-					</div>
-					<div className="flex flex-col gap-2">
-						<h1 className="text-[150%]">Syntax</h1>
-						<span><strong>"TRACK <em>trackname</em>:"</strong>: Declare a track that executes in parallel with other tracks.</span>
-						<span><strong>"PLAY <em>instrument note</em>"</strong>: Play <em>note</em> on <em>instrument</em> for one beat.</span>
-						<span><strong>"PLAY <em>instrument number</em>"</strong>: Play the note at memory address <em>number</em> on <em>instrument</em>.</span>
-						<span><strong>"REST <em>number</em>"</strong>: Play nothing for <em>number</em> beats.</span>
-						<span><strong>"SET <em>register value</em>"</strong>: Set the register named <em>register</em> to <em>value</em>.</span>
-						<span><strong>"ADD <em>register value</em>"</strong>: Add <em>value</em> to the register named <em>register</em>.</span>
-						<span><strong>"<em>label</em>:"</strong>: Declare a label that can be jumped to.</span>
-						<span><strong>"JUMP <em>label</em>"</strong>: Jump to the label named <em>label</em>.</span>
-						<span><strong>"BRZ <em>register</em> <em>label</em>"</strong>: Jump to <em>label</em> if <em>register</em> is zero.</span>
-					</div>
-				</div>
-			</div>,
-			document.body
-		);
-	}
-
 	return (
-		<>
-			{showHelp && <HelpModal />}
-			<div className="flex justify-end">
-				<button onClick={() => setShowHelp(!showHelp)} className="p-2 min-w-[100px] rounded bg-blue-500 hover:bg-blue-600 hover:cursor-pointer">
-					Help
-				</button>
+		<div className="overflow-scroll flex flex-col gap-8 p-4">
+			<div className="flex flex-col gap-2">
+				<h1 className="font-bold text-[120%]">Overview</h1>
+				<span>Press the play button to begin looping over your code. Code can be updated during playback by making changes in the editor and then pressing CTRL+ENTER.</span>
+				<span>Your code is executed on a virtual machine that turns it into sound events.</span>
+				<span>On the right is a view of the VM's registers and memory which can be edited via code or by typing in the boxes.</span>
+				<span>Use the "Toggle Note View" button to switch memory cells between MIDI and A-G view.</span>
+				<span>PLAY instructions take one beat to execute, REST instructions take a specified number of beats.</span>
+				<span>Instruction arguments can be specified in four ways: directly by MIDI note number, by the value in a register, by a direct memory access, or by indirect memory access (using the value in a register).</span>
+				<span>Direct Memory: [<em>number</em>], Indirect Memory: [<em>register</em>]</span>
+				<span>The example code demonstrates most of the available instructions.</span>
 			</div>
-		</>
+			<div className="flex flex-col gap-2">
+				<h1 className="font-bold text-[120%]">Code Controls</h1>
+				<span><strong>CTRL+ENTER</strong>: Update code.</span>
+				<span><strong>CTRL+/</strong>: Comment out the current line.</span>
+			</div>
+			<div className="flex flex-col gap-2">
+				<h1 className="font-bold text-[120%]">Drum Sample Map</h1>
+				<span><strong>60</strong>: Kick Drum</span>
+				<span><strong>61</strong>: Snare Drum</span>
+				<span><strong>62</strong>: Hi-Hat</span>
+			</div>
+			{/* <div className="flex flex-col gap-2">
+				<h1 className="font-bold text-[120%]">Instruments</h1>
+				<span><strong>DRUMS</strong>: A drum machine with kick, snare, and hat samples.</span>
+				<span><strong>SYNTH</strong>: A single oscillator that can play any MIDI note.</span>
+			</div>
+			<div className="flex flex-col gap-2">
+				<h1 className="font-bold text-[120%]">Syntax</h1>
+				<span><strong>"TRACK <em>trackname</em>:"</strong>: Define a track that executes in parallel with other tracks.</span>
+			</div> */}
+		</div>
 	);
 }

@@ -134,18 +134,14 @@ export class Sequencer {
 				case Opcode.JUMP:
 					track.cursor = track.program.labels[operandOne.value as string] ?? track.cursor;
 					continue;
-				case Opcode.BRZ:
+				case Opcode.JMPZ:
 					if (valueOne === 0) {
 						track.cursor = track.program.labels[operandTwo.value as string] ?? track.cursor;
 						continue;
 					}
 					break;
-				case Opcode.SET:
-					this._applyRegister(operandOne.value as Register, valueTwo);
-					break;
 				case Opcode.LOAD: {
-					const val = this._memory[valueTwo];
-					this._applyRegister(operandOne.value as Register, val);
+					this._applyRegister(operandOne.value as Register, valueTwo);
 					break;
 				}
 				// case Opcode.STORE: {

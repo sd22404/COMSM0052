@@ -3,14 +3,14 @@ export enum Opcode {
 	PLAY = "PLAY",
 	REST = "REST",
 	JUMP = "JUMP",
-	BRZ = "BRZ",
-	SET = "SET",
+	JMPZ = "JMPZ",
 	LOAD = "LOAD",
+	STORE = "STORE",
 	ADD = "ADD",
 }
 
 export enum Instrument {
-	SAMPLE = "SAMPLE",
+	DRUMS = "DRUMS",
 	SYNTH = "SYNTH",
 }
 

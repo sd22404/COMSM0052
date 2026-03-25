@@ -8,7 +8,7 @@ const parserWithHighlighting = parser.configure({
 			Comment: tags.lineComment,
 			Label: tags.labelName,
 			Opcode: tags.keyword,
-			Track: tags.keyword,
+			Track: tags.bool,
 			Register: tags.variableName,
 			Instrument: tags.typeName,
 			Note: tags.string,
@@ -19,7 +19,12 @@ const parserWithHighlighting = parser.configure({
 	],
 });
 
-const musicLanguage = LRLanguage.define({ parser: parserWithHighlighting });
+const musicLanguage = LRLanguage.define({
+	parser: parserWithHighlighting,
+	languageData: {
+		commentTokens: { line: ";" },
+	},
+});
 
 const musicHighlightStyle = HighlightStyle.define([
 	{ tag: tags.keyword, color: "#c678dd", fontWeight: "600" },
@@ -31,6 +36,7 @@ const musicHighlightStyle = HighlightStyle.define([
 	{ tag: tags.name, color: "#61afef" },
 	{ tag: tags.labelName, color: "#56b6c2", fontWeight: "600" },
 	{ tag: tags.lineComment, color: "#5c6370", fontStyle: "italic" },
+	{ tag: tags.bool, color: "#56b6c2", fontWeight: "600" },
 ]);
 
 export function musiclang() {

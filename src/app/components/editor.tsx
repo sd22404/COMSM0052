@@ -45,42 +45,39 @@ export default function Editor({onCodeChange, cursors}: { onCodeChange?: (code: 
 			doc:
 `; CTRL + ENTER while typing to update code.
 
-SET BPM 120
-SET VOL 20
+LOAD BPM 120
+LOAD VOL 100
 
-TRACK regs:
-SET REG1 0 ; try adding eight to this!
-SET REG2 3
-top:
+TRACK counter:
+LOAD REG1 0 ; try setting this to eight!
+LOAD REG2 7
+loop:
 REST 4
-BRZ REG2 regs
+JMPZ REG2 counter
 ADD REG1 1
 ADD REG2 -1
-JUMP top
+JUMP loop
 
 TRACK synth:
 PLAY SYNTH [REG1]
-REST 1
+REST 1 ; try adjusting this!
 
 TRACK drums:
-a:
-PLAY SAMPLE 0
+PLAY DRUMS 60
 REST 1
-PLAY SAMPLE 2
+PLAY DRUMS 62
 REST 1
-PLAY SAMPLE 1
+PLAY DRUMS 61
 REST 1
-PLAY SAMPLE 2
-PLAY SAMPLE 2
-; BRZ REG2 b
-; JUMP a
-PLAY SAMPLE 0
+PLAY DRUMS 62
+PLAY DRUMS 62
+PLAY DRUMS 60
 REST 1
-PLAY SAMPLE 2
+PLAY DRUMS 62
 REST 1
-PLAY SAMPLE 1
+PLAY DRUMS 61
 REST 1
-PLAY SAMPLE 2
+PLAY DRUMS 62
 REST 1`,
 			parent: editorRef.current,
 			extensions: [
