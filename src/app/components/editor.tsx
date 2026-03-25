@@ -58,12 +58,17 @@ ADD REG1 1
 ADD REG2 -1
 JUMP loop
 
-TRACK synth:
-PLAY SYNTH [REG1]
-REST 1 ; try adjusting this!
+TRACK synth1:
+PLAY SYNTH [REG1] ; uses register as memory address
+REST 3 ; try adjusting this!
+
+TRACK synth2:
+REST 1
+PLAY SYNTH 60 ; uses immediate value
+REST 2
 
 TRACK drums:
-PLAY DRUMS 60
+PLAY DRUMS 60 ; uses immediate value
 REST 1
 PLAY DRUMS 62
 REST 1
