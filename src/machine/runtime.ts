@@ -10,7 +10,6 @@ export class Runtime {
 		this.cores[0].active = true;
 	};
 
-	private state!: RuntimeState;
 	private running: boolean = false;
 	private event_q: NoteEvent[] = [];
 	private clock: number = 0;
@@ -25,7 +24,15 @@ export class Runtime {
 	}
 
 	private notify() {
-		this.broadcast?.({ ...this.state });
+		this.broadcast?.({
+			running: this.running,
+			memory: [...this.memory.data],
+			cores: this.cores.map(core => ({
+				active: core.active,
+				pc: core.pc,
+				regs: [...core.regs],
+			})),
+		});
 	}
 
 	run() {
@@ -48,15 +55,17 @@ export class Runtime {
 
 	load(program: Program) {
 		this.cores[0].load(program); // address to core !!!
+		this.notify();
 	}
 
 	write(addr: number, value: number) {
 		this.memory.write(addr, value);
+		this.notify();
 	}
 
 	toggleCore(index: number) {
 		if (index < 0 || index >= this.cores.length) return;
 		this.cores[index].active = !this.cores[index].active;
-		console.log(`Toggled core ${index} to ${this.cores[index].active}`);
+		this.notify();
 	}
 }

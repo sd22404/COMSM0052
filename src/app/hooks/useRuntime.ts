@@ -19,7 +19,7 @@ export default function useRuntime(): RuntimeHook {
 	const [state, setState] = useState<RuntimeState>({
 		running: false,
 		memory: new Array(128).fill(0),
-		cores: new Array(8).fill(null).map(() => ({
+		cores: Array.from({ length: 8 }, () => ({
 			active: false,
 			pc: 0,
 			regs: new Array(4).fill(0),
