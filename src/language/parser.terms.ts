@@ -2,13 +2,12 @@
 export const
   Comment = 1,
   Program = 2,
-  Track = 3,
-  Label = 4,
-  Instruction = 5,
-  Opcode = 6,
-  Operand = 7,
-  Instrument = 8,
-  Register = 9,
-  Immediate = 10,
-  Memory = 11,
-  LabelRef = 12
+  Label = 3,
+  Instruction = 4,
+  Opcode = 5,
+  Operand = 6,
+  Instrument = 7,
+  Register = 8,
+  Immediate = 9,
+  Memory = 10,
+  LabelRef = 11

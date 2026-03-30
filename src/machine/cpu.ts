@@ -1,28 +1,70 @@
-import { Program, Instruction, Opcode, Operand, Memory, RegisterFile, NoteEvent, Instrument, Register } from "@/common/types";
+import {
+	Instruction,
+	Instrument,
+	Memory,
+	NoteEvent,
+	Opcode,
+	Operand,
+	Program,
+	Register,
+	RegisterFile,
+	CoreState,
+	GlobalState,
+	SynthSettings,
+} from "@/common/types";
 
-const STEP_INTERVAL = 500;
+interface CoreConfig {
+	id: number;
+	event_q: NoteEvent[];
+	memory: Memory;
+	global_state: GlobalState;
+	onChange: () => void;
+	program?: Program;
+}
+
+function createSynthSettings(registers: number[], globalState: GlobalState): SynthSettings {
+	const bpm_ratio = registers[Register.BPM];
+	const volume_ratio = registers[Register.VOL];
+
+	return {
+		bpm: Math.max(1, (globalState.bpm * bpm_ratio) / 100),
+		volume: Math.max(0, (globalState.volume * volume_ratio) / 100),
+		pan: registers[Register.PAN],
+		attack: registers[Register.ATK],
+		decay: registers[Register.DEC],
+		sustain: registers[Register.SUS],
+		release: registers[Register.REL],
+	};
+}
 
 export class Core {
-	constructor(event_q: NoteEvent[], memory?: Memory, registers?: RegisterFile, program?: Program) {
+	constructor({ id, event_q, memory, global_state, onChange, program }: CoreConfig) {
+		this.id = id;
 		this.event_q = event_q;
-		this.program = program ?? {} as Program;
-		this.memory = memory ?? new Memory();
-		this.registers = registers ?? new RegisterFile();
+		this.memory = memory;
+		this.global_state = global_state;
+		this.onChange = onChange;
+		this.registers = new RegisterFile();
+		this.program = program ?? { instrs: [], labels: {} };
 	}
 
-	private enabled: boolean = false;
-	private counter: number = 0;
+	private readonly id: number;
+	private enabled = false;
+	private counter = 0;
+	private tick = 0;
 	private program: Program;
-	private memory: Memory;
-	private registers: RegisterFile;
-	private event_q: NoteEvent[];
-	private step_interval?: NodeJS.Timeout;
+	private readonly memory: Memory;
+	private readonly onChange: () => void;
+	private readonly registers: RegisterFile;
+	private readonly event_q: NoteEvent[];
+	private readonly global_state: GlobalState;
 
 	get active() {
 		return this.enabled;
 	}
 
 	set active(enabled: boolean) {
+		if (this.enabled === enabled) return;
 		this.enabled = enabled;
 		if (!enabled) this.halt();
 	}
@@ -31,58 +73,25 @@ export class Core {
 		return this.counter;
 	}
 
-	get mem() {
-		return [...this.memory.data];
-	}
-
 	get regs() {
-		return [...this.registers.data];
+		return this.registers.snapshot();
 	}
 
-	private fetch(pc: number): Instruction {
-		return this.program.instrs[pc] ?? { opcode: Opcode.NOP, operands: [] };
+	get state(): CoreState {
+		return {
+			id: this.id,
+			active: this.enabled,
+			pc: this.counter,
+			tick: this.tick,
+			regs: this.regs,
+		};
 	}
 
-	private decode(instr: Instruction): Instruction {
-		return instr;
-	}
+	private notify() { this.onChange?.(); }
 
-	private execute(instr: Instruction) {
-		const [raw1, raw2] = instr.operands;
-		const [val1, val2] = [raw1, raw2].map(op => this.eval(op));
-		const dest = (raw1 as { mode: "reg"; reg: Register }).reg;
+	private eval(operand?: Operand): number {
+		if (!operand) return 0;
 
-		switch(instr.opcode) {
-			case Opcode.PLAY:
-				this.event_q.push({ instrument: val1 as Instrument, pitch: val2, duration: 1 });
-				break;
-			case Opcode.REST:
-				break;
-			case Opcode.LOAD:
-				this.registers.write(dest, val2);
-				break;
-			case Opcode.STORE:
-				this.memory.write(val1, val2);
-				break;
-			case Opcode.ADD:
-				this.registers.write(dest, this.registers.read(dest) + val2);
-				break;
-			case Opcode.JUMP:
-				this.counter = val1;
-				break;
-			case Opcode.JMPZ:
-				if (val1 === 0) this.counter = val2;
-				break;
-			case Opcode.NOP:
-				break;
-			default:
-				console.error(`Unknown opcode ${instr.opcode}`);
-		}
-
-		console.log(this.regs);
-	}
-
-	private eval(operand: Operand): number {
 		switch (operand.mode) {
 			case "mem_direct":
 				return this.memory.read(operand.address);
@@ -97,28 +106,92 @@ export class Core {
 		}
 	}
 
-	load(program: Program) {
-		console.log(program);
-		this.program = program;
-		this.counter %= this.program.instrs.length;
+	private queueNote(instrument: Instrument, pitch: number, beat: number, duration: number) {
+		this.event_q.push({
+			instrument,
+			pitch,
+			beat,
+			duration,
+			settings: createSynthSettings(this.regs, this.global_state),
+		});
 	}
 
-	private step() {
-		if (!this.enabled) return;
+	private fetch(pc: number): Instruction {
+		return this.program.instrs[pc];
+	}
+
+	private decode(instr: Instruction): Instruction {
+		return instr;
+	}
+
+	private execute(instr: Instruction) {
+		const [raw1, raw2] = instr.operands;
+		const [val1, val2] = [this.eval(raw1), this.eval(raw2)];
+		const dest = (raw1 as { mode: "reg"; reg: Register }).reg;
+
+		switch (instr.opcode) {
+			case Opcode.PLAY:
+				this.queueNote(val1 as Instrument, val2, 1, 1); // TODO: add duration support
+				break;
+			case Opcode.REST:
+				this.tick += Math.max(0, val1);
+				break;
+			case Opcode.LOAD:
+				this.registers.write(dest, val2);
+			case Opcode.ADD: {
+				this.registers.write(dest, this.registers.read(dest) + val2);
+				break;
+			}
+			case Opcode.STORE:
+				this.memory.write(val1, val2);
+				break;
+			case Opcode.JUMP:
+				this.counter = val1 % this.program.instrs.length;
+				break;
+			case Opcode.JMPZ:
+				if (val1 === 0) this.counter = val2 % this.program.instrs.length;
+				break;
+			case Opcode.NOP:
+				break;
+			default:
+				break;
+		}
+	}
+
+	load(program: Program) {
+		this.program = program;
+		if (program.instrs.length === 0) this.counter = 0;
+		else this.counter %= program.instrs.length;
+	}
+
+	setRegister(register: Register, value: number) {
+		this.registers.write(register, value);
+		// TODO: cleanly handle bpm changes
+	}
+
+	step() {
+		if (!this.enabled || this.program.instrs.length === 0) return;
+
 		this.execute(this.decode(this.fetch(this.counter++)));
 		this.counter %= this.program.instrs.length;
+		this.notify();
 	}
 
 	run() {
-		this.step_interval = setInterval(() => this.step(), STEP_INTERVAL);
+		if (!this.enabled) return;
+		// TODO: execute code until the next rest
 	}
 
 	halt() {
-		if (this.step_interval) {
-			clearInterval(this.step_interval);
-			this.step_interval = undefined;
-		}
+		// TODO: stop executing
 
 		this.counter = 0;
+		this.notify();
+	}
+
+	reset() {
+		this.counter = 0;
+		this.registers.reset();
+		this.notify();
 	}
 }

@@ -1,17 +1,15 @@
 @top Program { newline* (statement newline+)* statement? }
 
-statement { (Track | Label | Instruction) }
+statement { (Label | Instruction) }
 
 Instruction { Opcode Operand+ }
-
-Track { "TRACK" Label }
 
 Operand { Instrument | Register | Immediate | Memory | LabelRef }
 
 @tokens {
 	Opcode { "PLAY" | "REST" | "JUMP" | "JMPZ" | "LOAD" | "STORE" | "ADD" }
 	Instrument { "DRUMS" | "BASS" | "PIANO" | "SYNTH" }
-	Register { "BPM" | "VOL" | "BAR" | "BEAT" | "REG" @digit+ }
+	Register { "BPM" | "VOL" | "PAN" | "ATTACK" | "DECAY" | "SUSTAIN" | "RELEASE" | "REG0" | "REG1" | "REG2" | "REG3" }
 	Label { identifier ":" }
 	LabelRef { identifier }
 	Immediate { number }

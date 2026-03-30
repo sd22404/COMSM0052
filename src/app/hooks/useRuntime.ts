@@ -1,30 +1,24 @@
 import { Runtime } from "@/machine/runtime";
-import { RuntimeState } from "@/common/types";
 import { Compiler } from "@/language/compiler";
+import { GlobalState, Register, RuntimeState, createDefaultRuntimeState } from "@/common/types";
 import { useEffect, useState } from "react";
 
 interface RuntimeHook {
 	runtime: RuntimeState;
 	run: () => void;
 	halt: () => void;
-	setCode: (code: string) => void;
-	// setRegister: (reg: number, value: number) => void;
+	reset: () => void;
+	setCode: (coreId: number, code: string) => void;
+	setRegister: (coreId: number, reg: Register, value: number) => void;
+	setGlobalControl: (control: keyof GlobalState, value: number) => void;
 	setMemory: (addr: number, value: number) => void;
 	toggleCore: (index: number) => void;
 }
 
 export default function useRuntime(): RuntimeHook {
-	const [runtime] = useState<Runtime>(new Runtime());
-	const [compiler] = useState<Compiler>(new Compiler());
-	const [state, setState] = useState<RuntimeState>({
-		running: false,
-		memory: new Array(128).fill(0),
-		cores: Array.from({ length: 8 }, () => ({
-			active: false,
-			pc: 0,
-			regs: new Array(4).fill(0),
-		})),
-	});
+	const [runtime] = useState(() => new Runtime());
+	const [compiler] = useState(() => new Compiler());
+	const [state, setState] = useState<RuntimeState>(createDefaultRuntimeState);
 
 	useEffect(() => {
 		runtime.setBroadcast(setState);
@@ -34,8 +28,11 @@ export default function useRuntime(): RuntimeHook {
 		runtime: state,
 		run: () => runtime.run(),
 		halt: () => runtime.halt(),
-		setCode: (code: string) => runtime.load(compiler.compile(code)),
-		setMemory: (addr: number, value: number) => runtime.write(addr, value),
-		toggleCore: (index: number) => runtime.toggleCore(index),
-	}
+		reset: () => runtime.reset(),
+		setCode: (coreId: number, code: string) => runtime.load(coreId, compiler.compile(code)),
+		setRegister: (coreId: number, reg: Register, value: number) => runtime.setRegister(coreId, reg, value),
+		setGlobalControl: (control: keyof GlobalState, value: number) => runtime.setGlobalControl(control, value),
+		setMemory: (addr: number, value: number) => runtime.setAddress(addr, value),
+		toggleCore: (id: number) => runtime.toggleCore(id),
+	};
 }

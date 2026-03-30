@@ -1,20 +1,25 @@
+
 import { parser } from "./parser";
 import { Program, Instruction, Opcode, Register, Instrument } from "@/common/types";
+
+function getLineNumber(code: string, offset: number): number {
+	return code.slice(0, offset).split('\n').length;
+}
 
 export class Compiler {
 	compile(code: string) {
 		const tree = parser.parse(code);
 		const cursor = tree.cursor();
 		const program: Program = { instrs: [], labels: {} };
-		let instr: Instruction = { opcode: Opcode.NOP, operands: [] };
+		let instr: Instruction = { line: getLineNumber(code, cursor.from), opcode: Opcode.NOP, operands: [] };
 
 		do {
 			const nodeText = code.slice(cursor.from, cursor.to);
 			instr = program.instrs.at(-1)!;
-			
+        
 			switch (cursor.node.type.name) {
 				case "Instruction":
-					program.instrs.push({ opcode: Opcode.NOP, operands: [] });
+					program.instrs.push({ line: getLineNumber(code, cursor.from), opcode: Opcode.NOP, operands: [] });
 					break;
 				case "Label":
 					program.labels[nodeText.split(":").at(0)!] = program.instrs.length;

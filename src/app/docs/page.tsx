@@ -1,9 +1,10 @@
-import Header from "../components/header";
+import Background from "@/app/components/background";
+import Header from "@/app/sections/header";
 
 export default function Docs() {
 	return (
-		<div className="flex flex-col w-screen h-screen font-mono">
+		<Background className="flex h-screen w-screen flex-col">
 			<Header />
-		</div>
+		</Background>
 	);
 }

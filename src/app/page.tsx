@@ -1,13 +1,14 @@
 "use client";
 
-import Header from "./components/header";
-import Environment from "./components/environment";
+import Background from "@/app/components/background";
+import Header from "@/app/sections/header";
+import Environment from "@/app/sections/environment";
 
 export default function Home() {
 	return (
-		<div className="font-mono">
+		<Background>
 			<Header />
 			<Environment />
-		</div>
+		</Background>
 	)
 }
