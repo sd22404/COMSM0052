@@ -1,4 +1,4 @@
-import { Instrument, NoteEvent } from "@/common/types";
+import { Instrument, MusicEvent } from "@/common/types";
 
 const SAMPLE_MAP: Map<number, string> = new Map([
 	[60, "/COMSM0052/samples/kick.wav"],
@@ -16,19 +16,15 @@ function midiToFreq(note: number): number {
 	return 440 * (2 ** ((note - 69) / 12));
 }
 
-function beatsToSeconds(beats: number, bpm: number) {
-	return (60 / Math.max(bpm, 1)) * Math.max(1, beats || 1);
-}
-
-function createVoiceOutput(ctx: AudioContext, destination: AudioNode, volume: number, pan: number) {
+function createPanVolOut(ctx: AudioContext, dest: AudioNode, vol: number, pan: number) {
 	const output = ctx.createGain();
-	output.gain.value = clamp(volume, 0, 100) / 100;
+	output.gain.value = clamp(vol, 0, 100) / 100;
 
 	const panner = ctx.createStereoPanner();
 	panner.pan.value = clamp(pan, -100, 100) / 100;
 
 	output.connect(panner);
-	panner.connect(destination);
+	panner.connect(dest);
 
 	return { output };
 }
@@ -44,21 +40,38 @@ export class AudioEngine {
 	private samples: Map<number, AudioBuffer> = new Map();
 	private ctx!: AudioContext;
 	private master!: GainNode;
+	private compressor!: DynamicsCompressorNode;
 	private init = false;
 
+	get currentTime() {
+		return this.init ? this.ctx.currentTime : 0;
+	}
+
 	start() {
-		if (this.init) return;
+		if (this.init) {
+			void this.ctx.resume();
+			return;
+		}
+
 		this.ctx = new AudioContext();
 		this.master = this.ctx.createGain();
 		this.master.gain.value = 0.18;
-		this.master.connect(this.ctx.destination);
-		this.loadSamples();
+		this.compressor = this.ctx.createDynamicsCompressor();
+		this.compressor.threshold.value = -20;
+		this.compressor.knee.value = 15;
+		this.compressor.ratio.value = 12;
+		this.compressor.attack.value = 0.003;
+		this.compressor.release.value = 0.25;
+		this.master.connect(this.compressor);
+		this.compressor.connect(this.ctx.destination);
+		void this.loadSamples();
 		this.init = true;
 	}
 
 	stop() {
 		if (!this.init) return;
-		this.ctx.close();
+		void this.ctx.close();
+		this.samples = new Map();
 		this.init = false;
 	}
 
@@ -74,63 +87,63 @@ export class AudioEngine {
 		}
 	}
 
-	private playSample(event: NoteEvent) {
-		const buffer = this.samples.get(event.pitch);
+	private playSample(event: MusicEvent, when: number) {
+		const buffer = this.samples.get(event.pitch ?? -1);
 		if (!buffer) return;
 
 		const source = this.ctx.createBufferSource();
 		source.buffer = buffer;
 
-		const { output } = createVoiceOutput(this.ctx, this.master, event.settings.volume, event.settings.pan);
+		const { output } = createPanVolOut(this.ctx, this.master, event.settings.volume, event.settings.pan);
 		source.connect(output);
-		source.start(this.ctx.currentTime);
+		source.start(when);
 	}
 
-	private playSynth(event: NoteEvent) {
-		const start_time = this.ctx.currentTime;
+	private playSynth(event: MusicEvent, when: number) {
+		if (event.pitch === undefined || event.instrument === undefined) return;
+
 		const attack = clamp(event.settings.attack, 0, 4000) / 1000;
 		const decay = clamp(event.settings.decay, 0, 4000) / 1000;
 		const sustain = clamp(event.settings.sustain, 0, 100) / 100;
 		const release = clamp(event.settings.release, 0, 4000) / 1000;
-		const duration_seconds = beatsToSeconds(event.duration, event.settings.bpm);
-		const sustain_start = start_time + attack + decay;
-		const release_start = start_time + duration_seconds;
-		const stop_time = release_start + release + 0.05;
+		const sustainStart = when + attack + decay;
+		const releaseStart = when + Math.max(0.05, event.duration); // TODO: convert to seconds
+		const stopTime = releaseStart + release + 0.05;
 
-		const { output } = createVoiceOutput(this.ctx, this.master, event.settings.volume, event.settings.pan);
+		const { output } = createPanVolOut(this.ctx, this.master, event.settings.volume, event.settings.pan);
 		const envelope = this.ctx.createGain();
-		envelope.gain.setValueAtTime(0.0001, start_time);
+		envelope.gain.setValueAtTime(0.0001, when);
 
-		if (attack > 0) envelope.gain.linearRampToValueAtTime(1, start_time + attack);
-		else envelope.gain.setValueAtTime(1, start_time);
+		if (attack > 0) envelope.gain.linearRampToValueAtTime(1, when + attack);
+		else envelope.gain.setValueAtTime(1, when);
 
-		if (decay > 0) envelope.gain.linearRampToValueAtTime(Math.max(0.0001, sustain), sustain_start);
-		else envelope.gain.setValueAtTime(Math.max(0.0001, sustain), start_time);
+		if (decay > 0) envelope.gain.linearRampToValueAtTime(Math.max(0.0001, sustain), sustainStart);
+		else envelope.gain.setValueAtTime(Math.max(0.0001, sustain), when);
 
-		envelope.gain.setValueAtTime(Math.max(0.0001, sustain), release_start);
-		if (release > 0) envelope.gain.linearRampToValueAtTime(0.0001, stop_time);
-		else envelope.gain.setValueAtTime(0.0001, release_start);
+		envelope.gain.setValueAtTime(Math.max(0.0001, sustain), releaseStart);
+		if (release > 0) envelope.gain.linearRampToValueAtTime(0.0001, stopTime);
+		else envelope.gain.setValueAtTime(0.0001, releaseStart);
 
 		const osc = this.ctx.createOscillator();
 		osc.type = event.instrument === Instrument.BASS ? "square" : event.instrument === Instrument.PIANO ? "triangle" : "sawtooth";
 		osc.frequency.value = midiToFreq(event.pitch);
 		osc.connect(envelope);
 		envelope.connect(output);
-		osc.start(start_time);
-		osc.stop(stop_time);
+		osc.start(when);
+		osc.stop(stopTime);
 	}
 
-	play(event: NoteEvent) {
-		if (!this.init) return;
+	play(event: MusicEvent, when: number) {
+		if (!this.init || event.type !== "play") return;
 
 		switch (event.instrument) {
 			case Instrument.DRUMS:
-				this.playSample(event);
+				this.playSample(event, when);
 				break;
 			case Instrument.SYNTH:
 			case Instrument.BASS:
 			case Instrument.PIANO:
-				this.playSynth(event);
+				this.playSynth(event, when);
 				break;
 			default:
 				break;

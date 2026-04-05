@@ -1,61 +1,45 @@
-import Button from "@/app/components/button";
 import Card from "@/app/components/card";
-import StatusPill from "@/app/components/pill";
-import { CoreState, GlobalState, Register } from "@/common/types";
+import { PillButton } from "@/app/components/pill";
+import { CoreState, Register } from "@/common/types";
 import Editor from "./editor";
 import Registers from "./registers";
-import { useState } from "react";
+import { Subheading } from "../components/text";
 
 interface CoreProps {
 	coreId: number;
-	core: CoreState;
-	globalState: GlobalState;
+	state: CoreState;
 	initialCode: string;
 	onCodeChange: (code: string) => void;
 	onRegisterChange: (register: Register, value: number) => void;
-	onToggleCore: () => void;
+	toggleCore: () => void;
 }
 
 export default function Core({
 	coreId,
-	core,
-	globalState,
+	state,
 	initialCode,
 	onCodeChange,
 	onRegisterChange,
-	onToggleCore,
+	toggleCore,
 }: CoreProps) {
-	const bpmRatio = core.regs[Register.BPM] ?? 100;
-	const volumeRatio = core.regs[Register.VOL] ?? 100;
-	const effectiveBpm = Math.round((globalState.bpm * bpmRatio) / 100);
-	const effectiveVolume = Math.round((globalState.volume * volumeRatio) / 100);
-	const [load, setLoad] = useState(false);
+	const statusVariant = state.enabled ? "active" : "idle";
+	const statusLabel = state.enabled ? "active" : "idle";
 
 	return (
-		<Card variant="panel" className="flex h-full min-h-0 flex-col gap-3 p-3">
-			<div className="flex items-start justify-between gap-3">
-				<div className="flex min-w-0 flex-col gap-1">
-					<div className="flex items-center gap-4">
-						<h2 className="text-base font-bold text-ctp-text">Core {coreId}</h2>
-						<StatusPill tone={core.active ? "active" : "idle"}>{core.active ? "active" : "idle"}</StatusPill>
-					</div>
-					{/* <SectionDescription className="text-xs">
-						PC {core.pc.toString().padStart(2, "0")} · {bpmRatio}% BPM = {effectiveBpm} · {volumeRatio}% VOL = {effectiveVolume}
-					</SectionDescription> */}
+		<Card variant="panel" className="flex gap-6 h-full w-full min-w-0 min-h-0 p-4">
+			<div className="flex min-w-0 flex-1 flex-col gap-3">
+				<div className="flex items-center gap-4">
+					<Subheading>Core {coreId}</Subheading>
+					<PillButton variant={statusVariant} onClick={toggleCore}>
+						{statusLabel}
+					</PillButton>
 				</div>
-				<div className="flex gap-1">
-					<Button size="sm" variant={core.active ? "danger" : "secondary"} onClick={onToggleCore}>
-						{core.active ? "Disable" : "Enable"}
-					</Button>
-					<Button size="sm" variant="primary" onClick={() => setLoad((current) => !current)}>
-						Load
-					</Button>
-				</div>
+				<Editor
+					initialCode={initialCode}
+					onCodeChange={onCodeChange}
+				/>
 			</div>
-			<div className="flex h-full min-h-0 gap-6">
-				<Editor initialCode={initialCode} onCodeChange={onCodeChange} loadTrigger={load} />
-				<Registers registers={core.regs} onRegisterChange={onRegisterChange} />
-			</div>
+			<Registers registers={state.regs} onRegisterChange={onRegisterChange} />
 		</Card>
 	);
 }

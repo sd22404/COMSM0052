@@ -1,10 +1,9 @@
 import Button from "@/app/components/button";
 import Input from "@/app/components/input";
-import { Eyebrow, SectionTitle } from "@/app/components/text";
+import { Eyebrow, Subheading } from "@/app/components/text";
 import { midiToNote } from "@/audio/engine";
 import { useState } from "react";
-
-const CELLS_PER_ROW = 4;
+import Card from "../components/card";
 
 export default function Memory({
 	memory,
@@ -13,64 +12,44 @@ export default function Memory({
 	memory: number[];
 	onMemoryChange: (address: number, value: number) => void;
 }) {
-	const [stringView, setStringView] = useState(false);
-	const [drafts, setDrafts] = useState<Record<number, string>>({});
-	const rows = Math.ceil(memory.length / CELLS_PER_ROW);
+	const [noteView, setNoteView] = useState(false);
+	const [drafts, setDrafts] = useState<(number | string)[]>(memory);
 
 	return (
-		<div className="flex h-full w-full flex-col gap-3">
-			<div className="flex items-center justify-between gap-3">
-				<SectionTitle>Shared Memory</SectionTitle>
-				<Button size="sm" variant="primary" onClick={() => setStringView((value) => !value)}>
-					{stringView ? "Show numbers" : "Show notes"}
-				</Button>
+		<Card variant="panel" className="flex-1 min-h-0 p-4">
+			<div className="flex h-full w-full flex-col gap-3">
+				<div className="flex items-center justify-between">
+					<Subheading>Shared Memory</Subheading>
+					<Button size="sm" variant="primary" onClick={() => setNoteView((value) => !value)}>
+						{noteView ? "Show numbers" : "Show notes"}
+					</Button>
+				</div>
+				<div className="grid gap-2 overflow-y-auto grid-cols-4">
+					{drafts.map((draft, addr) => {
+						const valInt = parseInt(draft as string);
+						const valDisplay = (noteView && !isNaN(valInt)) ? midiToNote(valInt) : draft;
+
+						return (
+							<div key={addr} className="flex flex-col items-center gap-1">
+								<Eyebrow>Addr {addr.toString().padStart(2, "0")}</Eyebrow>
+								<Input
+									className="w-full"
+									type="text"
+									value={valDisplay}
+									title={`Address ${addr}`}
+									onChange={(e) => {
+										const valStr = e.target.value;
+										const valInt = parseInt(valStr); // TODO: handle note input as well
+
+										if (!isNaN(valInt)) onMemoryChange(addr, valInt);
+										setDrafts((drafts) => drafts.map((draft, i) => (i === addr ? valStr : draft)));
+									}}
+								/>
+							</div>
+						);
+					})}
+				</div>
 			</div>
-			<div className="grid gap-2 overflow-y-auto pr-1">
-				{Array.from({ length: rows }, (_, rowIndex) => {
-					const startAddress = rowIndex * CELLS_PER_ROW;
-
-					return (
-						<div key={rowIndex} className="grid grid-cols-4 gap-2">
-							{Array.from({ length: CELLS_PER_ROW }, (_, colIndex) => {
-								const address = startAddress + colIndex;
-								if (address >= memory.length) return null;
-
-								const rawValue = drafts[address] ?? memory[address].toString();
-								const parsedValue = Number.parseInt(rawValue, 10);
-								const displayValue = stringView && !Number.isNaN(parsedValue) ? midiToNote(parsedValue) : rawValue;
-
-								return (
-									<div key={address} className="flex flex-col items-center gap-1">
-										<Eyebrow>Addr {address.toString().padStart(2, "0")}</Eyebrow>
-										<Input
-											className="w-full"
-											type="text"
-											value={displayValue}
-											title={`Address ${address} (decimal)`}
-											onChange={(event) => {
-												const nextValue = event.target.value;
-												const parsed = Number.parseInt(nextValue, 10);
-
-												if (Number.isNaN(parsed)) {
-													setDrafts((current) => ({ ...current, [address]: nextValue }));
-													return;
-												}
-
-												onMemoryChange(address, parsed);
-												setDrafts((current) => {
-													const nextDrafts = { ...current };
-													delete nextDrafts[address];
-													return nextDrafts;
-												});
-											}}
-										/>
-									</div>
-								);
-							})}
-						</div>
-					);
-				})}
-			</div>
-		</div>
+		</Card>
 	);
 }

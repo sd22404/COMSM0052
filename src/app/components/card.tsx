@@ -4,8 +4,8 @@ import { cn } from "./cn";
 type CardVariant = "base" | "panel" | "surface";
 
 const VARIANT_CLASSES: Record<CardVariant, string> = {
-	base: "border border-ctp-surface0 bg-ctp-base",
-	panel: "border border-ctp-surface0 bg-ctp-mantle/90",
+	base: "border border-ctp-surface0 bg-ctp-crust",
+	panel: "border border-ctp-surface0 bg-ctp-mantle",
 	surface: "border border-ctp-surface0 bg-ctp-surface0/40",
 };
 

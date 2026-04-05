@@ -2,13 +2,13 @@
 
 import Background from "@/app/components/background";
 import Header from "@/app/sections/header";
-import Environment from "@/app/sections/environment";
+import Workspace from "@/app/sections/workspace";
 
 export default function Home() {
 	return (
 		<Background>
 			<Header />
-			<Environment />
+			<Workspace />
 		</Background>
 	)
 }

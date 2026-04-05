@@ -1,36 +1,33 @@
-import { CORE_COUNT, GlobalState, Memory, NoteEvent, Program, Register, RuntimeState, createDefaultGlobalState } from "@/common/types";
-import { Core } from "@/machine/cpu";
-import { Sequencer } from "@/machine/sequencer";
+import { MusicEvent, Parameter, Register, RuntimeState } from "@/common/types";
+import { CPU, createDefaultCPU } from "@/machine/cpu";
+import { Scheduler, createDefaultScheduler } from "@/machine/scheduler";
+import { Assembler } from "@/language/assembler";
+
+export function createDefaultRuntime() {
+	return {
+		running: false,
+		cpu: createDefaultCPU(),
+		scheduler: createDefaultScheduler(),
+	}
+}
 
 export class Runtime {
 	constructor() {
-		this.global_state = createDefaultGlobalState();
-		this.memory = new Memory();
-		this.sequencer = new Sequencer(this.event_q);
-		this.cores = Array.from({ length: CORE_COUNT }, (_, id) => new Core({
-			id: id,
-			event_q: this.event_q,
-			memory: this.memory,
-			global_state: this.global_state,
-			onChange: () => this.notify(),
-		}));
-		this.cores[0].active = true;
+		this.cpu = new CPU(undefined, this.timeline);
+		this.scheduler = new Scheduler(undefined, this.timeline);
 	}
 
 	private running = false;
-	private readonly event_q: NoteEvent[] = [];
-	private readonly cores: Core[];
-	private readonly global_state: GlobalState;
-	private readonly memory: Memory;
-	private readonly sequencer: Sequencer;
+	private readonly cpu: CPU;
+	private readonly scheduler: Scheduler;
+	private timeline: MusicEvent[] = [];
 	private broadcast?: (state: RuntimeState) => void;
 
-	private snapshotState(): RuntimeState {
+	get state(): RuntimeState {
 		return {
 			running: this.running,
-			globals: { ...this.global_state },
-			memory: this.memory.snapshot(),
-			cores: this.cores.map((core) => core.state),
+			cpu: this.cpu.state,
+			scheduler: this.scheduler.state,
 		};
 	}
 
@@ -40,63 +37,57 @@ export class Runtime {
 	}
 
 	private notify() {
-		this.broadcast?.(this.snapshotState());
+		this.broadcast?.(this.state);
 	}
 
 	run() {
 		if (this.running) return;
 		this.running = true;
-		this.sequencer.run();
-		this.cores.forEach((core) => core.run());
+		this.cpu.start();
+		this.scheduler.start();
 		this.notify();
 	}
 
 	halt() {
 		if (!this.running) return;
 		this.running = false;
-		this.sequencer.halt();
-		this.cores.forEach((core) => core.halt());
+
+		this.cpu.stop();
+		this.scheduler.stop();
 		this.notify();
 	}
 
 	reset() {
 		this.halt();
-		this.memory.reset();
-		Object.assign(this.global_state, createDefaultGlobalState());
-		this.cores.forEach((core) => core.reset());
+		this.cpu.reset();
+		this.scheduler.reset();
 		this.notify();
 	}
 
-	load(coreId = 0, program: Program) {
-		const core = this.cores[coreId];
-		if (!core) return;
-		core.load(program);
+	load(coreId = 0, code: string) {
+		const program = Assembler.assemble(code);
+		this.cpu.load(coreId, program);
 		this.notify();
 	}
 
 	setAddress(addr: number, value: number) {
-		this.memory.write(addr, value);
+		this.cpu.setAddress(addr, value);
 		this.notify();
 	}
 
 	setRegister(coreId: number, register: Register, value: number) {
-		const core = this.cores[coreId];
-		if (!core) return;
-		core.setRegister(register, value);
+		this.cpu.setRegister(coreId, register, value);
 		this.notify();
 	}
 
-	setGlobalControl(control: keyof GlobalState, value: number) {
-		this.global_state[control] = value;
-		// TODO: cleanly handle bpm changes
+	setParameter(param: Parameter, value: number) {
+		this.cpu.setParameter(param, value);
+		// if (param === Parameter.BPM) this.scheduler.setBpm(value); // ???
 		this.notify();
 	}
 
-	toggleCore(index: number) {
-		const core = this.cores[index];
-		if (!core) return;
-		core.active = !core.active;
-		if (this.running && core.active) core.run();
+	toggleCore(id: number) {
+		this.cpu.toggleCore(id);
 		this.notify();
 	}
 }

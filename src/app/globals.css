@@ -1,9 +1,10 @@
 @import "tailwindcss";
 @import "@catppuccin/tailwindcss/mocha.css";
+@import "@catppuccin/palette/css/catppuccin.css";
 
 :root {
-  --background: #11111b;
-  --foreground: #cdd6f4;
+  --background: var(--ctp-mocha-base);
+  --foreground: var(--ctp-mocha-text);
 }
 
 @theme inline {
