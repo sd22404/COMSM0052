@@ -1,7 +1,16 @@
 const MEMORY_SIZE = 32;
 
 export function createDefaultMemory(size: number = MEMORY_SIZE): number[] {
-	return new Array(size).fill(0);
+	const mem = new Array(size).fill(0);
+	mem[0] = 58;
+	mem[1] = 62;
+	mem[2] = 63;
+	mem[3] = 65;
+	mem[8] = 60;
+	mem[9] = 64;
+	mem[10] = 65;
+	mem[11] = 67;
+	return mem;
 }
 
 export class Memory {

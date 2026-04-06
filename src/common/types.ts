@@ -3,7 +3,7 @@ export enum Opcode {
 }
 
 export enum Register {
-	VOL, PAN, ATK, DEC, SUS, REL, REG0, REG1, REG2, REG3,
+	VOL, PAN, ATK, DEC, SUS, REL, RAND, REG0, REG1, REG2, REG3,
 }
 
 export enum Instrument {
@@ -77,68 +77,60 @@ export interface RuntimeState {
 }
 
 const CORE_PROGRAMS = [
-	`; Core 0: stacked synth chords
-LOAD VOL 36
-LOAD ATK 20
+	`; Core 0: melody
+top:
+LOAD VOL 54
+LOAD ATK 10
 LOAD DEC 180
-LOAD SUS 60
-LOAD REL 240
+LOAD REL 180
 
-PLAY SYNTH 60
-PLAY SYNTH 64
-PLAY SYNTH 67
-REST 1
-PLAY SYNTH 62
-PLAY SYNTH 65
-PLAY SYNTH 69
-REST 1
-PLAY SYNTH 59
-PLAY SYNTH 62
-PLAY SYNTH 67
-REST 1
-PLAY SYNTH 60
-PLAY SYNTH 64
-PLAY SYNTH 67
-REST 1`,
+LOAD REG0 0 ; try setting this to eight!
+LOAD REG1 8
+
+loop:
+PLAY PIANO [REG0] ; uses register as memory address
+REST 4 ; try adjusting this!
+
+ADD REG0 1
+ADD REG1 -1
+JMPZ REG1 top
+JUMP loop`,
 	`; Core 1: drums
 LOAD VOL 88
 LOAD PAN -10
 
-PLAY DRUMS 60
-REST 1
+PLAY DRUMS 60 ; uses immediate value
+REST 2
 PLAY DRUMS 62
-REST 1
+REST 2
 PLAY DRUMS 61
+REST 2
+PLAY DRUMS 62
 REST 1
 PLAY DRUMS 62
-REST 1`,
-	`; Core 2: bass
-LOAD VOL 72
-LOAD DEC 120
-LOAD SUS 55
+REST 1
+PLAY DRUMS 60
+REST 2
+PLAY DRUMS 62
+REST 2
+PLAY DRUMS 61
+REST 2
+PLAY DRUMS 62
+REST 2`,
+	`; Core 2
+LOAD VOL 42
+LOAD ATK 10
+LOAD DEC 180
 LOAD REL 180
 
-PLAY BASS 36
 REST 2
-PLAY BASS 43
-REST 2`,
-	`; Core 3: pan test
-LOAD VOL 65
-LOAD PAN 35
-LOAD ATK 10
-LOAD DEC 90
-LOAD SUS 45
-LOAD REL 200
-
-PLAY PIANO 72
-REST 2
-PLAY PIANO 76
+PLAY PIANO 60
 REST 2`,
 ];
 
 export function getDefaultCoreProgram(coreId: number) {
 	return CORE_PROGRAMS[coreId] ?? `; Core ${coreId}
-; Press Ctrl+Enter or Load Core to assign this program.
+; Press Ctrl+Enter to assign this program.
 LOAD VOL 100
 
 loop:

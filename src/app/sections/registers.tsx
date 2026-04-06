@@ -18,7 +18,7 @@ export default function Registers({ registers, onRegisterChange }: RegisterProps
 	return (
 		<div className="flex flex-col gap-2">
 			<Eyebrow className="text-md">REGISTERS</Eyebrow>
-			<div className="flex flex-col gap-1 h-full overflow-y-auto">
+			<div className="flex flex-col gap-1 h-full overflow-y-auto overflow-x-hidden">
 				{drafts.map((draft, i) => (
 					<div key={i} className="flex items-center justify-between gap-3">
 						<Body className="font-semibold text-ctp-subtext0">

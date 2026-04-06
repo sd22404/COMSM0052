@@ -8,6 +8,7 @@ export function createDefaultRegisters(): number[] {
 		0,   // Decay
 		100, // Sustain
 		0,   // Release
+		100, // RAND
 		0,   // REG0
 		0,   // REG1
 		0,   // REG2
@@ -27,6 +28,8 @@ export class RegisterFile {
 	}
 
 	read(reg: Register): number {
+		if (reg == Register.RAND)
+			return Math.floor(Math.random() * this.regs[Register.RAND] + 1);
 		return this.regs[reg];
 	}
 

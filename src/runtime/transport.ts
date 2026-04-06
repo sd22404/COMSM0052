@@ -3,6 +3,8 @@ import { TransportState } from "@/common/types";
 const MIN_BPM = 1;
 const EPSILON = 1e-6;
 
+const CLICK_PER_BEAT = 4;
+
 interface PendingBPM {
 	time: number;
 	beat: number;
@@ -44,7 +46,7 @@ export class Transport {
 		};
 	}
 
-	private secondsPerBeat(bpm: number = this.activeBPM) { return 60 / clampBPM(bpm); }
+	private secondsPerBeat(bpm: number = this.activeBPM) { return 60 / (clampBPM(bpm) * CLICK_PER_BEAT); }
 	private beatsToSeconds(beats: number, bpm: number = this.activeBPM) { return beats * this.secondsPerBeat(bpm); }
 	private secondsToBeats(seconds: number, bpm: number = this.activeBPM) { return seconds / this.secondsPerBeat(bpm); }
 

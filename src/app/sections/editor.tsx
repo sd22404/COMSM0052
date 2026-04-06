@@ -1,7 +1,7 @@
 import { basicSetup } from "codemirror";
 // import { Compartment, Range, Text } from "@codemirror/state";
 // import { EditorView, Decoration, DecorationSet, KeyBinding, keymap } from "@codemirror/view";
-import { Compartment, Text } from "@codemirror/state";
+import { Text } from "@codemirror/state";
 import { EditorView, KeyBinding, keymap } from "@codemirror/view";
 import { indentWithTab } from "@codemirror/commands";
 import { catppuccinMocha, catppuccinLatte } from "@catppuccin/codemirror";
@@ -11,6 +11,7 @@ import { useEffect, useRef } from "react";
 interface EditorProps {
 	initialCode: string;
 	onCodeChange?: (code: string) => void;
+	onDraftChange?: (code: string) => void;
 }
 
 // function clampChar(doc: Text, value: number) {
@@ -76,20 +77,31 @@ interface EditorProps {
 export default function Editor({
 	initialCode,
 	onCodeChange,
+	onDraftChange,
 }: EditorProps) {
 	const editorRef = useRef<HTMLDivElement>(null);
 	const viewRef = useRef<EditorView | null>(null);
-	const highlightRef = useRef(new Compartment());
-	const doc = Text.of(initialCode.split("\n"));
+	const onCodeChangeRef = useRef(onCodeChange);
+	const onDraftChangeRef = useRef(onDraftChange);
+	// const highlightRef = useRef(new Compartment());
 
-	const loadCode = () => {
-		const view = viewRef.current;
-		if (!view) return;
-		onCodeChange?.(view.state.doc.toString());
-	};
+	useEffect(() => {
+		onCodeChangeRef.current = onCodeChange;
+	}, [onCodeChange]);
+
+	useEffect(() => {
+		onDraftChangeRef.current = onDraftChange;
+	}, [onDraftChange]);
 
 	useEffect(() => {
 		if (!editorRef.current) return;
+		const doc = Text.of(initialCode.split("\n"));
+
+		const loadCode = () => {
+			const view = viewRef.current;
+			if (!view) return;
+			onCodeChangeRef.current?.(view.state.doc.toString());
+		};
 
 		const runKeymap: KeyBinding = {
 			key: "Mod-Enter",
@@ -148,6 +160,10 @@ export default function Editor({
 			extensions: [
 				keymap.of([runKeymap]),
 				keymap.of([indentWithTab]),
+				EditorView.updateListener.of((update) => {
+					if (!update.docChanged) return;
+					onDraftChangeRef.current?.(update.state.doc.toString());
+				}),
 				// highlight.of(EditorView.decorations.of(
 				// 	buildHighlights(doc, null, []),
 				// )),

@@ -29,20 +29,19 @@ function HelpModal({ open, onClose }: { open: boolean; onClose: () => void }) {
 				<HelpBlock
 					title="Controls"
 					lines={[
-						<><strong>Ctrl+Enter</strong>: Load the focused editor into its matching core.</>,
-						<><strong>Enable Core</strong>: Arm that core so it participates when the runtime is running.</>,
-						<><strong>Global BPM</strong> and <strong>VOL</strong>: Shared transport controls for playback tempo and master volume.</>,
-						<><strong>Blue highlights</strong>: VM execution. <strong>Green/yellow highlights</strong>: currently active musical playback spans.</>,
+						<><strong>Ctrl+Enter</strong>: Load the focused code into its matching core.</>,
+						<><strong>Active/Idle</strong>: Indicators for the status of each core. Click to toggle.</>,
+						<><strong>Unloaded</strong>: Shows when editor text differs from code loaded in that core.</>,
+						<><strong>Master BPM</strong> and <strong>VOL</strong>: Overall tempo and volume controls.</>,
 						<><strong>Escape</strong>: Close this popup.</>,
 					]}
 				/>
 				<HelpBlock
 					title="Registers"
 					lines={[
-						<><strong>BPM*</strong> is currently reserved. Transport timing comes from the shared global BPM.</>,
-						<><strong>VOL</strong> scales the shared global volume per core.</>,
+						<><strong>VOL</strong> controls the volume of each core.</>,
 						<><strong>PAN</strong> controls stereo position per core.</>,
-						<><strong>ATTACK</strong>, <strong>DECAY</strong>, <strong>SUSTAIN</strong>, and <strong>RELEASE</strong> shape the synth envelope.</>,
+						<><strong>ATK</strong>, <strong>DEC</strong>, <strong>SUS</strong>, and <strong>REL</strong> shape the synth envelope.</>,
 						<><strong>REG0</strong> through <strong>REG3</strong> are general purpose VM registers for your own program logic.</>,
 					]}
 				/>
@@ -52,8 +51,8 @@ function HelpModal({ open, onClose }: { open: boolean; onClose: () => void }) {
 						<><strong>PLAY <em>instrument note</em></strong>: Emit a one-beat note at the core&apos;s current musical beat without advancing that beat.</>,
 						<><strong>REST <em>beats</em></strong>: Advance the core&apos;s musical beat by <em>beats</em>.</>,
 						<><strong>LOAD <em>register value</em></strong>: Write a value into a register.</>,
-						<><strong>ADD <em>register value</em></strong>: Add a value to an existing register.</>,
 						<><strong>STORE <em>address value</em></strong>: Write a value into shared memory.</>,
+						<><strong>ADD <em>register value</em></strong>: Add a value to an existing register.</>,
 						<><strong><em>label</em>:</strong> Declare a jump target.</>,
 						<><strong>JUMP <em>label</em></strong>: Jump to a label unconditionally.</>,
 						<><strong>JMPZ <em>register</em> <em>label</em></strong>: Jump if the register is zero.</>,

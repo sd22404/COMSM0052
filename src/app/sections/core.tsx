@@ -1,6 +1,7 @@
 import Card from "@/app/components/card";
-import { PillButton } from "@/app/components/pill";
+import { Pill, PillButton } from "@/app/components/pill";
 import { CoreState, Register } from "@/common/types";
+import { useEffect, useState } from "react";
 import Editor from "./editor";
 import Registers from "./registers";
 import { Subheading } from "../components/text";
@@ -22,21 +23,41 @@ export default function Core({
 	onRegisterChange,
 	toggleCore,
 }: CoreProps) {
-	const statusVariant = state.enabled ? "active" : "idle";
-	const statusLabel = state.enabled ? "active" : "idle";
+	const status = state.enabled ? "active" : "idle";
+	const [draftCode, setDraftCode] = useState(initialCode);
+	const [loadedCode, setLoadedCode] = useState(initialCode);
+	const hasUnloadedChanges = draftCode !== loadedCode;
+
+	useEffect(() => {
+		setDraftCode(initialCode);
+		setLoadedCode(initialCode);
+	}, [initialCode]);
+
+	const handleLoadCode = (code: string) => {
+		onCodeChange(code);
+		setLoadedCode(code);
+	};
 
 	return (
 		<Card variant="panel" className="flex gap-6 h-full w-full min-w-0 min-h-0 p-4">
 			<div className="flex min-w-0 flex-1 flex-col gap-3">
-				<div className="flex items-center gap-4">
-					<Subheading>Core {coreId}</Subheading>
-					<PillButton variant={statusVariant} onClick={toggleCore}>
-						{statusLabel}
-					</PillButton>
+				<div className="flex items-center gap-4 overflow-auto">
+					<Subheading className="truncate">Core {coreId}</Subheading>
+					<div className="flex items-center gap-2">
+						<PillButton variant={status} onClick={toggleCore}>
+							{status}
+						</PillButton>
+						{hasUnloadedChanges && (
+							<Pill variant="warning" title="Press Ctrl+Enter in this editor to load changes.">
+								unloaded
+							</Pill>
+						)}
+					</div>
 				</div>
 				<Editor
 					initialCode={initialCode}
-					onCodeChange={onCodeChange}
+					onCodeChange={handleLoadCode}
+					onDraftChange={setDraftCode}
 				/>
 			</div>
 			<Registers registers={state.regs} onRegisterChange={onRegisterChange} />
