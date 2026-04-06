@@ -11,12 +11,12 @@ export default function Workspace() {
 			cpu: {
 				memory,
 				parameters,
-				clock,
 				cores,
 			},
-			scheduler: {
-				events,	
-			}
+			transport: {
+				bpm,
+				horizon,
+			},
 		},
 		run,
 		halt,

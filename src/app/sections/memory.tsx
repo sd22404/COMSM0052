@@ -2,7 +2,7 @@ import Button from "@/app/components/button";
 import Input from "@/app/components/input";
 import { Eyebrow, Subheading } from "@/app/components/text";
 import { midiToNote } from "@/audio/engine";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Card from "../components/card";
 
 export default function Memory({
@@ -14,6 +14,10 @@ export default function Memory({
 }) {
 	const [noteView, setNoteView] = useState(false);
 	const [drafts, setDrafts] = useState<(number | string)[]>(memory);
+
+	useEffect(() => {
+		setDrafts(memory);
+	}, [memory]);
 
 	return (
 		<Card variant="panel" className="flex-1 min-h-0 p-4">

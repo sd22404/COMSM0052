@@ -1,6 +1,5 @@
-import { CPUState, MusicEvent, Parameter, Program, Register } from "@/common/types";
+import { CPUState, NoteEvent, Parameter, Program, Register } from "@/common/types";
 import { Core } from "./core";
-import { CPUClock, createDefaultClock } from "./clock";
 import { Memory, createDefaultMemory } from "./memory";
 import { createDefaultRegisters } from "./regfile";
 
@@ -10,7 +9,6 @@ export function createDefaultCPU(): CPUState {
 	return {
 		memory: createDefaultMemory(),
 		parameters: createDefaultParameters(),
-		clock: createDefaultClock(),
 		cores: Array.from({ length: CORE_COUNT }, (_, id) => ({
 			id: id,
 			pc: 0,
@@ -26,10 +24,8 @@ export function createDefaultParameters(): number[] {
 }
 
 export class CPU {
-	constructor(coreCount: number = CORE_COUNT, timeline: MusicEvent[]) {
+	constructor(coreCount: number = CORE_COUNT) {
 		this.parameters = createDefaultParameters();
-		this.timeline = timeline;
-		this.clock = new CPUClock(undefined, (beat) => this.pulse(beat));
 		this.cores = Array.from({ length: coreCount }, (_, id) => new Core({
 			id,
 			memory: this.memory,
@@ -39,22 +35,15 @@ export class CPU {
 	}
 
 	private readonly parameters: number[];
-	private readonly clock: CPUClock;
 	private memory = new Memory();
 	private cores: Core[] = [];
-	private readonly timeline: MusicEvent[];
 
 	get state(): CPUState {
 		return {
 			memory: this.memory.snapshot(),
 			parameters: [...this.parameters],
-			clock: this.clock.state,
 			cores: this.cores.map(core => core.state),
 		};
-	}
-
-	get bpm() {
-		return this.clock.bpm;
 	}
 
 	public toggleCore(index: number) {
@@ -67,11 +56,18 @@ export class CPU {
 		core.load(program);
 	}
 
-	public pulse(beat: number) {
-		console.log(this.timeline);
-		for (const core of this.cores) {
-			if (core.enabled) this.timeline.push(...core.runUntil(beat));
-		}
+	public renderUntil(beat: number) {
+		const events: NoteEvent[] = [];
+		for (const core of this.cores)
+			if (core.enabled) events.push(...core.renderUntil(beat));
+
+		events.sort((left, right) => (
+			left.beat - right.beat
+			|| left.coreID - right.coreID
+			|| Number(left.id.split(":").at(1)) - Number(right.id.split(":").at(1))
+		));
+
+		return events;
 	}
 
 	public setParameter(param: Parameter, value: number) {
@@ -88,16 +84,7 @@ export class CPU {
 		core.setRegister(register, value);
 	}
 
-	public start() {
-		this.clock.start();
-	}
-
-	public stop() {
-		this.clock.stop();
-	}
-
 	public reset() {
-		this.clock.reset();
 		this.memory.reset();
 		for (const core of this.cores) core.reset();
 	}

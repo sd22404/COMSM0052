@@ -1,0 +1,141 @@
+import { Parameter, Register, RuntimeState } from "@/common/types";
+import { AudioEngine } from "@/audio/engine";
+import { Assembler } from "@/language/assembler";
+import { CPU, createDefaultCPU } from "@/machine/cpu";
+import { Transport, createDefaultTransport } from "./transport";
+
+const SCHEDULE_INTERVAL = 25; // ms
+const LOOKAHEAD_SECONDS = 0.1;
+
+export function createDefaultRuntime() {
+	return {
+		running: false,
+		cpu: createDefaultCPU(),
+		transport: createDefaultTransport(),
+	};
+}
+
+export class Runtime {
+	constructor() {
+		this.cpu = new CPU();
+		this.transport = new Transport();
+		this.audio = new AudioEngine();
+	}
+
+	private running = false;
+	private readonly cpu: CPU;
+	private readonly transport: Transport;
+	private readonly audio: AudioEngine;
+	private broadcast?: (state: RuntimeState) => void;
+	private interval?: NodeJS.Timeout;
+	private starting = false;
+
+	get state(): RuntimeState {
+		return {
+			running: this.running,
+			cpu: this.cpu.state,
+			transport: this.transport.state,
+		};
+	}
+
+	setBroadcast(fn: (state: RuntimeState) => void) {
+		this.broadcast = fn;
+		this.notify();
+	}
+
+	private notify() {
+		this.broadcast?.(this.state);
+	}
+
+	private tick() {
+		const targetBeat = this.transport.lookahead(this.audio.time, LOOKAHEAD_SECONDS);
+		if (!targetBeat) return;
+
+		const notes = this.cpu.renderUntil(targetBeat);
+		for (const note of notes) {
+			const when = this.transport.timeAtBeat(note.beat);
+			const duration = this.transport.makeDuration(note.beat, note.beat + note.length);
+			this.audio.schedule(note, when, duration);
+		}
+		
+		this.notify();
+	}
+
+	private async init() {
+		try {
+			await this.audio.ready();
+		} catch (error) {
+			console.error("Failed to initialise audio playback:", error);
+			this.starting = false;
+			return;
+		}
+
+		if (this.running || !this.starting) return;
+		this.starting = false;
+		this.running = true;
+
+		this.audio.setMasterVolume(this.cpu.state.parameters[Parameter.VOL]);
+		this.transport.start(this.audio.time);
+		this.tick();
+		this.notify();
+		this.interval = setInterval(() => this.tick(), SCHEDULE_INTERVAL);
+	}
+
+	run() {
+		if (this.running || this.starting) return;
+		this.starting = true;
+		void this.init();
+	}
+
+	halt() {
+		if (!(this.starting || this.running || this.interval)) return;
+
+		this.running = false;
+		this.starting = false;
+
+		if (this.interval) {
+			clearInterval(this.interval);
+			this.interval = undefined;
+		}
+
+		this.transport.halt(this.audio.time);
+		this.audio.panic();
+		this.notify();
+	}
+
+	reset() {
+		this.halt();
+		this.cpu.reset();
+		this.transport.reset();
+		this.audio.panic();
+		this.notify();
+	}
+
+	load(coreId = 0, code: string) {
+		const program = Assembler.assemble(code);
+		this.cpu.load(coreId, program);
+		this.notify();
+	}
+
+	setAddress(addr: number, value: number) {
+		this.cpu.setAddress(addr, value);
+		this.notify();
+	}
+
+	setRegister(coreId: number, register: Register, value: number) {
+		this.cpu.setRegister(coreId, register, value);
+		this.notify();
+	}
+
+	setParameter(param: Parameter, value: number) {
+		this.cpu.setParameter(param, value);
+		if (param === Parameter.BPM) this.transport.setBPM(value, this.audio.time);
+		if (param === Parameter.VOL) this.audio.setMasterVolume(value);
+		this.notify();
+	}
+
+	toggleCore(id: number) {
+		this.cpu.toggleCore(id);
+		this.notify();
+	}
+}

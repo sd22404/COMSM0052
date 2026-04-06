@@ -41,14 +41,13 @@ export interface SynthSettings {
 	release: number;
 }
 
-export interface MusicEvent {
+export interface NoteEvent {
 	id: string;
 	coreID: number;
-	type: "play" | "rest";
 	beat: number;
-	duration: number;
-	instrument?: Instrument;
-	pitch?: number;
+	instrument: Instrument;
+	pitch: number;
+	length: number;
 	settings: SynthSettings;
 }
 
@@ -60,37 +59,31 @@ export interface CoreState {
 	regs: number[];
 }
 
-export interface ClockState {
+export interface TransportState {
 	bpm: number;
-	beat: number;
+	horizon: number;
 }
 
 export interface CPUState {
 	memory: number[];
 	parameters: number[];
-	clock: ClockState;
 	cores: CoreState[];
-}
-
-export interface SchedulerState {
-	events: MusicEvent[];
 }
 
 export interface RuntimeState {
 	running: boolean;
 	cpu: CPUState;
-	scheduler: SchedulerState;
+	transport: TransportState;
 }
 
 const CORE_PROGRAMS = [
 	`; Core 0: stacked synth chords
-LOAD VOL 82
+LOAD VOL 36
 LOAD ATK 20
 LOAD DEC 180
 LOAD SUS 60
 LOAD REL 240
 
-loop:
 PLAY SYNTH 60
 PLAY SYNTH 64
 PLAY SYNTH 67
@@ -106,13 +99,11 @@ REST 1
 PLAY SYNTH 60
 PLAY SYNTH 64
 PLAY SYNTH 67
-REST 1
-JUMP loop`,
+REST 1`,
 	`; Core 1: drums
 LOAD VOL 88
 LOAD PAN -10
 
-loop:
 PLAY DRUMS 60
 REST 1
 PLAY DRUMS 62
@@ -120,20 +111,17 @@ REST 1
 PLAY DRUMS 61
 REST 1
 PLAY DRUMS 62
-REST 1
-JUMP loop`,
+REST 1`,
 	`; Core 2: bass
 LOAD VOL 72
 LOAD DEC 120
 LOAD SUS 55
 LOAD REL 180
 
-loop:
 PLAY BASS 36
 REST 2
 PLAY BASS 43
-REST 2
-JUMP loop`,
+REST 2`,
 	`; Core 3: pan test
 LOAD VOL 65
 LOAD PAN 35
@@ -142,12 +130,10 @@ LOAD DEC 90
 LOAD SUS 45
 LOAD REL 200
 
-loop:
 PLAY PIANO 72
 REST 2
 PLAY PIANO 76
-REST 2
-JUMP loop`,
+REST 2`,
 ];
 
 export function getDefaultCoreProgram(coreId: number) {

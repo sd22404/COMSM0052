@@ -1,4 +1,4 @@
-import { Runtime, createDefaultRuntime } from "@/machine/runtime";
+import { Runtime, createDefaultRuntime } from "@/runtime/runtime";
 import { Parameter, Register, RuntimeState } from "@/common/types";
 import { useEffect, useState } from "react";
 

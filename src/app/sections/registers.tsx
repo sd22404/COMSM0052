@@ -1,7 +1,7 @@
 import { Register } from "@/common/types";
 import Input from "../components/input";
 import { Body, Eyebrow } from "../components/text";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 interface RegisterProps {
 	registers: number[];
@@ -10,6 +10,10 @@ interface RegisterProps {
 
 export default function Registers({ registers, onRegisterChange }: RegisterProps) {
 	const [drafts, setDrafts] = useState<(number | string)[]>(registers);
+
+	useEffect(() => {
+		setDrafts(registers);
+	}, [registers]);
 
 	return (
 		<div className="flex flex-col gap-2">

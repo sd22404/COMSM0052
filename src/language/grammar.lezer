@@ -9,7 +9,7 @@ Operand { Instrument | Register | Immediate | Memory | LabelRef }
 @tokens {
 	Opcode { "PLAY" | "REST" | "JUMP" | "JMPZ" | "LOAD" | "STORE" | "ADD" }
 	Instrument { "DRUMS" | "BASS" | "PIANO" | "SYNTH" }
-	Register { "BPM" | "VOL" | "PAN" | "ATK" | "DEC" | "SUS" | "REL" | "REG0" | "REG1" | "REG2" | "REG3" }
+	Register { "VOL" | "PAN" | "ATK" | "DEC" | "SUS" | "REL" | "REG0" | "REG1" | "REG2" | "REG3" }
 	Label { identifier ":" }
 	LabelRef { identifier }
 	Immediate { number }

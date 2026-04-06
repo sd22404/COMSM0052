@@ -3,7 +3,7 @@ import {
 	Parameter,
 	Instruction,
 	Instrument,
-	MusicEvent,
+	NoteEvent,
 	Opcode,
 	Operand,
 	Program,
@@ -14,12 +14,21 @@ import { Memory } from "@/machine/memory";
 import { RegisterFile } from "@/machine/regfile";
 
 const ZERO_TIME_BUDGET = 4096;
+const NOP: Instruction = {
+	opcode: Opcode.NOP,
+	operands: [],
+};
 
 interface CoreConfig {
 	id: number;
 	memory: Memory;
 	parameters: number[];
 	program?: Program;
+}
+
+interface Result {
+	event?: NoteEvent;
+	advanced: boolean;
 }
 
 function clampBeat(value: number) {
@@ -118,30 +127,33 @@ export class Core {
 	}
 
 	private normalise(pc: number): number {
+		if (this.program.instrs.length === 0) return 0;
 		return (pc % this.program.instrs.length + this.program.instrs.length) % this.program.instrs.length;
 	}
 
 	private fetch(pc: number): Instruction {
+		if (this.program.instrs.length === 0) return NOP;
 		return this.program.instrs[this.normalise(pc)];
 	}
 
-	execute(instr: Instruction): MusicEvent | null {
+	execute(instr: Instruction): Result {
 		const [raw1, raw2] = instr.operands;
 		const [val1, val2] = [this.eval(raw1), this.eval(raw2)];
 
 		switch (instr.opcode) {
 			case Opcode.PLAY:
-				return this.createEvent("play", 1, val1, val2); // TODO: implement duration
+				return { event: this.createEvent(val1, val2, 1), advanced: true }; // TODO: implement duration
 			case Opcode.REST:
-				return this.createEvent("rest", val1);
+				this._beat = clampBeat(this._beat + val1);
+				break;
 			case Opcode.LOAD:
 				if (raw1?.mode === "reg") this.registers.write(raw1.reg, val2);
 				break;
-			case Opcode.ADD:
-				if (raw1?.mode === "reg") this.registers.write(raw1.reg, this.registers.read(raw1.reg) + val2);
-				break;
 			case Opcode.STORE:
 				this.memory.write(val1, val2);
+				break;
+			case Opcode.ADD:
+				if (raw1?.mode === "reg") this.registers.write(raw1.reg, this.registers.read(raw1.reg) + val2);
 				break;
 			case Opcode.JUMP:
 				this._pc = this.normalise(val1);
@@ -154,44 +166,36 @@ export class Core {
 				break;
 		}
 
-		return null;
+		return { event: undefined, advanced: false };
 	}
 
-	runUntil(targetBeat: number): MusicEvent[] {
-		const events: MusicEvent[] = [];
-		let zeroTimeInstrs = 0;
-
+	renderUntil(targetBeat: number): NoteEvent[] {
+		const events: NoteEvent[] = [];
 		if (!this._enabled) return events;
 		if (this.program.instrs.length === 0) return events;
+		let zeroTimeInstrs = 0;
 
 		while (this._beat < targetBeat && zeroTimeInstrs < ZERO_TIME_BUDGET) {
-			const event = this.execute(this.fetch(this._pc++))
-			if (event) {
-				zeroTimeInstrs = 0;
-				this._beat = clampBeat(this._beat + event.duration);
-				events.push(event);
-			} else {
-				zeroTimeInstrs++;
-			}
+			const { event, advanced } = this.execute(this.fetch(this._pc++));
+			if (event) events.push(event);
+			zeroTimeInstrs = advanced ? 0 : zeroTimeInstrs + 1;
 		}
 
 		return events;
 	}
 
 	private createEvent(
-		type: MusicEvent["type"],
+		instrument: Instrument,
+		pitch: number,
 		duration: number,
-		instrument?: Instrument,
-		pitch?: number,
-	): MusicEvent {
+	): NoteEvent {
 		return {
 			id: `${this.id}:${this.eventCounter++}`,
 			coreID: this.id,
-			type,
 			beat: this._beat,
-			duration,
 			instrument,
 			pitch,
+			length: duration,
 			settings: createSynthSettings(this.regs, this.parameters),
 		};
 	}
