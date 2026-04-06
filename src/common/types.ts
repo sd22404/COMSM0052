@@ -16,7 +16,8 @@ export enum Parameter {
 
 export type Operand =
 	| { mode: "imm"; value: number }
-	| { mode: "reg"; reg: Register }
+	| { mode: "reg_read"; reg: Register }
+	| { mode: "reg_write"; reg: Register }
 	| { mode: "mem_direct"; address: number }
 	| { mode: "mem_indirect"; reg: Register }
 	| { mode: "label"; value: string }

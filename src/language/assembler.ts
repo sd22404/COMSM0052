@@ -37,7 +37,10 @@ export class Assembler {
 					instr?.operands.push({ mode: "imm", value: parseInt(nodeText) }); // TODO: handle erroneous input
 					break;
 				case "Register":
-					instr?.operands.push({ mode: "reg", reg: Register[nodeText as keyof typeof Register] });
+					if (instr && instr.operands.length === 0 && [Opcode.LOAD, Opcode.ADD].includes(instr.opcode))
+						instr.operands.push({ mode: "reg_write", reg: Register[nodeText as keyof typeof Register] });
+					else
+						instr?.operands.push({ mode: "reg_read", reg: Register[nodeText as keyof typeof Register] });
 					break;
 				case "Memory": {
 					const value = nodeText.slice(1, -1);

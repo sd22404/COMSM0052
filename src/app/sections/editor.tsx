@@ -1,9 +1,10 @@
 import { basicSetup } from "codemirror";
 import { Text } from "@codemirror/state";
 import { EditorView, KeyBinding, keymap } from "@codemirror/view";
+import { linter } from "@codemirror/lint";
 import { indentWithTab } from "@codemirror/commands";
 import { catppuccinMocha, catppuccinLatte } from "@catppuccin/codemirror";
-import { musiclang } from "@/language/musiclang";
+import { musiclang, musiclinter } from "@/language/musiclang";
 import { useEffect, useRef } from "react";
 
 interface EditorProps {
@@ -80,6 +81,7 @@ export default function Editor({
 				theme,
 				basicSetup,
 				musiclang(),
+				linter(musiclinter),
 			],
 		});
 

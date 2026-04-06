@@ -117,8 +117,10 @@ export class Core {
 				return this.memory.read(operand.address);
 			case "mem_indirect":
 				return this.memory.read(this.registers.read(operand.reg));
-			case "reg":
+			case "reg_read":
 				return this.registers.read(operand.reg);
+			case "reg_write":
+				return operand.reg;
 			case "label":
 				return this.program.labels[operand.value] ?? 0;
 			default:
@@ -147,13 +149,13 @@ export class Core {
 				this._beat = clampBeat(this._beat + val1);
 				break;
 			case Opcode.LOAD:
-				if (raw1?.mode === "reg") this.registers.write(raw1.reg, val2);
+				this.registers.write(val1, val2);
 				break;
 			case Opcode.STORE:
 				this.memory.write(val1, val2);
 				break;
 			case Opcode.ADD:
-				if (raw1?.mode === "reg") this.registers.write(raw1.reg, this.registers.read(raw1.reg) + val2);
+				this.registers.write(val1, this.registers.read(val1) + val2);
 				break;
 			case Opcode.JUMP:
 				this._pc = this.normalise(val1);
