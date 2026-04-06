@@ -1,0 +1,33 @@
+const MEMORY_SIZE = 32;
+
+export function createDefaultMemory(size: number = MEMORY_SIZE): number[] {
+	return new Array(size).fill(0);
+}
+
+export class Memory {
+	constructor(private readonly size: number = MEMORY_SIZE) {
+		this.mem = createDefaultMemory(size);
+	}
+
+	private mem: number[];
+
+	snapshot() {
+		return [...this.mem];
+	}
+
+	reset() {
+		this.mem.fill(0);
+	}
+
+	private normalise(addr: number) {
+		return ((addr % this.mem.length) + this.mem.length) % this.mem.length;
+	}
+
+	read(addr: number): number {
+		return this.mem[this.normalise(addr)];
+	}
+
+	write(addr: number, value: number) {
+		this.mem[this.normalise(addr)] = value;
+	}
+}

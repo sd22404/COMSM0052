@@ -1,112 +1,209 @@
-import { Instrument } from "@/core/types";
+import { Instrument, NoteEvent } from "@/common/types";
 
-const midiToFreq = function(note: number): number {
-	const A = 440;
-	const freq = (A / 32) * (2 ** ((note - 9) / 12));
-	return freq;
+const SAMPLE_MAP: Map<number, string> = new Map([
+	[60, "/COMSM0052/samples/kick.wav"],
+	[61, "/COMSM0052/samples/snare.wav"],
+	[62, "/COMSM0052/samples/hat.wav"],
+]);
+
+const semitoneToNote = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
+
+const MASTER_GAIN = 0.18;
+const EPSILON = 1e-3;
+
+type ActiveSource = AudioBufferSourceNode | OscillatorNode;
+
+function clamp(value: number, min: number, max: number) { return Math.min(max, Math.max(min, value)); }
+function midiToFreq(note: number): number { return 440 * (2 ** ((note - 69) / 12)); }
+
+function tryDisconnect(node: AudioNode) {
+	try {
+		node.disconnect();
+	} catch {}
 }
 
-const noteToSemitone: Record<string, number> = {
-	'C': 0, 'C#': 1, 'Db': 1, 'D': 2, 'D#': 3, 'Eb': 3,
-	'E': 4, 'F': 5, 'F#': 6, 'Gb': 6, 'G': 7, 'G#': 8,
-	'Ab': 8, 'A': 9, 'A#': 10, 'Bb': 10, 'B': 11
+function tryStop(source: ActiveSource, when: number) {
+	try {
+		source.stop(when);
+	} catch {}
 }
 
-const semitoneToNote = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+function createVolPan(ctx: AudioContext, dest: AudioNode, vol: number, pan: number) {
+	const volume = ctx.createGain();
+	volume.gain.value = clamp(vol, 0, 100) / 100;
 
-export const midiToNote = function(midi: number): string {
+	const panner = ctx.createStereoPanner();
+	panner.pan.value = clamp(pan, -100, 100) / 100;
+
+	volume.connect(panner);
+	panner.connect(dest);
+
+	return { volume, panner };
+}
+
+export function midiToNote(midi: number): string {
 	const noteIndex = midi % 12;
 	const octave = Math.floor(midi / 12) - 1;
 	if (octave < 0) return "0";
 	return semitoneToNote[noteIndex] + octave.toString();
 }
 
-const SAMPLE_PATHS: string[] = [
-	"/COMSM0052/samples/kick.wav",
-	"/COMSM0052/samples/snare.wav",
-	"/COMSM0052/samples/hat.wav",
-];
-
 export class AudioEngine {
-	private _samples: AudioBuffer[] = [];
-	private _volume: number = 100;
-	private _gain!: GainNode;
-	private _bpm: number = 120;
-	private _clickMs: number = 60000 / this._bpm / 4;
-	private _audioContext!: AudioContext;
-	private _initialized = false;
+	private samples: Map<number, AudioBuffer> = new Map();
+	private ctx?: AudioContext;
+	private master?: GainNode;
+	private compressor?: DynamicsCompressorNode;
+	private readonly activeSources = new Map<ActiveSource, () => void>();
+	private samplePromise?: Promise<void>;
 
-	init() {
-		if (this._initialized) return;
-		this._audioContext = new AudioContext();
-		this._gain = this._audioContext.createGain();
-		this._gain.connect(this._audioContext.destination);
-		this._loadSamples();
-		this._initialized = true;
+	get time() {
+		return this.ctx?.currentTime ?? 0;
 	}
 
-	private async _loadSamples() {
-		for (const path of SAMPLE_PATHS) {
+	private init() {
+		if (this.ctx) return;
+
+		this.ctx = new AudioContext();
+		this.master = this.ctx.createGain();
+		this.compressor = this.ctx.createDynamicsCompressor();
+		this.compressor.threshold.value = -20;
+		this.compressor.knee.value = 15;
+		this.compressor.ratio.value = 12;
+		this.compressor.attack.value = 0.003;
+		this.compressor.release.value = 0.25;
+
+		this.master.connect(this.compressor);
+		this.compressor.connect(this.ctx.destination);
+		this.setMasterVolume(100);
+	}
+
+	private registerSource(source: ActiveSource, cleanup: () => void) {
+		let finalised = false;
+		const finish = () => {
+			if (finalised) return;
+			finalised = true;
+			this.activeSources.delete(source);
+			cleanup();
+		};
+
+		source.onended = finish;
+		this.activeSources.set(source, finish);
+	}
+
+	async ready() {
+		this.init();
+		if (!this.ctx) return;
+
+		if (this.ctx.state === "suspended")
+			await this.ctx.resume();
+
+		this.samplePromise ??= this.loadSamples();
+		await this.samplePromise;
+	}
+
+	setMasterVolume(value: number) {
+		if (!this.master) return;
+		this.master.gain.value = (clamp(value, 0, 100) / 100) * MASTER_GAIN;
+	}
+
+	panic() {
+		if (!this.ctx) return;
+
+		for (const [source, cleanup] of Array.from(this.activeSources.entries())) {
+			source.onended = null;
+			tryStop(source, this.ctx.currentTime);
+			cleanup();
+		}
+	}
+
+	private async loadSamples() {
+		if (!this.ctx) return;
+
+		for (const [midiNote, path] of SAMPLE_MAP.entries()) {
 			try {
 				const res = await fetch(path);
 				const buf = await res.arrayBuffer();
-				this._samples.push(await this._audioContext.decodeAudioData(buf));
-			} catch (e) {
-				console.error(`Failed to load sample #${SAMPLE_PATHS.indexOf(path)}:`, e);
+				this.samples.set(midiNote, await this.ctx.decodeAudioData(buf));
+			} catch (error) {
+				console.error(`Failed to load sample #${midiNote}:`, error);
 			}
 		}
 	}
 
-	private _playSample(index: number, time: number) {
-		const buffer = this._samples[index];
+	private scheduleSample(event: NoteEvent, when: number) {
+		if (!this.ctx || !this.master) return;
+
+		const buffer = this.samples.get(event.pitch);
 		if (!buffer) return;
-		const source = this._audioContext.createBufferSource();
+
+		const source = this.ctx.createBufferSource();
 		source.buffer = buffer;
-		source.connect(this._gain);
-		source.start(time);
+
+		const { volume, panner } = createVolPan(this.ctx, this.master, event.settings.volume, event.settings.pan);
+		source.connect(volume);
+		this.registerSource(source, () => {
+			tryDisconnect(source);
+			tryDisconnect(volume);
+			tryDisconnect(panner);
+		});
+		source.start(when);
 	}
 
-	get volume() {
-		return this._volume;
+	private scheduleSynth(event: NoteEvent, when: number, duration: number) {
+		if (!this.ctx || !this.master) return;
+
+		const attack = clamp(event.settings.attack, 0, 4000) / 1000;
+		const decay = clamp(event.settings.decay, 0, 4000) / 1000;
+		const sustain = clamp(event.settings.sustain, 0, 100) / 100;
+		const release = clamp(event.settings.release, 0, 4000) / 1000;
+		const sustainStart = when + attack + decay;
+		const releaseStart = when + Math.max(0.05, duration);
+		const stopTime = releaseStart + release + 0.05;
+
+		const { volume, panner } = createVolPan(this.ctx, this.master, event.settings.volume, event.settings.pan);
+		const envelope = this.ctx.createGain();
+		envelope.gain.setValueAtTime(0.0001, when);
+
+		if (attack > 0) envelope.gain.linearRampToValueAtTime(1, when + attack);
+		else envelope.gain.setValueAtTime(1, when);
+
+		if (decay > 0) envelope.gain.linearRampToValueAtTime(Math.max(0.0001, sustain), sustainStart);
+		else envelope.gain.setValueAtTime(Math.max(0.0001, sustain), when);
+
+		envelope.gain.setValueAtTime(Math.max(0.0001, sustain), releaseStart);
+		if (release > 0) envelope.gain.linearRampToValueAtTime(0.0001, stopTime);
+		else envelope.gain.setValueAtTime(0.0001, releaseStart);
+
+		const osc = this.ctx.createOscillator();
+		osc.type = event.instrument === Instrument.BASS ? "square" : event.instrument === Instrument.PIANO ? "triangle" : "sawtooth";
+		osc.frequency.value = midiToFreq(event.pitch);
+		osc.connect(envelope);
+		envelope.connect(volume);
+		this.registerSource(osc, () => {
+			tryDisconnect(osc);
+			tryDisconnect(envelope);
+			tryDisconnect(volume);
+			tryDisconnect(panner);
+		});
+		osc.start(when);
+		osc.stop(stopTime);
 	}
 
-	set volume(volume: number) {
-		this._volume = volume;
-		this._gain.gain.value = volume / 100;
-	}
+	schedule(note: NoteEvent, when: number, duration: number) {
+		if (!this.ctx) return;
 
-	get bpm() {
-		return this._bpm;
-	}
+		const startTime = Math.max(when, this.ctx.currentTime + EPSILON);
+		const noteDuration = Math.max(0, duration);
 
-	set bpm(bpm: number) {
-		this._bpm = bpm;
-		this._clickMs = 60000 / this._bpm / 4;
-	}
-
-	get clickMs() {
-		return this._clickMs;
-	}
-
-	currentTime() {
-		return this._audioContext.currentTime;
-	}
-
-	play(instrument: Instrument, note: number, beatDuration?: number, beatDelay?: number) {
-		const startTime = this._audioContext.currentTime + (beatDelay || 0) * this._clickMs / 1000;
-
-		switch (instrument) {
-			case Instrument.SAMPLE:
-				this._playSample(note, startTime);
+		switch (note.instrument) {
+			case Instrument.DRUMS:
+				this.scheduleSample(note, startTime);
 				break;
-			case Instrument.SYNTH: {
-				const osc = this._audioContext.createOscillator();
-				osc.connect(this._gain);
-				osc.frequency.value = midiToFreq(note);
-				osc.start(startTime);
-				osc.stop(startTime + (beatDuration || 1) * this._clickMs / 1000);
+			case Instrument.SYNTH:
+			case Instrument.BASS:
+			case Instrument.PIANO:
+				this.scheduleSynth(note, startTime, noteDuration);
 				break;
-			}
 			default:
 				break;
 		}

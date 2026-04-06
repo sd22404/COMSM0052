@@ -1,14 +1,10 @@
-"use client";
-
 import Background from "@/app/components/background";
 import Header from "@/app/sections/header";
-import Workspace from "@/app/sections/workspace";
 
-export default function Home() {
+export default function Docs() {
 	return (
-		<Background>
+		<Background className="flex h-screen w-screen flex-col">
 			<Header />
-			<Workspace />
 		</Background>
-	)
+	);
 }

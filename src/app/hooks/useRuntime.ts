@@ -1,29 +1,37 @@
-import { useEffect, useRef, useState } from "react";
-import { Sequencer, SequencerState } from "@/runtime/sequencer";
-import { AudioEngine } from "@/audio/engine";
-import { compile } from "@/language/compiler";
-import { Register } from "@/core/types";
+import { Runtime, createDefaultRuntime } from "@/runtime/runtime";
+import { Parameter, Register, RuntimeState } from "@/common/types";
+import { useEffect, useState } from "react";
 
-export default function useRuntime() {
-	const seqRef = useRef<Sequencer | null>(null);
-	if (!seqRef.current) seqRef.current = new Sequencer(new AudioEngine());
+interface RuntimeHook {
+	runtime: RuntimeState;
+	run: () => void;
+	halt: () => void;
+	reset: () => void;
+	setCode: (coreId: number, code: string) => void;
+	setRegister: (coreId: number, reg: Register, value: number) => void;
+	setParameter: (control: Parameter, value: number) => void;
+	setMemory: (addr: number, value: number) => void;
+	toggleCore: (index: number) => void;
+}
 
-	const seq = seqRef.current;
-	const [state, setState] = useState<SequencerState>(seq.state);
+export default function useRuntime(): RuntimeHook {
+	const [runtime] = useState(() => new Runtime());
+	const [state, setState] = useState<RuntimeState>(createDefaultRuntime);
 
 	useEffect(() => {
-		seq.onStateChange = setState;
-	}, [seq]);
+		runtime.setBroadcast(setState);
+		return () => runtime.halt();
+	}, [runtime]);
 
 	return {
-		running: state.running,
-		registers: state.registers,
-		memory: state.memory,
-		cursors: state.cursors,
-		run: () => seq.run(),
-		halt: () => seq.halt(),
-		setCode: (code: string) => seq.setTracks(compile(code)),
-		setRegister: (reg: Register, val: number) => seq.setRegister(reg, val),
-		setMemory: (addr: number, val: number) => seq.setMemory(addr, val),
+		runtime: state,
+		run: () => runtime.run(),
+		halt: () => runtime.halt(),
+		reset: () => runtime.reset(),
+		setCode: (coreId: number, code: string) => runtime.load(coreId, code),
+		setRegister: (coreId: number, reg: Register, value: number) => runtime.setRegister(coreId, reg, value),
+		setParameter: (param: Parameter, value: number) => runtime.setParameter(param, value),
+		setMemory: (addr: number, value: number) => runtime.setAddress(addr, value),
+		toggleCore: (id: number) => runtime.toggleCore(id),
 	};
 }

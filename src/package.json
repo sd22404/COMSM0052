@@ -9,16 +9,17 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@catppuccin/codemirror": "^1.0.3",
+    "clsx": "^2.1.1",
     "codemirror": "^6.0.2",
     "lezer": "^0.13.5",
     "next": "16.1.6",
-    "notes-to-frequencies": "^1.0.0",
     "react": "19.2.3",
     "react-dom": "19.2.3",
-    "react-icons": "^5.6.0",
-    "tone": "^15.1.22"
+    "tailwind-merge": "^3.5.0"
   },
   "devDependencies": {
+    "@catppuccin/tailwindcss": "^1.0.0",
     "@lezer/generator": "^1.8.0",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
