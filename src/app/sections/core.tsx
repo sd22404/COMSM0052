@@ -7,7 +7,6 @@ import Registers from "./registers";
 import { Subheading } from "../components/text";
 
 interface CoreProps {
-	coreId: number;
 	state: CoreState;
 	initialCode: string;
 	onCodeChange: (code: string) => void;
@@ -16,7 +15,6 @@ interface CoreProps {
 }
 
 export default function Core({
-	coreId,
 	state,
 	initialCode,
 	onCodeChange,
@@ -26,28 +24,40 @@ export default function Core({
 	const status = state.enabled ? "active" : "idle";
 	const [draftCode, setDraftCode] = useState(initialCode);
 	const [loadedCode, setLoadedCode] = useState(initialCode);
-	const hasUnloadedChanges = draftCode !== loadedCode;
+	const hasChanged = draftCode !== loadedCode;
 
 	useEffect(() => {
-		setDraftCode(initialCode);
-		setLoadedCode(initialCode);
-	}, [initialCode]);
+		const code = localStorage.getItem(`core-${state.id}-code`) ?? initialCode;
+		setDraftCode(code);
+		setLoadedCode(code);
+		onCodeChange(code);
+	}, [state.id, initialCode]);
+
+	useEffect(() => {
+		localStorage.getItem(`core-${state.id}-enabled`) === "true" && toggleCore();
+	}, []);
 
 	const handleLoadCode = (code: string) => {
+		localStorage.setItem(`core-${state.id}-code`, code);
 		onCodeChange(code);
 		setLoadedCode(code);
+	};
+
+	const handleToggleCore = () => {
+		localStorage.setItem(`core-${state.id}-enabled`, JSON.stringify(!state.enabled));
+		toggleCore();
 	};
 
 	return (
 		<Card variant="panel" className="flex gap-6 h-full w-full min-w-0 min-h-0 p-4">
 			<div className="flex min-w-0 flex-1 flex-col gap-3">
 				<div className="flex items-center gap-4 overflow-auto">
-					<Subheading className="truncate">Core {coreId}</Subheading>
+					<Subheading className="truncate">Core {state.id}</Subheading>
 					<div className="flex items-center gap-2">
-						<PillButton variant={status} onClick={toggleCore}>
+						<PillButton variant={status} onClick={handleToggleCore}>
 							{status}
 						</PillButton>
-						{hasUnloadedChanges && (
+						{hasChanged && (
 							<Pill variant="warning" title="Press Ctrl+Enter in this editor to load changes.">
 								unloaded
 							</Pill>
@@ -55,7 +65,7 @@ export default function Core({
 					</div>
 				</div>
 				<Editor
-					initialCode={initialCode}
+					initialCode={loadedCode}
 					onCodeChange={handleLoadCode}
 					onDraftChange={setDraftCode}
 				/>

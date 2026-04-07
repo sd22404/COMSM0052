@@ -86,7 +86,6 @@ export default function Editor({
 		});
 
 		viewRef.current = view;
-		loadCode();
 
 		return () => {
 			view.destroy();

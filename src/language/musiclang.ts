@@ -54,7 +54,7 @@ function completions(context: CompletionContext) {
 	else if (["PLAY"].includes(prevWord)) options = instruments;
 	else if (["LOAD", "ADD"].includes(prevWord)) options = allRegs;
 	else if (["JMPZ", "REST", "STORE"].includes(prevWord)) options = regs;
-	else if (regs.map(reg => reg.label).includes(prevWord)) options = regs;
+	else if (allRegs.map(reg => reg.label).includes(prevWord)) options = regs;
 	else if (instruments.map(i => i.label).includes(prevWord)) options = regs;
 
 	return {

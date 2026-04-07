@@ -29,7 +29,7 @@ export class RegisterFile {
 
 	read(reg: Register): number {
 		if (reg == Register.RAND)
-			return Math.floor(Math.random() * this.regs[Register.RAND] + 1);
+			return Math.floor(Math.random() * (this.regs[Register.RAND] + 1));
 		return this.regs[reg];
 	}
 

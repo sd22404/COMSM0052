@@ -30,7 +30,7 @@ function tryStop(source: ActiveSource, when: number) {
 
 function createVolPan(ctx: AudioContext, dest: AudioNode, vol: number, pan: number) {
 	const volume = ctx.createGain();
-	volume.gain.value = clamp(vol, 0, 100) / 100;
+	volume.gain.value = clamp(vol, 0, 100) / 100 * MASTER_GAIN;
 
 	const panner = ctx.createStereoPanner();
 	panner.pan.value = clamp(pan, -100, 100) / 100;

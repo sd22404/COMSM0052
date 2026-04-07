@@ -1,17 +1,16 @@
-import {
-	CoreState,
-	Parameter,
-	Instruction,
-	Instrument,
-	NoteEvent,
-	Opcode,
-	Operand,
-	Program,
-	Register,
-	SynthSettings,
-} from "@/common/types";
+import { CoreState, Parameter, Instruction, Instrument, NoteEvent, Opcode, Operand, Program, Register, SynthSettings } from "@/common/types";
 import { Memory } from "@/machine/memory";
-import { RegisterFile } from "@/machine/regfile";
+import { RegisterFile, createDefaultRegisters } from "@/machine/regfile";
+
+export function createDefaultCore(id: number): CoreState {
+	return {
+		id,
+		enabled: false,
+		pc: 0,
+		beat: 0,
+		regs: createDefaultRegisters(),
+	};
+}
 
 const ZERO_TIME_BUDGET = 4096;
 const NOP: Instruction = {

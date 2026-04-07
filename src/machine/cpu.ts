@@ -1,7 +1,6 @@
 import { CPUState, NoteEvent, Parameter, Program, Register } from "@/common/types";
-import { Core } from "./core";
+import { Core, createDefaultCore } from "./core";
 import { Memory, createDefaultMemory } from "./memory";
-import { createDefaultRegisters } from "./regfile";
 
 const CORE_COUNT = 4;
 
@@ -9,13 +8,7 @@ export function createDefaultCPU(): CPUState {
 	return {
 		memory: createDefaultMemory(),
 		parameters: createDefaultParameters(),
-		cores: Array.from({ length: CORE_COUNT }, (_, id) => ({
-			id: id,
-			pc: 0,
-			beat: 0,
-			regs: createDefaultRegisters(),
-			enabled: false,
-		})),
+		cores: Array.from({ length: CORE_COUNT }, (_, id) => createDefaultCore(id)),
 	};
 }
 
@@ -31,7 +24,6 @@ export class CPU {
 			memory: this.memory,
 			parameters: this.parameters,
 		}));
-		this.toggleCore(0);
 	}
 
 	private readonly parameters: number[];
