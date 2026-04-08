@@ -8,44 +8,41 @@ import { Subheading } from "../components/text";
 
 interface CoreProps {
 	state: CoreState;
-	initialCode: string;
-	onCodeChange: (code: string) => void;
-	onRegisterChange: (register: Register, value: number) => void;
-	toggleCore: () => void;
+	defaultCode: string;
+	setRegister: (register: Register, value: number) => void;
+	toggle: () => void;
+	load: (code: string) => void;
 }
 
-export default function Core({
-	state,
-	initialCode,
-	onCodeChange,
-	onRegisterChange,
-	toggleCore,
-}: CoreProps) {
+function fetchCode(coreID: number, fallback: string) {
+	return localStorage.getItem(`core-${coreID}-code`) ?? fallback;
+}
+
+export default function Core({ state, defaultCode, setRegister, toggle, load }: CoreProps) {
 	const status = state.enabled ? "active" : "idle";
-	const [draftCode, setDraftCode] = useState(initialCode);
-	const [loadedCode, setLoadedCode] = useState(initialCode);
+	const [initialCode, setInitialCode] = useState(defaultCode);
+	const [draftCode, setDraftCode] = useState(defaultCode);
+	const [loadedCode, setLoadedCode] = useState(defaultCode);
 	const hasChanged = draftCode !== loadedCode;
 
 	useEffect(() => {
-		const code = localStorage.getItem(`core-${state.id}-code`) ?? initialCode;
+		const code = fetchCode(state.id, defaultCode);
+		setInitialCode(code);
 		setDraftCode(code);
 		setLoadedCode(code);
-		onCodeChange(code);
-	}, [state.id, initialCode]);
-
-	useEffect(() => {
-		localStorage.getItem(`core-${state.id}-enabled`) === "true" && toggleCore();
+		load(code);
+		if (localStorage.getItem(`core-${state.id}-enabled`) === "true") toggle();
 	}, []);
 
-	const handleLoadCode = (code: string) => {
+	const handleLoad = (code: string) => {
 		localStorage.setItem(`core-${state.id}-code`, code);
-		onCodeChange(code);
 		setLoadedCode(code);
+		load(code);
 	};
 
-	const handleToggleCore = () => {
+	const handleToggle = () => {
 		localStorage.setItem(`core-${state.id}-enabled`, JSON.stringify(!state.enabled));
-		toggleCore();
+		toggle();
 	};
 
 	return (
@@ -54,7 +51,7 @@ export default function Core({
 				<div className="flex items-center gap-4 overflow-auto">
 					<Subheading className="truncate">Core {state.id}</Subheading>
 					<div className="flex items-center gap-2">
-						<PillButton variant={status} onClick={handleToggleCore}>
+						<PillButton variant={status} onClick={handleToggle}>
 							{status}
 						</PillButton>
 						{hasChanged && (
@@ -65,12 +62,12 @@ export default function Core({
 					</div>
 				</div>
 				<Editor
-					initialCode={loadedCode}
-					onCodeChange={handleLoadCode}
-					onDraftChange={setDraftCode}
+					initialCode={initialCode}
+					onChange={setDraftCode}
+					onLoad={handleLoad}
 				/>
 			</div>
-			<Registers registers={state.regs} onRegisterChange={onRegisterChange} />
+			<Registers registers={state.regs} setRegister={setRegister} />
 		</Card>
 	);
 }

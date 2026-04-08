@@ -1,5 +1,4 @@
 import { basicSetup } from "codemirror";
-import { Text } from "@codemirror/state";
 import { EditorView, KeyBinding, keymap } from "@codemirror/view";
 import { linter } from "@codemirror/lint";
 import { indentWithTab } from "@codemirror/commands";
@@ -9,39 +8,34 @@ import { useEffect, useRef } from "react";
 
 interface EditorProps {
 	initialCode: string;
-	onCodeChange?: (code: string) => void;
-	onDraftChange?: (code: string) => void;
+	onLoad: (code: string) => void;
+	onChange: (code: string) => void;
 }
 
-export default function Editor({
-	initialCode,
-	onCodeChange,
-	onDraftChange,
-}: EditorProps) {
+export default function Editor({ initialCode, onLoad, onChange }: EditorProps) {
 	const editorRef = useRef<HTMLDivElement>(null);
 	const viewRef = useRef<EditorView | null>(null);
-	const onCodeChangeRef = useRef(onCodeChange);
-	const onDraftChangeRef = useRef(onDraftChange);
+	const onLoadRef = useRef(onLoad);
+	const onChangeRef = useRef(onChange);
 
 	useEffect(() => {
-		onCodeChangeRef.current = onCodeChange;
-	}, [onCodeChange]);
+		onLoadRef.current = onLoad;
+	}, [onLoad]);
 
 	useEffect(() => {
-		onDraftChangeRef.current = onDraftChange;
-	}, [onDraftChange]);
+		onChangeRef.current = onChange;
+	}, [onChange]);
 
 	useEffect(() => {
 		if (!editorRef.current) return;
-		const doc = Text.of(initialCode.split("\n"));
 
 		const loadCode = () => {
 			const view = viewRef.current;
 			if (!view) return;
-			onCodeChangeRef.current?.(view.state.doc.toString());
+			onLoadRef.current?.(view.state.doc.toString());
 		};
 
-		const runKeymap: KeyBinding = {
+		const loadKeybind: KeyBinding = {
 			key: "Mod-Enter",
 			run: () => {
 				loadCode();
@@ -68,14 +62,14 @@ export default function Editor({
 		});
 
 		const view = new EditorView({
-			doc: doc,
+			doc: initialCode,
 			parent: editorRef.current,
 			extensions: [
-				keymap.of([runKeymap]),
+				keymap.of([loadKeybind]),
 				keymap.of([indentWithTab]),
 				EditorView.updateListener.of((update) => {
 					if (!update.docChanged) return;
-					onDraftChangeRef.current?.(update.state.doc.toString());
+					onChangeRef.current?.(update.state.doc.toString());
 				}),
 				style,
 				theme,

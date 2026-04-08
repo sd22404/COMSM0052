@@ -6,21 +6,16 @@ import { Parameter } from "@/common/types";
 import Help from "./help";
 import { useState } from "react";
 
-export default function Controls({
-	parameters,
-	setParameter,
-	running,
-	run,
-	halt,
-	reset,
-}: {
+interface ControlsProps {
 	parameters: number[];
 	setParameter: (param: Parameter, value: number) => void;
 	running: boolean;
 	run: () => void;
 	halt: () => void;
 	reset: () => void;
-}){
+}
+
+export default function Controls({ parameters, setParameter, running, run, halt, reset }: ControlsProps){
 	const [drafts, setDrafts] = useState<(number | string)[]>(parameters);
 
 	return (
@@ -30,7 +25,9 @@ export default function Controls({
 			<div className="flex justify-between">
 			{drafts.map((value, i) => (
 				<div key={i} className="flex items-center gap-4">
-					<Body className="text-xl font-semibold text-ctp-teal">{Parameter[i]}</Body>
+					<Body className="text-xl font-semibold text-ctp-teal">
+						{Parameter[i]}
+					</Body>
 					<Input
 						className="w-20 text-xl"
 						type="number"
@@ -55,7 +52,7 @@ export default function Controls({
 					{running ? "Stop Audio" : "Start Audio"}
 				</Button>
 				<Button variant="secondary" onClick={reset}>
-					Reset Controls
+					Reset
 				</Button>
 				<Help />
 			</div>

@@ -5,13 +5,12 @@ import { midiToNote } from "@/audio/engine";
 import { useEffect, useState } from "react";
 import Card from "../components/card";
 
-export default function Memory({
-	memory,
-	onMemoryChange,
-}: {
+interface MemoryProps {
 	memory: number[];
-	onMemoryChange: (address: number, value: number) => void;
-}) {
+	setMemory: (addr: number, val: number) => void;
+}
+
+export default function Memory({ memory, setMemory }: MemoryProps) {
 	const [noteView, setNoteView] = useState(false);
 	const [drafts, setDrafts] = useState<(number | string)[]>(memory);
 
@@ -45,7 +44,7 @@ export default function Memory({
 										const valStr = e.target.value;
 										const valInt = parseInt(valStr); // TODO: handle note input as well
 
-										if (!isNaN(valInt)) onMemoryChange(addr, valInt);
+										if (!isNaN(valInt)) setMemory(addr, valInt);
 										setDrafts((drafts) => drafts.map((draft, i) => (i === addr ? valStr : draft)));
 									}}
 								/>

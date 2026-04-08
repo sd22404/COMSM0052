@@ -42,8 +42,8 @@ export class CPU {
 		this.cores[index].toggle(); // TODO: toggle on downbeat
 	}
 
-	public load(coreId: number, program: Program) {
-		const core = this.cores[coreId];
+	public load(coreID: number, program: Program) {
+		const core = this.cores[coreID];
 		if (!core) return;
 		core.load(program);
 	}
@@ -70,14 +70,14 @@ export class CPU {
 		this.memory.write(addr, value);
 	}
 
-	public setRegister(coreId: number, register: Register, value: number) {
-		const core = this.cores[coreId];
+	public setRegister(coreID: number, register: Register, value: number) {
+		const core = this.cores[coreID];
 		if (!core) return;
 		core.setRegister(register, value);
 	}
 
 	public reset() {
-		this.memory.reset();
+		// this.memory.reset();
 		for (const core of this.cores) core.reset();
 	}
 }

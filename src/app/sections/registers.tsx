@@ -5,10 +5,10 @@ import { useEffect, useState } from "react";
 
 interface RegisterProps {
 	registers: number[];
-	onRegisterChange: (reg: Register, val: number) => void;
+	setRegister: (reg: Register, val: number) => void;
 }
 
-export default function Registers({ registers, onRegisterChange }: RegisterProps) {
+export default function Registers({ registers, setRegister }: RegisterProps) {
 	const [drafts, setDrafts] = useState<(number | string)[]>(registers);
 
 	useEffect(() => {
@@ -32,7 +32,7 @@ export default function Registers({ registers, onRegisterChange }: RegisterProps
 								const valStr = e.target.value;
 								const valInt = parseInt(valStr);
 
-								if (!isNaN(valInt)) onRegisterChange(i, valInt);
+								if (!isNaN(valInt)) setRegister(i, valInt);
 								setDrafts((drafts) => drafts.map((draft, j) => (j === i ? valStr : draft)));
 							}}
 						/>

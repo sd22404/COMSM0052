@@ -23,12 +23,12 @@ export class Runtime {
 	}
 
 	private running = false;
+	private starting = false;
 	private readonly cpu: CPU;
 	private readonly transport: Transport;
 	private readonly audio: AudioEngine;
 	private broadcast?: (state: RuntimeState) => void;
 	private interval?: NodeJS.Timeout;
-	private starting = false;
 
 	get state(): RuntimeState {
 		return {
@@ -111,9 +111,9 @@ export class Runtime {
 		this.notify();
 	}
 
-	load(coreId = 0, code: string) {
+	load(coreID = 0, code: string) {
 		const program = Assembler.assemble(code);
-		this.cpu.load(coreId, program);
+		this.cpu.load(coreID, program);
 		this.notify();
 	}
 
@@ -122,8 +122,8 @@ export class Runtime {
 		this.notify();
 	}
 
-	setRegister(coreId: number, register: Register, value: number) {
-		this.cpu.setRegister(coreId, register, value);
+	setRegister(coreID: number, register: Register, value: number) {
+		this.cpu.setRegister(coreID, register, value);
 		this.notify();
 	}
 
