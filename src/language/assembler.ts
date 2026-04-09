@@ -16,6 +16,10 @@ export class Assembler {
 					instr = {
 						opcode: Opcode.NOP,
 						operands: [],
+						range: {
+							from: cursor.from,
+							to: cursor.to,
+						},
 					};
 					program.instrs.push(instr);
 					break;

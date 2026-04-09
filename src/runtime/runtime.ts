@@ -1,8 +1,9 @@
-import { Parameter, Register, RuntimeState } from "@/common/types";
+import { NoteEvent, Parameter, Register, RuntimeState } from "@/common/types";
 import { AudioEngine } from "@/audio/engine";
 import { Assembler } from "@/language/assembler";
 import { CPU, createDefaultCPU } from "@/machine/cpu";
 import { Transport, createDefaultTransport } from "./transport";
+import { Highlights, createDefaultHighlights } from "./highlights";
 
 const SCHEDULE_INTERVAL = 25; // ms
 const LOOKAHEAD_SECONDS = 0.1;
@@ -12,6 +13,7 @@ export function createDefaultRuntime() {
 		running: false,
 		cpu: createDefaultCPU(),
 		transport: createDefaultTransport(),
+		highlights: createDefaultHighlights(),
 	};
 }
 
@@ -20,6 +22,7 @@ export class Runtime {
 		this.cpu = new CPU();
 		this.transport = new Transport();
 		this.audio = new AudioEngine();
+		this.highlights = new Highlights();
 	}
 
 	private running = false;
@@ -27,6 +30,7 @@ export class Runtime {
 	private readonly cpu: CPU;
 	private readonly transport: Transport;
 	private readonly audio: AudioEngine;
+	private readonly highlights: Highlights;
 	private broadcast?: (state: RuntimeState) => void;
 	private interval?: NodeJS.Timeout;
 
@@ -35,6 +39,7 @@ export class Runtime {
 			running: this.running,
 			cpu: this.cpu.state,
 			transport: this.transport.state,
+			highlights: this.highlights.state,
 		};
 	}
 
@@ -51,14 +56,20 @@ export class Runtime {
 		const targetBeat = this.transport.lookahead(this.audio.time, LOOKAHEAD_SECONDS);
 		if (!targetBeat) return;
 
-		const notes = this.cpu.renderUntil(targetBeat);
-		for (const note of notes) {
-			const when = this.transport.timeAtBeat(note.beat);
-			const duration = this.transport.makeDuration(note.beat, note.beat + note.length);
-			this.audio.schedule(note, when, duration);
-		}
-		
+		const traces = this.cpu.renderUntil(targetBeat);
+		this.highlights.capture(traces, {
+			timeAtBeat: beat => this.transport.timeAtBeat(beat),
+			scheduleEvent: (beat, note) => this.scheduleEvent(beat, note),
+		});
+
+		this.highlights.refresh(this.audio.time);
 		this.notify();
+	}
+
+	private scheduleEvent(beat: number, note: NoteEvent) {
+		const when = this.transport.timeAtBeat(beat);
+		const duration = this.transport.makeDuration(beat, beat + note.length);
+		return this.audio.schedule(note, when, duration);
 	}
 
 	private async init() {
@@ -100,6 +111,7 @@ export class Runtime {
 
 		this.transport.halt(this.audio.time);
 		this.audio.panic();
+		this.highlights.clear();
 		this.notify();
 	}
 
@@ -108,12 +120,14 @@ export class Runtime {
 		this.cpu.reset();
 		this.transport.reset();
 		this.audio.panic();
+		this.highlights.clear();
 		this.notify();
 	}
 
 	load(coreID = 0, code: string) {
 		const program = Assembler.assemble(code);
 		this.cpu.load(coreID, program);
+		this.highlights.clearCore(coreID, this.audio.time);
 		this.notify();
 	}
 

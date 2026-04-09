@@ -1,6 +1,6 @@
 import Card from "@/app/components/card";
 import { Pill, PillButton } from "@/app/components/pill";
-import { CoreState, Register } from "@/common/types";
+import { HighlightState, CoreState, Register } from "@/common/types";
 import { useEffect, useState } from "react";
 import Editor from "./editor";
 import Registers from "./registers";
@@ -8,6 +8,7 @@ import { Subheading } from "../components/text";
 
 interface CoreProps {
 	state: CoreState;
+	highlights: HighlightState["cores"][number];
 	defaultCode: string;
 	setRegister: (register: Register, value: number) => void;
 	toggle: () => void;
@@ -18,7 +19,7 @@ function fetchCode(coreID: number, fallback: string) {
 	return localStorage.getItem(`core-${coreID}-code`) ?? fallback;
 }
 
-export default function Core({ state, defaultCode, setRegister, toggle, load }: CoreProps) {
+export default function Core({ state, highlights, defaultCode, setRegister, toggle, load }: CoreProps) {
 	const status = state.enabled ? "active" : "idle";
 	const [initialCode, setInitialCode] = useState(defaultCode);
 	const [draftCode, setDraftCode] = useState(defaultCode);
@@ -63,11 +64,12 @@ export default function Core({ state, defaultCode, setRegister, toggle, load }: 
 				</div>
 				<Editor
 					initialCode={initialCode}
+					highlights={hasChanged ? [] : highlights.code}
 					onChange={setDraftCode}
 					onLoad={handleLoad}
 				/>
 			</div>
-			<Registers registers={state.regs} setRegister={setRegister} />
+			<Registers registers={state.regs} highlights={highlights.regs} setRegister={setRegister} />
 		</Card>
 	);
 }

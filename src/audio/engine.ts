@@ -1,4 +1,4 @@
-import { Instrument, NoteEvent } from "@/common/types";
+import { Instrument, NoteEvent, PlayWindow } from "@/common/types";
 
 const SAMPLE_MAP: Map<number, string> = new Map([
 	[60, "/COMSM0052/samples/kick.wav"],
@@ -130,11 +130,11 @@ export class AudioEngine {
 		}
 	}
 
-	private scheduleSample(event: NoteEvent, when: number) {
-		if (!this.ctx || !this.master) return;
+	private scheduleSample(event: NoteEvent, when: number): PlayWindow | undefined {
+		if (!this.ctx || !this.master) return undefined;
 
 		const buffer = this.samples.get(event.pitch);
-		if (!buffer) return;
+		if (!buffer) return undefined;
 
 		const source = this.ctx.createBufferSource();
 		source.buffer = buffer;
@@ -147,10 +147,14 @@ export class AudioEngine {
 			tryDisconnect(panner);
 		});
 		source.start(when);
+		return {
+			start: when,
+			end: when + buffer.duration,
+		};
 	}
 
-	private scheduleSynth(event: NoteEvent, when: number, duration: number) {
-		if (!this.ctx || !this.master) return;
+	private scheduleSynth(event: NoteEvent, when: number, duration: number): PlayWindow | undefined {
+		if (!this.ctx || !this.master) return undefined;
 
 		const attack = clamp(event.settings.attack, 0, 4000) / 1000;
 		const decay = clamp(event.settings.decay, 0, 4000) / 1000;
@@ -187,25 +191,27 @@ export class AudioEngine {
 		});
 		osc.start(when);
 		osc.stop(stopTime);
+		return {
+			start: when,
+			end: stopTime,
+		};
 	}
 
-	schedule(note: NoteEvent, when: number, duration: number) {
-		if (!this.ctx) return;
+	schedule(note: NoteEvent, when: number, duration: number): PlayWindow | undefined {
+		if (!this.ctx) return undefined;
 
 		const startTime = Math.max(when, this.ctx.currentTime + EPSILON);
 		const noteDuration = Math.max(0, duration);
 
 		switch (note.instrument) {
 			case Instrument.DRUMS:
-				this.scheduleSample(note, startTime);
-				break;
+				return this.scheduleSample(note, startTime);
 			case Instrument.SYNTH:
 			case Instrument.BASS:
 			case Instrument.PIANO:
-				this.scheduleSynth(note, startTime, noteDuration);
-				break;
+				return this.scheduleSynth(note, startTime, noteDuration);
 			default:
-				break;
+				return undefined;
 		}
 	}
 }

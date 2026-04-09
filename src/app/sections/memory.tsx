@@ -2,17 +2,27 @@ import Button from "@/app/components/button";
 import Input from "@/app/components/input";
 import { Eyebrow, Subheading } from "@/app/components/text";
 import { midiToNote } from "@/audio/engine";
+import { MemoryHighlight } from "@/common/types";
 import { useEffect, useState } from "react";
 import Card from "../components/card";
+import { cn } from "../components/cn";
 
 interface MemoryProps {
 	memory: number[];
+	highlights: MemoryHighlight[];
 	setMemory: (addr: number, val: number) => void;
 }
 
-export default function Memory({ memory, setMemory }: MemoryProps) {
+export default function Memory({ memory, highlights, setMemory }: MemoryProps) {
 	const [noteView, setNoteView] = useState(false);
 	const [drafts, setDrafts] = useState<(number | string)[]>(memory);
+	const highlightModes = new Map<number, "read" | "write">();
+
+	for (const highlight of highlights) {
+		const current = highlightModes.get(highlight.addr);
+		if (current === "write") continue; // ??
+		highlightModes.set(highlight.addr, highlight.mode);
+	}
 
 	useEffect(() => {
 		setDrafts(memory);
@@ -32,11 +42,33 @@ export default function Memory({ memory, setMemory }: MemoryProps) {
 						const valInt = parseInt(draft as string);
 						const valDisplay = (noteView && !isNaN(valInt)) ? midiToNote(valInt) : draft;
 
+						const read = highlightModes.get(addr) === "read";
+						const write = highlightModes.get(addr) === "write";
+
 						return (
-							<div key={addr} className="flex flex-col items-center gap-1">
-								<Eyebrow>Addr {addr.toString().padStart(2, "0")}</Eyebrow>
+							<div
+								key={addr}
+								className={cn(
+									"flex flex-col items-center gap-1 transition-colors", // rounded px-2 py-1
+									read && "bg-ctp-blue/10",
+									write && "bg-ctp-peach/10",
+								)}
+							>
+								<Eyebrow
+									className={cn(
+										"transition-colors",
+										read && "text-ctp-blue",
+										write && "text-ctp-peach",
+									)}
+								>
+									Addr {addr.toString().padStart(2, "0")}
+								</Eyebrow>
 								<Input
-									className="w-full"
+									className={cn(
+										"w-full transition-colors",
+										read && "border-ctp-blue text-ctp-blue",
+										write && "border-ctp-peach text-ctp-peach",
+									)}
 									type="text"
 									value={valDisplay}
 									title={`Address ${addr}`}

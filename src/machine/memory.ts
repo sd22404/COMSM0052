@@ -28,7 +28,7 @@ export class Memory {
 		this.mem.fill(0);
 	}
 
-	private normalise(addr: number) {
+	normalise(addr: number) {
 		return ((addr % this.mem.length) + this.mem.length) % this.mem.length;
 	}
 

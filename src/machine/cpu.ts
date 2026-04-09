@@ -1,4 +1,4 @@
-import { CPUState, NoteEvent, Parameter, Program, Register } from "@/common/types";
+import { CPUState, ExecutionTrace, Parameter, Program, Register } from "@/common/types";
 import { Core, createDefaultCore } from "./core";
 import { Memory, createDefaultMemory } from "./memory";
 
@@ -49,17 +49,17 @@ export class CPU {
 	}
 
 	public renderUntil(beat: number) {
-		const events: NoteEvent[] = [];
+		const traces: ExecutionTrace[] = [];
 		for (const core of this.cores)
-			if (core.enabled) events.push(...core.renderUntil(beat));
+			if (core.enabled) traces.push(...core.renderUntil(beat));
 
-		events.sort((left, right) => (
+		traces.sort((left, right) => (
 			left.beat - right.beat
 			|| left.coreID - right.coreID
 			|| Number(left.id.split(":").at(1)) - Number(right.id.split(":").at(1))
 		));
 
-		return events;
+		return traces;
 	}
 
 	public setParameter(param: Parameter, value: number) {

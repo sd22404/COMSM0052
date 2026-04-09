@@ -13,10 +13,7 @@ export default function Workspace() {
 				parameters,
 				cores,
 			},
-			transport: {
-				bpm,
-				horizon,
-			},
+			highlights,
 		},
 		run,
 		halt,
@@ -35,6 +32,7 @@ export default function Workspace() {
 					<Core
 						key={state.id}
 						state={state}
+						highlights={highlights.cores[state.id] ?? { code: [], regs: [] }}
 						defaultCode={getDefaultCoreProgram(state.id)}
 						setRegister={(reg: Register, val: number) => setRegister(state.id, reg, val)}
 						toggle={() => toggleCore(state.id)}
@@ -45,7 +43,7 @@ export default function Workspace() {
 
 			<div className="flex h-full w-xs flex-col gap-4">
 				<Controls parameters={parameters} setParameter={setParameter} running={running} run={run} halt={halt} reset={reset} />
-				<Memory memory={memory} setMemory={setMemory} />
+				<Memory memory={memory} highlights={highlights.memory} setMemory={setMemory} />
 			</div>
 		</div>
 	);
