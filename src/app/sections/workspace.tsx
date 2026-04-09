@@ -3,6 +3,7 @@ import Memory from "./memory";
 import Core from "./core";
 import useRuntime from "../hooks/useRuntime";
 import Controls from "./controls";
+import SampleSelector from "./sampler";
 
 export default function Workspace() {
 	const {
@@ -14,6 +15,7 @@ export default function Workspace() {
 				cores,
 			},
 			highlights,
+			samples,
 		},
 		run,
 		halt,
@@ -22,6 +24,7 @@ export default function Workspace() {
 		setRegister,
 		setParameter,
 		setMemory,
+		setSample,
 		toggleCore,
 	} = useRuntime();
 
@@ -42,9 +45,10 @@ export default function Workspace() {
 				))}
 			</div>
 
-			<div className="flex h-full w-xs flex-col gap-4">
+			<div className="flex h-full w-sm flex-col gap-2">
 				<Controls parameters={parameters} setParameter={setParameter} running={running} run={run} halt={halt} reset={reset} />
 				<Memory memory={memory} highlights={highlights.memory} setMemory={setMemory} />
+				<SampleSelector samples={samples} setSample={setSample} />
 			</div>
 		</div>
 	);

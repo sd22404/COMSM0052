@@ -1,5 +1,5 @@
 import { Note, Parameter, PlayWindow, Register, RuntimeState } from "@/common/types";
-import { AudioEngine } from "@/audio/engine";
+import { AudioEngine, DEFAULT_SAMPLE_MAP } from "@/audio/engine";
 import { Assembler } from "@/language/assembler";
 import { CPU, createDefaultCPU } from "@/machine/cpu";
 import { Transport, createDefaultTransport } from "./transport";
@@ -14,6 +14,7 @@ export function createDefaultRuntime() {
 		cpu: createDefaultCPU(),
 		transport: createDefaultTransport(),
 		highlights: createDefaultHighlights(),
+		samples: DEFAULT_SAMPLE_MAP,
 	};
 }
 
@@ -40,6 +41,7 @@ export class Runtime {
 			cpu: this.cpu.state,
 			transport: this.transport.state,
 			highlights: this.highlights.state,
+			samples: this.audio.sampleMap,
 		};
 	}
 
@@ -155,6 +157,11 @@ export class Runtime {
 		this.cpu.setParameter(param, value);
 		if (param === Parameter.BPM) this.transport.setBPM(value, this.audio.time);
 		if (param === Parameter.VOL) this.audio.setMasterVolume(value);
+		this.notify();
+	}
+
+	setSample(note: number, sample: string) {
+		this.audio.sampleMap.set(note, sample);
 		this.notify();
 	}
 

@@ -1,12 +1,13 @@
 import { Instrument, Note, PlayWindow } from "@/common/types";
 
-const SAMPLE_MAP: Map<number, string> = new Map([
-	[60, "/COMSM0052/samples/kick.wav"],
-	[61, "/COMSM0052/samples/snare.wav"],
-	[62, "/COMSM0052/samples/hat.wav"],
+export const DEFAULT_SAMPLE_MAP: Map<number, string> = new Map([
+	[60, "/COMSM0052/samples/drums/kicks/Acoustic/CYCdh_AcouKick-01.wav"],
+	[61, "/COMSM0052/samples/drums/snares/Acoustic/Acoustic Snare-01.wav"],
+	[62, "/COMSM0052/samples/drums/hi-hats/Acoustic/Acoustic Hat-01.wav"],
 ]);
 
 const semitoneToNote = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
+const noteToSemitone: Record<string, number> = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 };
 
 const MASTER_GAIN = 0.18;
 const EPSILON = 1e-3;
@@ -30,7 +31,7 @@ function tryStop(source: ActiveSource, when: number) {
 
 function createVolPan(ctx: AudioContext, dest: AudioNode, vol: number, pan: number) {
 	const volume = ctx.createGain();
-	volume.gain.value = clamp(vol, 0, 100) / 100 * MASTER_GAIN;
+	volume.gain.value = clamp(vol, 0, 100) / 100;
 
 	const panner = ctx.createStereoPanner();
 	panner.pan.value = clamp(pan, -100, 100) / 100;
@@ -48,6 +49,22 @@ export function midiToNote(midi: number): string {
 	return semitoneToNote[noteIndex] + octave.toString();
 }
 
+export function noteToMidi(note: string): number | undefined {
+	const match = note.trim().match(/^([A-Ga-g])([#b]?)(\d+)$/);
+	if (!match) return undefined;
+
+	const [, letterRaw, accidentalRaw, octaveRaw] = match;
+	const base = noteToSemitone[letterRaw.toUpperCase()];
+	const octave = parseInt(octaveRaw);
+	if (isNaN(octave)) return undefined;
+
+	const accidental = accidentalRaw === "#" ? 1 : accidentalRaw === "b" ? -1 : 0;
+	const midi = (octave + 1) * 12 + base + accidental;
+	if (midi < 0 || midi > 127) return undefined;
+
+	return midi;
+}
+
 export class AudioEngine {
 	private samples: Map<number, AudioBuffer> = new Map();
 	private ctx?: AudioContext;
@@ -55,9 +72,14 @@ export class AudioEngine {
 	private compressor?: DynamicsCompressorNode;
 	private readonly activeSources = new Map<ActiveSource, () => void>();
 	private samplePromise?: Promise<void>;
+	private _sampleMap: Map<number, string> = new Map(DEFAULT_SAMPLE_MAP);
 
 	get time() {
 		return this.ctx?.currentTime ?? 0;
+	}
+
+	get sampleMap() {
+		return this._sampleMap;
 	}
 
 	private init() {
@@ -97,7 +119,7 @@ export class AudioEngine {
 		if (this.ctx.state === "suspended")
 			await this.ctx.resume();
 
-		this.samplePromise ??= this.loadSamples();
+		this.samplePromise ??= this.loadSamples(this._sampleMap);
 		await this.samplePromise;
 	}
 
@@ -116,10 +138,10 @@ export class AudioEngine {
 		}
 	}
 
-	private async loadSamples() {
+	private async loadSamples(sampleMap: Map<number, string>) {
 		if (!this.ctx) return;
 
-		for (const [midiNote, path] of SAMPLE_MAP.entries()) {
+		for (const [midiNote, path] of sampleMap.entries()) {
 			try {
 				const res = await fetch(path);
 				const buf = await res.arrayBuffer();

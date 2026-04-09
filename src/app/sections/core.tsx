@@ -48,7 +48,7 @@ export default function Core({ state, codeHighlights, regsHighlights, defaultCod
 	};
 
 	return (
-		<Card variant="panel" className="flex gap-6 h-full w-full min-w-0 min-h-0 p-4">
+		<Card variant="panel" className="flex gap-3 h-full w-full min-w-0 min-h-0 p-4">
 			<div className="flex min-w-0 flex-1 flex-col gap-3">
 				<div className="flex items-center gap-4 overflow-auto">
 					<Subheading className="truncate">Core {state.id}</Subheading>

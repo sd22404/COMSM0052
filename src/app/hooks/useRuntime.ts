@@ -11,6 +11,7 @@ interface RuntimeHook {
 	setRegister: (coreID: number, reg: Register, value: number) => void;
 	setParameter: (control: Parameter, value: number) => void;
 	setMemory: (addr: number, value: number) => void;
+	setSample: (note: number, sample: string) => void;
 	toggleCore: (index: number) => void;
 }
 
@@ -32,6 +33,7 @@ export default function useRuntime(): RuntimeHook {
 		setRegister: (coreID: number, reg: Register, value: number) => runtime.setRegister(coreID, reg, value),
 		setParameter: (param: Parameter, value: number) => runtime.setParameter(param, value),
 		setMemory: (addr: number, value: number) => runtime.setAddress(addr, value),
+		setSample: (note: number, sample: string) => runtime.setSample(note, sample),
 		toggleCore: (id: number) => runtime.toggleCore(id),
 	};
 }

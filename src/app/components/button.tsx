@@ -2,7 +2,7 @@ import { ComponentPropsWithoutRef } from "react";
 import { cn } from "./cn";
 
 type ButtonVariant = "primary" | "secondary" | "danger" | "ghost";
-type ButtonSize = "sm" | "md";
+type ButtonSize = "sm" | "md" | "lg";
 
 const VARIANT_CLASSES: Record<ButtonVariant, string> = {
 	primary: "bg-ctp-blue text-ctp-base hover:bg-ctp-sky",
@@ -14,6 +14,7 @@ const VARIANT_CLASSES: Record<ButtonVariant, string> = {
 const SIZE_CLASSES: Record<ButtonSize, string> = {
 	sm: "px-3 py-2 text-xs font-semibold",
 	md: "px-4 py-2.5 text-sm font-semibold",
+	lg: "px-5 py-3 text-base font-semibold",
 };
 
 interface ButtonProps extends ComponentPropsWithoutRef<"button"> {

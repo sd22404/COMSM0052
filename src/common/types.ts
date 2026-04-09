@@ -111,6 +111,7 @@ export interface RuntimeState {
 	cpu: CPUState;
 	transport: TransportState;
 	highlights: HighlightState;
+	samples: Map<number, string>;
 }
 
 export interface HighlightState {
