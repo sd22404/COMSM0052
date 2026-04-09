@@ -18,5 +18,5 @@ export function Body({ className, ...props }: ComponentPropsWithoutRef<"p">) {
 }
 
 export function Eyebrow({ className, ...props }: ComponentPropsWithoutRef<"span">) {
-	return <span className={cn("text-xs font-semibold uppercase tracking-[0.1em] text-ctp-overlay1", className)} {...props} />;
+	return <span className={cn("text-xs font-semibold uppercase tracking-widest text-ctp-overlay1", className)} {...props} />;
 }

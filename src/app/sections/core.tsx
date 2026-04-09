@@ -4,7 +4,7 @@ import { CoreState, Register, CodeSpan, RegisterAccess } from "@/common/types";
 import { useEffect, useState } from "react";
 import Editor from "./editor";
 import Registers from "./registers";
-import { Subheading } from "../components/text";
+import { Subsubheading } from "../components/text";
 
 interface CoreProps {
 	state: CoreState;
@@ -48,29 +48,37 @@ export default function Core({ state, codeHighlights, regsHighlights, defaultCod
 	};
 
 	return (
-		<Card variant="panel" className="flex gap-3 h-full w-full min-w-0 min-h-0 p-4">
+		<Card variant="panel" className="flex gap-3 h-full w-full min-w-0 min-h-0">
 			<div className="flex min-w-0 flex-1 flex-col gap-3">
-				<div className="flex items-center gap-4 overflow-auto">
-					<Subheading className="truncate">Core {state.id}</Subheading>
-					<div className="flex items-center gap-2">
-						<PillButton variant={status} onClick={handleToggle}>
-							{status}
-						</PillButton>
-						{hasChanged && (
-							<Pill variant="warning" title="Press Ctrl+Enter in this editor to load changes.">
-								unloaded
-							</Pill>
-						)}
+				<div className="flex items-center justify-between">
+					<div className="flex items-center gap-4 overflow-auto">
+						<Subsubheading className="truncate">Core {state.id}</Subsubheading>
+						<div className="flex items-center gap-2">
+							<PillButton variant={status} size="sm" onClick={handleToggle}>
+								{status}
+							</PillButton>
+							{hasChanged && (
+								<Pill variant="warning" size="sm" title="Press Ctrl+Enter in this editor to load changes.">
+									unloaded
+								</Pill>
+							)}
+						</div>
 					</div>
 				</div>
-				<Editor
-					initialCode={initialCode}
-					highlights={hasChanged ? [] : codeHighlights}
-					onChange={setDraftCode}
-					onLoad={handleLoad}
-				/>
+				<div className="flex flex-1 min-h-0 gap-3 overflow-hidden">
+					<Editor
+						initialCode={initialCode}
+						highlights={hasChanged ? [] : codeHighlights}
+						onChange={setDraftCode}
+						onLoad={handleLoad}
+					/>
+					<Registers
+						registers={state.regs}
+						highlights={regsHighlights} 
+						setRegister={setRegister}
+					/>
+				</div>
 			</div>
-			<Registers registers={state.regs} highlights={regsHighlights} setRegister={setRegister} />
 		</Card>
 	);
 }

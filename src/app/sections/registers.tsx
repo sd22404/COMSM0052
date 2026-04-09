@@ -3,6 +3,7 @@ import { cn } from "../components/cn";
 import Input from "../components/input";
 import { Body, Eyebrow } from "../components/text";
 import { useEffect, useState } from "react";
+import Card from "../components/card";
 
 interface RegisterProps {
 	registers: number[];
@@ -25,52 +26,51 @@ export default function Registers({ registers, highlights, setRegister }: Regist
 	}, [registers]);
 
 	return (
-		<div className="flex flex-col gap-2">
-			<Eyebrow className="text-md">REGISTERS</Eyebrow>
-			<div className="flex flex-col gap-1 h-full overflow-y-auto overflow-x-hidden">
-				{drafts.map((draft, i) => {
-					const reg = i as Register;
-					const read = highlightModes.get(reg) === "read";
-					const write = highlightModes.get(reg) === "write";
+		<Card className="flex flex-col min-h-0 overflow-y-auto overflow-x-hidden">
+			{drafts.map((draft, i) => {
+				const reg = i as Register;
+				const read = highlightModes.get(reg) === "read";
+				const write = highlightModes.get(reg) === "write";
 
-					return (
-					<div
-						key={i}
+				return (
+				<div
+					key={i}
+					className={cn(
+						"shrink-0 rounded px-2 flex items-center justify-between overflow-hidden transition-colors",
+						"focus-within:ring-1 focus-within:ring-inset focus-within:ring-ctp-blue",
+						read && "ring-1 ring-inset ring-ctp-blue/50 text-ctp-blue bg-ctp-blue/10",
+						write && "ring-1 ring-inset ring-ctp-peach/50 text-ctp-peach bg-ctp-peach/10",
+					)}
+				>
+					<Eyebrow
 						className={cn(
-							"flex items-center justify-between gap-2 transition-colors",
-							// read && "bg-ctp-blue/10",
-							// write && "bg-ctp-peach/10",
+							"text-sm",
+							read && "text-ctp-blue",
+							write && "text-ctp-peach",
 						)}
 					>
-						<Body
-							className={cn(
-								"font-semibold text-ctp-subtext0 transition-colors",
-								read && "text-ctp-blue",
-								write && "text-ctp-peach",
-							)}
-						>
-							{Register[i]}
-						</Body>
-						<Input
-							className={cn(
-								"w-18 transition-colors",
-								read && "border-ctp-blue text-ctp-blue",
-								write && "border-ctp-peach text-ctp-peach",
-							)}
-							type="number"
-							value={draft}
-							onChange={(e) => {
-								const valStr = e.target.value;
-								const valInt = parseInt(valStr);
+						{Register[i]}
+					</Eyebrow>
+					<Input
+						className={cn(
+							"w-14 border-0 bg-transparent text-right text-sm font-semibold",
+							"focus:border-transparent focus:ring-0",
+							read && "text-ctp-blue",
+							write && "text-ctp-peach",
+						)}
+						type="text"
+						value={draft}
+						onChange={(e) => {
+							const valStr = e.target.value;
+							const valInt = parseInt(valStr);
 
-								if (!isNaN(valInt)) setRegister(reg, valInt);
-								setDrafts((drafts) => drafts.map((draft, j) => (j === i ? valStr : draft)));
-							}}
-						/>
-					</div>
-					);
-				})}
-			</div>
-		</div>
+							if (!isNaN(valInt)) setRegister(reg, valInt);
+							setDrafts((drafts) => drafts.map((draft, j) => (j === i ? valStr : draft)));
+						}}
+					/>
+				</div>
+				);
+			})}
+		</Card>
 	);
 }

@@ -13,7 +13,7 @@ export default function SampleSelector({ samples, setSample }: SampleSelectorPro
 	const [open, setOpen] = useState(false);
 
 	return (
-		<Card title="Sampler" variant="panel" className="w-full min-h-0 p-4">
+		<Card title="Sampler" variant="panel" className="w-full min-h-0">
 			<div className="flex items-center justify-between">
 				<Subheading>Sample Selector</Subheading>
 				<Button variant="secondary" onClick={() => setOpen((value) => !value)} className="h-1h w-1h">

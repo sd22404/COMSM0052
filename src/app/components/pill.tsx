@@ -17,8 +17,8 @@ const VARIANT_HOVER_CLASSES: Record<PillVariant, string> = {
 };
 
 const SIZE_CLASSES: Record<PillSize, string> = {
-	sm: "text-xs px-1 py-0.5",
-	md: "text-sm px-2 py-1",
+	sm: "text-xs px-2 py-1",
+	md: "text-sm px-3 py-2",
 };
 
 interface PillProps extends ComponentPropsWithoutRef<"span"> {
@@ -30,7 +30,7 @@ export function Pill({ className, variant = "idle", size = "md", ...props }: Pil
 	return (
 		<span
 			className={cn(
-				"rounded-full px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.18em]",
+				"rounded-full font-semibold uppercase tracking-widest",
 				VARIANT_CLASSES[variant],
 				SIZE_CLASSES[size],
 				className
@@ -44,7 +44,7 @@ export function PillButton({ className, variant = "idle", size = "md", ...props 
 	return (
 		<button
 			className={cn(
-				"rounded-full px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.18em]",
+				"rounded-full font-semibold uppercase tracking-widest",
 				VARIANT_CLASSES[variant],
 				VARIANT_HOVER_CLASSES[variant],
 				SIZE_CLASSES[size],

@@ -18,7 +18,7 @@ export default function Controls({ parameters, setParameter, running, run, halt,
 	const [drafts, setDrafts] = useState<(number | string)[]>(parameters);
 
 	return (
-		<Card variant="panel" className="flex flex-col gap-3 p-4">
+		<Card variant="panel" className="flex flex-col gap-3">
 			<Subheading>Master Controls</Subheading>
 
 			<div className="flex justify-between">
