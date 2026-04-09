@@ -1,9 +1,9 @@
 import { Instrument, Note, PlayWindow } from "@/common/types";
 
 export const DEFAULT_SAMPLE_MAP: Map<number, string> = new Map([
-	[60, "/COMSM0052/samples/drums/kicks/Acoustic/CYCdh_AcouKick-01.wav"],
-	[61, "/COMSM0052/samples/drums/snares/Acoustic/Acoustic Snare-01.wav"],
-	[62, "/COMSM0052/samples/drums/hi-hats/Acoustic/Acoustic Hat-01.wav"],
+	[60, "/COMSM0052/samples/kicks/CYCdh_AcouKick-01.wav"],
+	[61, "/COMSM0052/samples/snares/Acoustic Snare-01.wav"],
+	[62, "/COMSM0052/samples/hats/Acoustic Hat-01.wav"],
 ]);
 
 const semitoneToNote = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
