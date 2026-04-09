@@ -8,7 +8,7 @@ import { CodeRange } from "@/common/types";
 import { musiclang, musiclinter } from "@/language/musiclang";
 import { useEffect, useRef } from "react";
 
-const highlightLine = Decoration.line({
+const highlightMark = Decoration.mark({
 	class: "cm-highlight",
 });
 
@@ -22,23 +22,12 @@ function buildDecorations(doc: Text, ranges: CodeRange[]): DecorationSet {
 	if (doc.length === 0 || ranges.length === 0) return Decoration.none;
 
 	const builder = new RangeSetBuilder<Decoration>();
-	const seen = new Set<number>();
-
 	for (const range of ranges) {
 		const start = clamp(range.from, 0, doc.length);
-		const end = clamp(Math.max(range.from, range.to - 1), 0, doc.length);
-		let line = doc.lineAt(start);
-		const finalLine = doc.lineAt(end);
+		const end = clamp(range.to, 0, doc.length);
+		if (end <= start) continue;
 
-		while (true) {
-			if (!seen.has(line.from)) {
-				seen.add(line.from);
-				builder.add(line.from, line.from, highlightLine);
-			}
-
-			if (line.number >= finalLine.number || line.number >= doc.lines) break;
-			line = doc.line(line.number + 1);
-		}
+		builder.add(start, end, highlightMark);
 	}
 
 	return builder.finish();
