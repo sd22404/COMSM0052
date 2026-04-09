@@ -49,9 +49,9 @@ export default function Memory({ memory, highlights, setMemory }: MemoryProps) {
 							<div
 								key={addr}
 								className={cn(
-									"flex flex-col items-center gap-1 transition-colors", // rounded px-2 py-1
-									read && "bg-ctp-blue/10",
-									write && "bg-ctp-peach/10",
+									"flex flex-col items-center gap-1 transition-colors",
+									// read && "bg-ctp-blue/10",
+									// write && "bg-ctp-peach/10",
 								)}
 							>
 								<Eyebrow

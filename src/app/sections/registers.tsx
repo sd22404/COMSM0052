@@ -37,9 +37,9 @@ export default function Registers({ registers, highlights, setRegister }: Regist
 					<div
 						key={i}
 						className={cn(
-							"flex items-center justify-between gap-3 transition-colors", // rounded px-2 py-1
-							read && "bg-ctp-blue/10",
-							write && "bg-ctp-peach/10",
+							"flex items-center justify-between gap-3 transition-colors",
+							// read && "bg-ctp-blue/10",
+							// write && "bg-ctp-peach/10",
 						)}
 					>
 						<Body

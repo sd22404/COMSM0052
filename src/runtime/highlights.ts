@@ -1,7 +1,6 @@
 import { ExecutionTrace, HighlightState, NoteEvent, PlayWindow } from "@/common/types";
 
-const DEFAULT_CORE_COUNT = 4;
-const EXECUTION_HIGHLIGHT_TIME = 0.1;
+const EXECUTION_HIGHLIGHT_TIME = 0.2;
 
 export function createDefaultHighlights(): HighlightState {
 	return {

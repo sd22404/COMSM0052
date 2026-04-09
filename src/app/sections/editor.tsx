@@ -102,7 +102,9 @@ export default function Editor({ initialCode, highlights, onLoad, onChange }: Ed
 				fontFamily: "var(--font-mono)",
 			},
 			".cm-highlight": {
-				backgroundColor: ctpAlpha("teal", 0.16),
+				backgroundColor: ctpAlpha("green", 0.16),
+				borderRadius: "2px",
+				padding: "0 0 0 2px",
 			},
 			".cm-activeLineGutter": {
 				color: ctp("lavender"),
