@@ -1,4 +1,4 @@
-import { Register, RegisterHighlight } from "@/common/types";
+import { Register, RegisterAccess } from "@/common/types";
 import { cn } from "../components/cn";
 import Input from "../components/input";
 import { Body, Eyebrow } from "../components/text";
@@ -6,7 +6,7 @@ import { useEffect, useState } from "react";
 
 interface RegisterProps {
 	registers: number[];
-	highlights: RegisterHighlight[];
+	highlights: RegisterAccess[];
 	setRegister: (reg: Register, val: number) => void;
 }
 

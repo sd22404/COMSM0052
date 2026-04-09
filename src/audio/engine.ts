@@ -1,4 +1,4 @@
-import { Instrument, NoteEvent, PlayWindow } from "@/common/types";
+import { Instrument, Note, PlayWindow } from "@/common/types";
 
 const SAMPLE_MAP: Map<number, string> = new Map([
 	[60, "/COMSM0052/samples/kick.wav"],
@@ -130,16 +130,16 @@ export class AudioEngine {
 		}
 	}
 
-	private scheduleSample(event: NoteEvent, when: number): PlayWindow | undefined {
+	private scheduleSample(note: Note, when: number): PlayWindow | undefined {
 		if (!this.ctx || !this.master) return undefined;
 
-		const buffer = this.samples.get(event.pitch);
+		const buffer = this.samples.get(note.pitch);
 		if (!buffer) return undefined;
 
 		const source = this.ctx.createBufferSource();
 		source.buffer = buffer;
 
-		const { volume, panner } = createVolPan(this.ctx, this.master, event.settings.volume, event.settings.pan);
+		const { volume, panner } = createVolPan(this.ctx, this.master, note.settings.volume, note.settings.pan);
 		source.connect(volume);
 		this.registerSource(source, () => {
 			tryDisconnect(source);
@@ -153,18 +153,18 @@ export class AudioEngine {
 		};
 	}
 
-	private scheduleSynth(event: NoteEvent, when: number, duration: number): PlayWindow | undefined {
+	private scheduleSynth(note: Note, when: number, duration: number): PlayWindow | undefined {
 		if (!this.ctx || !this.master) return undefined;
 
-		const attack = clamp(event.settings.attack, 0, 4000) / 1000;
-		const decay = clamp(event.settings.decay, 0, 4000) / 1000;
-		const sustain = clamp(event.settings.sustain, 0, 100) / 100;
-		const release = clamp(event.settings.release, 0, 4000) / 1000;
+		const attack = clamp(note.settings.attack, 0, 4000) / 1000;
+		const decay = clamp(note.settings.decay, 0, 4000) / 1000;
+		const sustain = clamp(note.settings.sustain, 0, 100) / 100;
+		const release = clamp(note.settings.release, 0, 4000) / 1000;
 		const sustainStart = when + attack + decay;
 		const releaseStart = when + Math.max(0.05, duration);
 		const stopTime = releaseStart + release + 0.05;
 
-		const { volume, panner } = createVolPan(this.ctx, this.master, event.settings.volume, event.settings.pan);
+		const { volume, panner } = createVolPan(this.ctx, this.master, note.settings.volume, note.settings.pan);
 		const envelope = this.ctx.createGain();
 		envelope.gain.setValueAtTime(0.0001, when);
 
@@ -179,8 +179,8 @@ export class AudioEngine {
 		else envelope.gain.setValueAtTime(0.0001, releaseStart);
 
 		const osc = this.ctx.createOscillator();
-		osc.type = event.instrument === Instrument.BASS ? "square" : event.instrument === Instrument.PIANO ? "triangle" : "sawtooth";
-		osc.frequency.value = midiToFreq(event.pitch);
+		osc.type = note.instrument === Instrument.BASS ? "square" : note.instrument === Instrument.PIANO ? "triangle" : "sawtooth";
+		osc.frequency.value = midiToFreq(note.pitch);
 		osc.connect(envelope);
 		envelope.connect(volume);
 		this.registerSource(osc, () => {
@@ -197,7 +197,7 @@ export class AudioEngine {
 		};
 	}
 
-	schedule(note: NoteEvent, when: number, duration: number): PlayWindow | undefined {
+	schedule(note: Note, when: number, duration: number): PlayWindow | undefined {
 		if (!this.ctx) return undefined;
 
 		const startTime = Math.max(when, this.ctx.currentTime + EPSILON);

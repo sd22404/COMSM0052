@@ -32,7 +32,8 @@ export default function Workspace() {
 					<Core
 						key={state.id}
 						state={state}
-						highlights={highlights.cores[state.id] ?? { code: [], regs: [] }}
+						codeHighlights={highlights.code[state.id] ?? []}
+						regsHighlights={highlights.regs[state.id] ?? []}
 						defaultCode={getDefaultCoreProgram(state.id)}
 						setRegister={(reg: Register, val: number) => setRegister(state.id, reg, val)}
 						toggle={() => toggleCore(state.id)}

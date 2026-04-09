@@ -2,14 +2,14 @@ import Button from "@/app/components/button";
 import Input from "@/app/components/input";
 import { Eyebrow, Subheading } from "@/app/components/text";
 import { midiToNote } from "@/audio/engine";
-import { MemoryHighlight } from "@/common/types";
+import { MemoryAccess } from "@/common/types";
 import { useEffect, useState } from "react";
 import Card from "../components/card";
 import { cn } from "../components/cn";
 
 interface MemoryProps {
 	memory: number[];
-	highlights: MemoryHighlight[];
+	highlights: MemoryAccess[];
 	setMemory: (addr: number, val: number) => void;
 }
 

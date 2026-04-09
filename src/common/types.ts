@@ -23,13 +23,13 @@ export type Operand =
 	| { mode: "label"; value: string }
 	| { mode: "instrument"; value: Instrument };
 
-export interface CodeRange {
+export interface CodeSpan {
 	from: number;
 	to: number;
 }
 
 export interface Instruction {
-	range: CodeRange;
+	span: CodeSpan;
 	opcode: Opcode;
 	operands: Operand[];
 }
@@ -48,7 +48,7 @@ export interface SynthSettings {
 	release: number;
 }
 
-export interface NoteEvent {
+export interface Note {
 	length: number;
 	instrument: Instrument;
 	pitch: number;
@@ -60,26 +60,31 @@ export interface PlayWindow {
 	end: number;
 }
 
-export type HighlightMode = "read" | "write";
+export type AccessMode = "read" | "write";
 
-export interface RegisterHighlight {
+export interface RegisterAccess {
 	reg: Register;
-	mode: HighlightMode;
+	mode: AccessMode;
 }
 
-export interface MemoryHighlight {
+export interface MemoryAccess {
 	addr: number;
-	mode: HighlightMode;
+	mode: AccessMode;
 }
 
-export interface ExecutionTrace {
-	id: string;
+export interface EventLog {
+	registers: RegisterAccess[];
+	memory: MemoryAccess[];
+}
+
+export interface ExecEvent {
+	id: number;
 	coreID: number;
 	beat: number;
-	instruction: Instruction;
-	registers: RegisterHighlight[];
-	memory: MemoryHighlight[];
-	event?: NoteEvent;
+	span: CodeSpan;
+	log: EventLog;
+	advanced: boolean;
+	note?: Note;
 }
 
 export interface CoreState {
@@ -109,8 +114,9 @@ export interface RuntimeState {
 }
 
 export interface HighlightState {
-	cores: { code: CodeRange[]; regs: RegisterHighlight[] }[];
-	memory: MemoryHighlight[];
+	code: CodeSpan[][];
+	regs: RegisterAccess[][];
+	memory: MemoryAccess[];
 }
 
 const CORE_PROGRAMS = [

@@ -4,7 +4,7 @@ import { Decoration, DecorationSet, EditorView, KeyBinding, keymap } from "@code
 import { linter } from "@codemirror/lint";
 import { indentWithTab } from "@codemirror/commands";
 import { catppuccinMocha, catppuccinLatte } from "@catppuccin/codemirror";
-import { CodeRange } from "@/common/types";
+import { CodeSpan } from "@/common/types";
 import { musiclang, musiclinter } from "@/language/musiclang";
 import { useEffect, useRef } from "react";
 
@@ -12,19 +12,19 @@ const highlightMark = Decoration.mark({
 	class: "cm-highlight",
 });
 
-const setHighlights = StateEffect.define<CodeRange[]>();
+const setHighlights = StateEffect.define<CodeSpan[]>();
 
 function clamp(value: number, min: number, max: number) {
 	return Math.min(max, Math.max(min, value));
 }
 
-function buildDecorations(doc: Text, ranges: CodeRange[]): DecorationSet {
-	if (doc.length === 0 || ranges.length === 0) return Decoration.none;
+function buildDecorations(doc: Text, spans: CodeSpan[]): DecorationSet {
+	if (doc.length === 0 || spans.length === 0) return Decoration.none;
 
 	const builder = new RangeSetBuilder<Decoration>();
-	for (const range of ranges) {
-		const start = clamp(range.from, 0, doc.length);
-		const end = clamp(range.to, 0, doc.length);
+	for (const span of spans) {
+		const start = clamp(span.from, 0, doc.length);
+		const end = clamp(span.to, 0, doc.length);
 		if (end <= start) continue;
 
 		builder.add(start, end, highlightMark);
@@ -52,7 +52,7 @@ const highlightField = StateField.define<DecorationSet>({
 
 interface EditorProps {
 	initialCode: string;
-	highlights: CodeRange[];
+	highlights: CodeSpan[];
 	onLoad: (code: string) => void;
 	onChange: (code: string) => void;
 }

@@ -1,12 +1,14 @@
-import { CPUState, ExecutionTrace, Parameter, Program, Register } from "@/common/types";
+import { CPUState, ExecEvent, Parameter, Program, Register } from "@/common/types";
+import { AccessLog } from "./log";
 import { Core, createDefaultCore } from "./core";
 import { Memory, createDefaultMemory } from "./memory";
 
 const CORE_COUNT = 4;
+const MEMORY_SIZE = 32;
 
 export function createDefaultCPU(): CPUState {
 	return {
-		memory: createDefaultMemory(),
+		memory: createDefaultMemory(MEMORY_SIZE),
 		parameters: createDefaultParameters(),
 		cores: Array.from({ length: CORE_COUNT }, (_, id) => createDefaultCore(id)),
 	};
@@ -21,14 +23,16 @@ export class CPU {
 		this.parameters = createDefaultParameters();
 		this.cores = Array.from({ length: coreCount }, (_, id) => new Core({
 			id,
+			log: this.log,
 			memory: this.memory,
 			parameters: this.parameters,
 		}));
 	}
 
 	private readonly parameters: number[];
-	private memory = new Memory();
-	private cores: Core[] = [];
+	private readonly log = new AccessLog();
+	private readonly memory = new Memory(MEMORY_SIZE, this.log);
+	private readonly cores: Core[] = [];
 
 	get state(): CPUState {
 		return {
@@ -48,18 +52,19 @@ export class CPU {
 		core.load(program);
 	}
 
-	public renderUntil(beat: number) {
-		const traces: ExecutionTrace[] = [];
+	public execUntil(beat: number) {
+		this.log.clear();
+		const events: ExecEvent[] = [];
 		for (const core of this.cores)
-			if (core.enabled) traces.push(...core.renderUntil(beat));
+			if (core.enabled) events.push(...core.execUntil(beat));
 
-		traces.sort((left, right) => (
+		events.sort((left, right) => (
 			left.beat - right.beat
 			|| left.coreID - right.coreID
-			|| Number(left.id.split(":").at(1)) - Number(right.id.split(":").at(1))
+			|| left.id - right.id
 		));
 
-		return traces;
+		return events;
 	}
 
 	public setParameter(param: Parameter, value: number) {
@@ -79,5 +84,6 @@ export class CPU {
 	public reset() {
 		// this.memory.reset();
 		for (const core of this.cores) core.reset();
+		this.log.clear();
 	}
 }

@@ -1,18 +1,17 @@
 import {
 	CoreState,
-	ExecutionTrace,
+	ExecEvent,
 	Instruction,
 	Instrument,
-	MemoryHighlight,
-	NoteEvent,
+	Note,
 	Opcode,
 	Operand,
 	Parameter,
 	Program,
 	Register,
-	RegisterHighlight,
 	SynthSettings,
 } from "@/common/types";
+import { AccessLog } from "@/machine/log";
 import { Memory } from "@/machine/memory";
 import { RegisterFile, createDefaultRegisters } from "@/machine/regfile";
 
@@ -30,24 +29,15 @@ const ZERO_TIME_BUDGET = 4096;
 const NOP: Instruction = {
 	opcode: Opcode.NOP,
 	operands: [],
-	range: { from: 0, to: 0 },
+	span: { from: 0, to: 0 },
 };
 
 interface CoreConfig {
 	id: number;
+	log: AccessLog;
 	memory: Memory;
 	parameters: number[];
 	program?: Program;
-}
-
-interface Result {
-	trace: ExecutionTrace;
-	advanced: boolean;
-}
-
-interface TraceContext {
-	registers: RegisterHighlight[];
-	memory: MemoryHighlight[];
 }
 
 function clampBeat(value: number) {
@@ -66,20 +56,22 @@ function createSynthSettings(registers: number[], parameters: number[]): SynthSe
 }
 
 export class Core {
-	constructor({ id, memory, parameters, program }: CoreConfig) {
+	constructor({ id, memory, log, parameters, program }: CoreConfig) {
 		this.id = id;
+		this.log = log;
 		this.memory = memory;
 		this.parameters = parameters;
-		this.registers = new RegisterFile();
+		this.registers = new RegisterFile(this.id, this.log);
 		this.program = program ?? { instrs: [], labels: {} };
 	}
 
 	private readonly id: number;
+	private readonly log: AccessLog;
 	private readonly memory: Memory;
 	private readonly parameters: number[];
 	private readonly registers: RegisterFile;
 	private program: Program;
-	private traceCounter = 0;
+	private seq = 0;
 	private _enabled = false;
 	private _pc = 0;
 	private _beat = 0;
@@ -128,33 +120,17 @@ export class Core {
 		this._enabled = !this._enabled;
 	}
 
-	private eval(operand: Operand | undefined, trace: TraceContext): number {
+	private eval(operand?: Operand): number {
 		if (!operand) return 0;
 
 		switch (operand.mode) {
 			case "mem_direct":
-				trace.memory.push({
-					addr: this.memory.normalise(operand.address),
-					mode: "read",
-				});
 				return this.memory.read(operand.address);
 			case "mem_indirect": {
-				trace.registers.push({
-					reg: operand.reg,
-					mode: "read",
-				});
 				const address = this.registers.read(operand.reg);
-				trace.memory.push({
-					addr: this.memory.normalise(address),
-					mode: "read",
-				});
 				return this.memory.read(address);
 			}
 			case "reg_read":
-				trace.registers.push({
-					reg: operand.reg,
-					mode: "read",
-				});
 				return this.registers.read(operand.reg);
 			case "reg_write":
 				return operand.reg;
@@ -175,49 +151,29 @@ export class Core {
 		return this.program.instrs[this.normalise(pc)];
 	}
 
-	execute(instr: Instruction): Result {
+	execute(instr: Instruction): ExecEvent {
 		const beat = this._beat;
-		const trace: TraceContext = {
-			registers: [],
-			memory: [],
-		};
+		const mark = this.log.mark(this.id);
 		const [raw1, raw2] = instr.operands;
-		const [val1, val2] = [this.eval(raw1, trace), this.eval(raw2, trace)];
-		let event: NoteEvent | undefined;
+		const [val1, val2] = [this.eval(raw1), this.eval(raw2)];
+		let note: Note | undefined;
 
 		switch (instr.opcode) {
 			case Opcode.PLAY:
-				event = this.createEvent(val1 as Instrument, val2, 1); // TODO: implement duration
+				note = this.createNote(val1 as Instrument, val2, 1); // TODO: implement duration
 				break;
 			case Opcode.REST:
-				this._beat = clampBeat(this._beat + val1);
+				this._beat = clampBeat(this._beat + val1); // TODO: stall execution here for highlighting purposes?
 				break;
 			case Opcode.LOAD:
 				this.registers.write(val1 as Register, val2);
-				trace.registers.push({
-					reg: val1 as Register,
-					mode: "write",
-				});
 				break;
 			case Opcode.STORE:
 				this.memory.write(val1, val2);
-				trace.memory.push({
-					addr: this.memory.normalise(val1),
-					mode: "write",
-				});
 				break;
-			case Opcode.ADD: {
-				trace.registers.push({
-					reg: val1 as Register,
-					mode: "read",
-				});
+			case Opcode.ADD:
 				this.registers.write(val1 as Register, this.registers.read(val1 as Register) + val2);
-				trace.registers.push({
-					reg: val1 as Register,
-					mode: "write",
-				});
 				break;
-			}
 			case Opcode.JUMP:
 				this._pc = this.normalise(val1);
 				break;
@@ -230,39 +186,32 @@ export class Core {
 		}
 
 		return {
-			trace: {
-				id: `${this.id}:${this.traceCounter++}`,
-				coreID: this.id,
-				beat,
-				instruction: instr,
-				registers: trace.registers,
-				memory: trace.memory,
-				event,
-			},
+			id: this.seq++,
+			coreID: this.id,
+			beat,
+			span: instr.span,
+			log: this.log.since(this.id, mark),
 			advanced: instr.opcode === Opcode.PLAY,
+			note,
 		};
 	}
 
-	renderUntil(targetBeat: number): ExecutionTrace[] {
-		const traces: ExecutionTrace[] = [];
-		if (!this._enabled) return traces;
-		if (this.program.instrs.length === 0) return traces;
+	execUntil(targetBeat: number): ExecEvent[] {
+		const events: ExecEvent[] = [];
+		if (!this._enabled) return events;
+		if (this.program.instrs.length === 0) return events;
 		let zeroTimeInstrs = 0;
 
 		while (this._beat < targetBeat && zeroTimeInstrs < ZERO_TIME_BUDGET) {
-			const { trace, advanced } = this.execute(this.fetch(this._pc++));
-			traces.push(trace);
-			zeroTimeInstrs = advanced ? 0 : zeroTimeInstrs + 1;
+			const event = this.execute(this.fetch(this._pc++));
+			events.push(event);
+			zeroTimeInstrs = event.advanced ? 0 : zeroTimeInstrs + 1;
 		}
 
-		return traces;
+		return events;
 	}
 
-	private createEvent(
-		instrument: Instrument,
-		pitch: number,
-		length: number,
-	): NoteEvent {
+	private createNote(instrument: Instrument, pitch: number, length: number): Note {
 		return {
 			length,
 			instrument,

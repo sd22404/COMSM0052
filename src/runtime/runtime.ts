@@ -1,9 +1,9 @@
-import { NoteEvent, Parameter, Register, RuntimeState } from "@/common/types";
+import { Note, Parameter, PlayWindow, Register, RuntimeState } from "@/common/types";
 import { AudioEngine } from "@/audio/engine";
 import { Assembler } from "@/language/assembler";
 import { CPU, createDefaultCPU } from "@/machine/cpu";
 import { Transport, createDefaultTransport } from "./transport";
-import { Highlights, createDefaultHighlights } from "./highlights";
+import { Highlights, createDefaultHighlights, EXECUTION_HIGHLIGHT_TIME } from "./highlights";
 
 const SCHEDULE_INTERVAL = 25; // ms
 const LOOKAHEAD_SECONDS = 0.1;
@@ -56,18 +56,28 @@ export class Runtime {
 		const targetBeat = this.transport.lookahead(this.audio.time, LOOKAHEAD_SECONDS);
 		if (!targetBeat) return;
 
-		const traces = this.cpu.renderUntil(targetBeat);
-		this.highlights.capture(traces, {
-			timeAtBeat: beat => this.transport.timeAtBeat(beat),
-			scheduleEvent: (beat, note) => this.scheduleEvent(beat, note),
-		});
+		const events = this.cpu.execUntil(targetBeat);
+
+		for (const event of events) {
+			const window = this.scheduleNote(event.beat, event.note);
+			if (!window) continue;
+
+			this.highlights.push({
+				coreID: event.coreID,
+				window,
+				span: event.span,
+				regs: event.log.registers,
+				memory: event.log.memory,
+			})
+		}
 
 		this.highlights.refresh(this.audio.time);
 		this.notify();
 	}
 
-	private scheduleEvent(beat: number, note: NoteEvent) {
+	private scheduleNote(beat: number, note?: Note): PlayWindow | undefined {
 		const when = this.transport.timeAtBeat(beat);
+		if (!note) return {start: when, end: when + EXECUTION_HIGHLIGHT_TIME};
 		const duration = this.transport.makeDuration(beat, beat + note.length);
 		return this.audio.schedule(note, when, duration);
 	}

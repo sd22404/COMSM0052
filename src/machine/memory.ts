@@ -1,6 +1,6 @@
-const MEMORY_SIZE = 32;
+import { AccessLog } from "./log";
 
-export function createDefaultMemory(size: number = MEMORY_SIZE): number[] {
+export function createDefaultMemory(size: number): number[] {
 	const mem = new Array(size).fill(0);
 	mem[0] = 58;
 	mem[1] = 62;
@@ -14,10 +14,12 @@ export function createDefaultMemory(size: number = MEMORY_SIZE): number[] {
 }
 
 export class Memory {
-	constructor(private readonly size: number = MEMORY_SIZE) {
+	constructor(size: number, log: AccessLog ) {
 		this.mem = createDefaultMemory(size);
+		this.log = log;
 	}
 
+	private readonly log: AccessLog;
 	private mem: number[];
 
 	snapshot() {
@@ -33,10 +35,14 @@ export class Memory {
 	}
 
 	read(addr: number): number {
-		return this.mem[this.normalise(addr)];
+		const normalised = this.normalise(addr);
+		this.log.recordMemory(normalised, "read");
+		return this.mem[normalised];
 	}
 
 	write(addr: number, value: number) {
-		this.mem[this.normalise(addr)] = value;
+		const normalised = this.normalise(addr);
+		this.mem[normalised] = value;
+		this.log.recordMemory(normalised, "write");
 	}
 }

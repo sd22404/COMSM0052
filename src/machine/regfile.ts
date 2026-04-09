@@ -1,4 +1,5 @@
 import { Register } from "@/common/types";
+import { AccessLog } from "./log";
 
 export function createDefaultRegisters(): number[] {
 	return [
@@ -17,7 +18,15 @@ export function createDefaultRegisters(): number[] {
 }
 
 export class RegisterFile {
-	private regs: number[] = createDefaultRegisters();
+	constructor(id: number, log: AccessLog) {
+		this.id = id;
+		this.log = log;
+		this.regs = createDefaultRegisters();
+	}
+
+	private readonly id: number;
+	private readonly log: AccessLog;
+	private regs: number[];
 
 	snapshot() {
 		return [...this.regs];
@@ -28,6 +37,7 @@ export class RegisterFile {
 	}
 
 	read(reg: Register): number {
+		this.log.recordRegister(this.id, reg, "read");
 		if (reg == Register.RAND)
 			return Math.floor(Math.random() * (this.regs[Register.RAND] + 1));
 		return this.regs[reg];
@@ -35,5 +45,6 @@ export class RegisterFile {
 
 	write(reg: Register, value: number) {
 		this.regs[reg] = value;
+		this.log.recordRegister(this.id, reg, "write");
 	}
 }

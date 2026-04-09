@@ -16,7 +16,7 @@ export class Assembler {
 					instr = {
 						opcode: Opcode.NOP,
 						operands: [],
-						range: {
+						span: {
 							from: cursor.from,
 							to: cursor.to,
 						},
