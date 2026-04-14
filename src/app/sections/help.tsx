@@ -30,7 +30,7 @@ function HelpModal({ open, onClose }: { open: boolean; onClose: () => void }) {
 					title="Controls"
 					lines={[
 						<><strong>Ctrl+Enter</strong>: Load the focused code into its matching core.</>,
-						<><strong>Active/Idle</strong>: Indicators for the status of each core. Click to toggle.</>,
+						<><strong>Active/Idle</strong>: Indicators for the status of each core. Click to toggle. Enabling takes effect on the next down beat.</>,
 						<><strong>Unloaded</strong>: Shows when editor text differs from the last valid program loaded in that core.</>,
 						<><strong>Invalid</strong>: The editor has semantic or syntax errors, so load is blocked and the last valid program stays active.</>,
 						<><strong>Faulted</strong>: The core hit a runtime error such as a zero-time loop or a non-positive <strong>REST</strong>.</>,

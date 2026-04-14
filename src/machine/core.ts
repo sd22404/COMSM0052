@@ -120,9 +120,12 @@ export class Core {
 		this.registers.write(reg, val);
 	}
 
-	setEnabled(enabled: boolean) {
+	setEnabled(enabled: boolean, startBeat = this._beat) {
 		this._enabled = enabled;
-		if (enabled) this.clearFault();
+		if (!enabled) return;
+
+		this.clearFault();
+		this.rewind(startBeat);
 	}
 
 	reset(startBeat = 0) {

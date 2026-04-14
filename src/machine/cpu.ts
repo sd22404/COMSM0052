@@ -42,10 +42,10 @@ export class CPU {
 		};
 	}
 
-	public setEnabled(coreID: number, enabled: boolean) {
+	public setEnabled(coreID: number, enabled: boolean, startBeat?: number) {
 		const core = this.cores[coreID];
 		if (!core) return;
-		core.setEnabled(enabled);
+		core.setEnabled(enabled, startBeat);
 	}
 
 	public load(coreID: number, program: Program) {

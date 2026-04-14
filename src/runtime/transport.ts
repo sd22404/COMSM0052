@@ -60,6 +60,16 @@ export class Transport {
 		return clampBeat(pending.beat + this.secondsToBeats(clampedTime - pending.time, pending.bpm));
 	}
 
+	beatAt(audioTime: number) {
+		this.applyBPM(audioTime);
+		return this.beatAtTime(audioTime);
+	}
+
+	downBeatAtOrAfter(beat: number) {
+		const clamped = clampBeat(beat);
+		return Math.max(0, Math.ceil((clamped - EPSILON) / CLICK_PER_BEAT) * CLICK_PER_BEAT);
+	}
+
 	private applyBPM(now: number) {
 		const pending = this.pendingBPM;
 		if (!pending || now + EPSILON < pending.time) return;

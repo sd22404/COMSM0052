@@ -173,7 +173,13 @@ export class Runtime {
 	}
 
 	setEnabled(coreID: number, enabled: boolean) {
-		this.cpu.setEnabled(coreID, enabled);
+		const startBeat = !enabled
+			? undefined
+			: this.running
+				? this.transport.downBeatAtOrAfter(this.transport.beatAt(this.audio.time))
+				: this.transport.downBeatAtOrAfter(this.transport.state.horizon);
+
+		this.cpu.setEnabled(coreID, enabled, startBeat);
 		this.notify();
 	}
 }
