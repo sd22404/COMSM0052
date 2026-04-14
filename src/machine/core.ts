@@ -128,7 +128,7 @@ export class Core {
 		this.rewind(startBeat);
 	}
 
-	reset(startBeat = 0) {
+	reset(startBeat?: number) {
 		this.registers.reset();
 		this._enabled = false;
 		this.clearFault();

@@ -50,26 +50,6 @@ export class Transport {
 	private beatsToSeconds(beats: number, bpm: number = this.activeBPM) { return beats * this.secondsPerBeat(bpm); }
 	private secondsToBeats(seconds: number, bpm: number = this.activeBPM) { return seconds / this.secondsPerBeat(bpm); }
 
-	private beatAtTime(audioTime: number) {
-		const clampedTime = Math.max(audioTime, this.anchorTime);
-		const pending = this.pendingBPM;
-
-		if (!pending || clampedTime + EPSILON < pending.time)
-			return clampBeat(this.anchorBeat + this.secondsToBeats(clampedTime - this.anchorTime));
-
-		return clampBeat(pending.beat + this.secondsToBeats(clampedTime - pending.time, pending.bpm));
-	}
-
-	beatAt(audioTime: number) {
-		this.applyBPM(audioTime);
-		return this.beatAtTime(audioTime);
-	}
-
-	downBeatAtOrAfter(beat: number) {
-		const clamped = clampBeat(beat);
-		return Math.max(0, Math.ceil((clamped - EPSILON) / CLICK_PER_BEAT) * CLICK_PER_BEAT);
-	}
-
 	private applyBPM(now: number) {
 		const pending = this.pendingBPM;
 		if (!pending || now + EPSILON < pending.time) return;
@@ -89,7 +69,7 @@ export class Transport {
 
 	halt(audioTime: number) {
 		this.applyBPM(audioTime);
-		const beat = this.beatAtTime(audioTime);
+		const beat = this.beatAt(audioTime);
 
 		this.anchorTime = audioTime;
 		this.anchorBeat = beat;
@@ -98,17 +78,30 @@ export class Transport {
 		this.pendingBPM = undefined;
 	}
 
-	reset(startBeat = 0) {
-		const beat = clampBeat(startBeat);
-
+	reset() {
 		this.anchorTime = 0;
-		this.anchorBeat = beat;
-		this.horizonBeat = beat;
+		this.anchorBeat = 0;
+		this.horizonBeat = 0;
 		this.activeBPM = this.targetBPM;
 		this.pendingBPM = undefined;
 	}
 
-	timeAtBeat(beat: number) {
+	downBeatAt(audioTime: number) {
+		const beat = this.beatAt(audioTime);
+		return Math.max(0, Math.ceil((beat - EPSILON) / CLICK_PER_BEAT) * CLICK_PER_BEAT);
+	}
+
+	private beatAt(audioTime: number) {
+		const clampedTime = Math.max(audioTime, this.anchorTime);
+		const pending = this.pendingBPM;
+
+		if (!pending || clampedTime + EPSILON < pending.time)
+			return clampBeat(this.anchorBeat + this.secondsToBeats(clampedTime - this.anchorTime));
+
+		return clampBeat(pending.beat + this.secondsToBeats(clampedTime - pending.time, pending.bpm));
+	}
+
+	timeAt(beat: number) {
 		const clamped = clampBeat(beat);
 		const pending = this.pendingBPM;
 
@@ -121,14 +114,14 @@ export class Transport {
 	makeDuration(fromBeat: number, toBeat: number) {
 		const startBeat = clampBeat(fromBeat);
 		const endBeat = clampBeat(toBeat);
-		return Math.max(0, this.timeAtBeat(endBeat) - this.timeAtBeat(startBeat));
+		return Math.max(0, this.timeAt(endBeat) - this.timeAt(startBeat));
 	}
 
 	lookahead(audioTime: number, seconds: number): number | undefined {
 		this.applyBPM(audioTime);
 
-		const fromBeat = Math.max(this.horizonBeat, this.beatAtTime(audioTime));
-		const toBeat = this.beatAtTime(audioTime + Math.max(0, seconds));
+		const fromBeat = Math.max(this.horizonBeat, this.beatAt(audioTime));
+		const toBeat = this.beatAt(audioTime + Math.max(0, seconds));
 
 		if (toBeat <= fromBeat + EPSILON) return undefined;
 
@@ -141,7 +134,7 @@ export class Transport {
 		this.targetBPM = bpm;
 		this.applyBPM(audioTime);
 
-		const currentBeat = this.beatAtTime(audioTime);
+		const currentBeat = this.beatAt(audioTime);
 		if (this.horizonBeat <= currentBeat + EPSILON) {
 			this.anchorTime = audioTime;
 			this.anchorBeat = currentBeat;
@@ -151,7 +144,7 @@ export class Transport {
 		}
 
 		this.pendingBPM = {
-			time: this.timeAtBeat(this.horizonBeat),
+			time: this.timeAt(this.horizonBeat),
 			beat: this.horizonBeat,
 			bpm,
 		};

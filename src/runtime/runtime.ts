@@ -80,7 +80,7 @@ export class Runtime {
 	}
 
 	private scheduleNote(beat: number, note?: Note): PlayWindow | undefined {
-		const when = this.transport.timeAtBeat(beat);
+		const when = this.transport.timeAt(beat);
 		if (!note) return {start: when, end: when + EXECUTION_HIGHLIGHT_TIME};
 		const duration = this.transport.makeDuration(beat, beat + note.length);
 		return this.audio.schedule(note, when, duration);
@@ -173,11 +173,8 @@ export class Runtime {
 	}
 
 	setEnabled(coreID: number, enabled: boolean) {
-		const startBeat = !enabled
-			? undefined
-			: this.running
-				? this.transport.downBeatAtOrAfter(this.transport.beatAt(this.audio.time))
-				: this.transport.downBeatAtOrAfter(this.transport.state.horizon);
+		const startBeat = !enabled || !this.running ? undefined
+			: this.transport.downBeatAt(this.audio.time);
 
 		this.cpu.setEnabled(coreID, enabled, startBeat);
 		this.notify();
