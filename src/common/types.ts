@@ -1,42 +1,112 @@
 export enum Opcode {
-	NOP, PLAY, REST, LOAD, STORE, ADD, JUMP, JMPZ,
+	PLAY,
+	REST,
+	LOAD,
+	STORE,
+	ADD,
+	JUMP,
+	JMPZ,
 }
 
 export enum Register {
-	VOL, PAN, ATK, DEC, SUS, REL, RAND, REG0, REG1, REG2, REG3,
+	VOL,
+	PAN,
+	ATK,
+	DEC,
+	SUS,
+	REL,
+	RAND,
+	REG0,
+	REG1,
+	REG2,
+	REG3,
 }
 
-export enum Instrument {
-	SYNTH, DRUMS, BASS, PIANO,
+export enum Device {
+	SYNTH,
+	DRUMS,
+	BASS,
+	PIANO,
 }
 
 export enum Parameter {
-	BPM, VOL,
+	BPM,
+	VOL,
 }
-
-export type Operand =
-	| { mode: "imm"; value: number }
-	| { mode: "reg_read"; reg: Register }
-	| { mode: "reg_write"; reg: Register }
-	| { mode: "mem_direct"; address: number }
-	| { mode: "mem_indirect"; reg: Register }
-	| { mode: "label"; value: string }
-	| { mode: "instrument"; value: Instrument };
 
 export interface CodeSpan {
 	from: number;
 	to: number;
 }
 
-export interface Instruction {
+export interface Diagnostic {
+	severity: "error" | "warning" | "info";
+	message: string;
 	span: CodeSpan;
-	opcode: Opcode;
-	operands: Operand[];
 }
 
-export interface Program {
-	instrs: Instruction[];
-	labels: Record<string, number>;
+export enum OpType {
+	Imm,
+	Reg,
+	Mem,
+	Device,
+	Label,
+}
+
+export interface ImmOperand {
+	type: OpType.Imm;
+	value: number;
+	span: CodeSpan;
+}
+
+export interface RegOperand {
+	type: OpType.Reg;
+	reg: Register;
+	span: CodeSpan;
+}
+
+export type AddrOperand = ImmOperand | RegOperand;
+export type ValOperand = ImmOperand | RegOperand | MemOperand;
+
+export interface MemOperand {
+	type: OpType.Mem;
+	addr: AddrOperand;
+	span: CodeSpan;
+}
+
+export interface DeviceOperand {
+	type: OpType.Device;
+	device: Device;
+	span: CodeSpan;
+}
+
+export interface LabelOperand {
+	type: OpType.Label;
+	addr: number;
+	label?: string;
+	span: CodeSpan;
+}
+
+interface BaseInstruction<Op extends Opcode, Ops extends readonly unknown[]> {
+	opcode: Op;
+	operands: Ops;
+	span: CodeSpan;
+}
+
+export type Instruction =
+	| BaseInstruction<Opcode.PLAY, [DeviceOperand, ValOperand]>
+	| BaseInstruction<Opcode.REST, [ValOperand]>
+	| BaseInstruction<Opcode.LOAD, [RegOperand, ValOperand]>
+	| BaseInstruction<Opcode.STORE, [AddrOperand, ValOperand]>
+	| BaseInstruction<Opcode.ADD, [RegOperand, ValOperand]>
+	| BaseInstruction<Opcode.JUMP, [LabelOperand]>
+	| BaseInstruction<Opcode.JMPZ, [RegOperand, LabelOperand]>;
+
+export type Program = Instruction[];
+
+export interface CompileResult {
+	program?: Program;
+	diagnostics: Diagnostic[];
 }
 
 export interface SynthSettings {
@@ -50,7 +120,7 @@ export interface SynthSettings {
 
 export interface Note {
 	length: number;
-	instrument: Instrument;
+	device: Device;
 	pitch: number;
 	settings: SynthSettings;
 }
@@ -83,8 +153,14 @@ export interface ExecEvent {
 	beat: number;
 	span: CodeSpan;
 	log: EventLog;
-	advanced: boolean;
 	note?: Note;
+}
+
+export interface RuntimeFault {
+	message: string;
+	span: CodeSpan;
+	beat: number;
+	pc: number;
 }
 
 export interface CoreState {
@@ -93,6 +169,7 @@ export interface CoreState {
 	pc: number;
 	beat: number;
 	regs: number[];
+	fault?: RuntimeFault;
 }
 
 export interface TransportState {
@@ -118,6 +195,23 @@ export interface HighlightState {
 	code: CodeSpan[][];
 	regs: RegisterAccess[][];
 	memory: MemoryAccess[];
+}
+
+export interface TutorialState {
+	active: boolean;
+	title: string;
+	text: string;
+	anchorRef: string;
+}
+
+export interface Sample {
+	path: string;
+	buf?: AudioBuffer;
+	promise?: Promise<void>;
+}
+
+export function hasErrors(diagnostics: Diagnostic[]): boolean {
+	return diagnostics.some((diagnostic) => diagnostic.severity === "error");
 }
 
 const CORE_PROGRAMS = [
@@ -172,8 +266,8 @@ PLAY PIANO 60
 REST 2`,
 ];
 
-export function getDefaultCoreProgram(coreId: number) {
-	return CORE_PROGRAMS[coreId] ?? `; Core ${coreId}
+export function getDefaultCode(coreID: number) {
+	return CORE_PROGRAMS[coreID] ?? `; Core ${coreID}
 ; Press Ctrl+Enter to assign this program.
 LOAD VOL 100
 

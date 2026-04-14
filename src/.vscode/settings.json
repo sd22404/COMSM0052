@@ -1,0 +1,8 @@
+{
+	"chat.tools.terminal.autoApprove": {
+		"/^bun run lint$/": {
+			"approve": true,
+			"matchCommandLine": true
+		}
+	}
+}

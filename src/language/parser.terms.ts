@@ -6,8 +6,8 @@ export const
   Instruction = 4,
   Opcode = 5,
   Operand = 6,
-  Instrument = 7,
+  Immediate = 7,
   Register = 8,
-  Immediate = 9,
-  Memory = 10,
-  LabelRef = 11
+  Memory = 9,
+  Device = 10,
+  Identifier = 11

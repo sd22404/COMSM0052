@@ -1,23 +1,23 @@
 import { Register, RegisterAccess } from "@/common/types";
 import { cn } from "../components/cn";
 import Input from "../components/input";
-import { Body, Eyebrow } from "../components/text";
+import { Eyebrow } from "../components/text";
 import { useEffect, useState } from "react";
 import Card from "../components/card";
 
 interface RegisterProps {
 	registers: number[];
 	highlights: RegisterAccess[];
-	setRegister: (reg: Register, val: number) => void;
+	onRegisterChange: (reg: Register, val: number) => void;
 }
 
-export default function Registers({ registers, highlights, setRegister }: RegisterProps) {
+export default function Registers({ registers, highlights, onRegisterChange }: RegisterProps) {
 	const [drafts, setDrafts] = useState<(number | string)[]>(registers);
 	const highlightModes = new Map<Register, "read" | "write">();
 
 	for (const highlight of highlights) {
 		const current = highlightModes.get(highlight.reg);
-		if (current === "write") continue; // ??
+		if (current === "write") continue;
 		highlightModes.set(highlight.reg, highlight.mode);
 	}
 
@@ -26,7 +26,7 @@ export default function Registers({ registers, highlights, setRegister }: Regist
 	}, [registers]);
 
 	return (
-		<Card className="flex flex-col min-h-0 overflow-y-auto overflow-x-hidden">
+		<Card className="p-0 flex flex-col min-h-0 overflow-y-auto overflow-x-hidden">
 			{drafts.map((draft, i) => {
 				const reg = i as Register;
 				const read = highlightModes.get(reg) === "read";
@@ -64,7 +64,7 @@ export default function Registers({ registers, highlights, setRegister }: Regist
 							const valStr = e.target.value;
 							const valInt = parseInt(valStr);
 
-							if (!isNaN(valInt)) setRegister(reg, valInt);
+							if (!isNaN(valInt)) onRegisterChange(reg, valInt);
 							setDrafts((drafts) => drafts.map((draft, j) => (j === i ? valStr : draft)));
 						}}
 					/>

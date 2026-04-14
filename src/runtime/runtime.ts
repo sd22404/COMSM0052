@@ -1,12 +1,12 @@
-import { Note, Parameter, PlayWindow, Register, RuntimeState } from "@/common/types";
+import { CompileResult, Note, Parameter, PlayWindow, Register, RuntimeState } from "@/common/types";
 import { AudioEngine, DEFAULT_SAMPLE_MAP } from "@/audio/engine";
-import { Assembler } from "@/language/assembler";
+import { Compiler } from "@/language/compiler";
 import { CPU, createDefaultCPU } from "@/machine/cpu";
 import { Transport, createDefaultTransport } from "./transport";
 import { Highlights, createDefaultHighlights, EXECUTION_HIGHLIGHT_TIME } from "./highlights";
 
-const SCHEDULE_INTERVAL = 25; // ms
-const LOOKAHEAD_SECONDS = 0.1;
+const SCHEDULE_INTERVAL = 12; // ms
+const LOOKAHEAD_SECONDS = 0.2;
 
 export function createDefaultRuntime() {
 	return {
@@ -14,7 +14,9 @@ export function createDefaultRuntime() {
 		cpu: createDefaultCPU(),
 		transport: createDefaultTransport(),
 		highlights: createDefaultHighlights(),
-		samples: DEFAULT_SAMPLE_MAP,
+		samples: new Map<number, string>(
+			Array.from(DEFAULT_SAMPLE_MAP.entries()).map(([note, sample]) => [note, sample.path]),
+		),
 	};
 }
 
@@ -41,7 +43,7 @@ export class Runtime {
 			cpu: this.cpu.state,
 			transport: this.transport.state,
 			highlights: this.highlights.state,
-			samples: this.audio.sampleMap,
+			samples: this.audio.samples,
 		};
 	}
 
@@ -131,16 +133,22 @@ export class Runtime {
 		this.halt();
 		this.cpu.reset();
 		this.transport.reset();
-		this.audio.panic();
+		this.audio.reset();
 		this.highlights.clear();
 		this.notify();
 	}
 
-	load(coreID = 0, code: string) {
-		const program = Assembler.assemble(code);
-		this.cpu.load(coreID, program);
+	load(coreID = 0, code: string): CompileResult {
+		const result = Compiler.compile(code);
+		if (!result.program) {
+			this.notify();
+			return result;
+		}
+
+		this.cpu.load(coreID, result.program);
 		this.highlights.clearCore(coreID, this.audio.time);
 		this.notify();
+		return result;
 	}
 
 	setAddress(addr: number, value: number) {
@@ -161,12 +169,11 @@ export class Runtime {
 	}
 
 	setSample(note: number, sample: string) {
-		this.audio.sampleMap.set(note, sample);
-		this.notify();
+		void this.audio.setSample(note, sample).finally(() => this.notify());
 	}
 
-	toggleCore(id: number) {
-		this.cpu.toggleCore(id);
+	setEnabled(coreID: number, enabled: boolean) {
+		this.cpu.setEnabled(coreID, enabled);
 		this.notify();
 	}
 }

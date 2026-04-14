@@ -5,7 +5,7 @@ type CardVariant = "base" | "panel" | "surface";
 
 const VARIANT_CLASSES: Record<CardVariant, string> = {
 	base: "border border-ctp-surface0 bg-ctp-crust",
-	panel: "border border-ctp-surface0 bg-ctp-mantle p-3",
+	panel: "border border-ctp-surface0 bg-ctp-mantle",
 	surface: "border border-ctp-surface0 bg-ctp-surface0/40",
 };
 
@@ -16,7 +16,7 @@ interface CardProps extends ComponentPropsWithoutRef<"div"> {
 export default function Card({ className, variant = "base", ...props }: CardProps) {
 	return (
 		<div
-			className={cn("rounded text-ctp-text", VARIANT_CLASSES[variant], className)}
+			className={cn("rounded p-3 text-ctp-text", VARIANT_CLASSES[variant], className)}
 			{...props}
 		/>
 	);

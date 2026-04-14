@@ -4,7 +4,7 @@ import { Decoration, DecorationSet, EditorView, KeyBinding, keymap } from "@code
 import { linter } from "@codemirror/lint";
 import { indentWithTab } from "@codemirror/commands";
 import { catppuccinMocha, catppuccinLatte } from "@catppuccin/codemirror";
-import { CodeSpan } from "@/common/types";
+import { CodeSpan, RuntimeFault } from "@/common/types";
 import { musiclang, musiclinter } from "@/language/musiclang";
 import { useEffect, useRef } from "react";
 
@@ -12,13 +12,18 @@ const highlightMark = Decoration.mark({
 	class: "cm-highlight",
 });
 
+const faultMark = Decoration.mark({
+	class: "cm-fault",
+});
+
 const setHighlights = StateEffect.define<CodeSpan[]>();
+const setFault = StateEffect.define<CodeSpan>();
 
 function clamp(value: number, min: number, max: number) {
 	return Math.min(max, Math.max(min, value));
 }
 
-function buildDecorations(doc: Text, spans: CodeSpan[]): DecorationSet {
+function buildDecorations(doc: Text, spans: CodeSpan[], decoration: Decoration): DecorationSet {
 	if (doc.length === 0 || spans.length === 0) return Decoration.none;
 
 	const builder = new RangeSetBuilder<Decoration>();
@@ -27,7 +32,7 @@ function buildDecorations(doc: Text, spans: CodeSpan[]): DecorationSet {
 		const end = clamp(span.to, 0, doc.length);
 		if (end <= start) continue;
 
-		builder.add(start, end, highlightMark);
+		builder.add(start, end, decoration);
 	}
 
 	return builder.finish();
@@ -41,8 +46,10 @@ const highlightField = StateField.define<DecorationSet>({
 		let nextDecorations = decorations.map(transaction.changes);
 
 		for (const effect of transaction.effects) {
-			if (!effect.is(setHighlights)) continue;
-			nextDecorations = buildDecorations(transaction.state.doc, effect.value);
+			if (effect.is(setHighlights))
+				nextDecorations = buildDecorations(transaction.state.doc, effect.value, highlightMark);
+			if (effect.is(setFault))
+				nextDecorations = buildDecorations(transaction.state.doc, [effect.value], faultMark);
 		}
 
 		return nextDecorations;
@@ -52,12 +59,13 @@ const highlightField = StateField.define<DecorationSet>({
 
 interface EditorProps {
 	initialCode: string;
+	fault?: RuntimeFault;
 	highlights: CodeSpan[];
 	onLoad: (code: string) => void;
 	onChange: (code: string) => void;
 }
 
-export default function Editor({ initialCode, highlights, onLoad, onChange }: EditorProps) {
+export default function Editor({ initialCode, fault, highlights, onLoad, onChange }: EditorProps) {
 	const editorRef = useRef<HTMLDivElement>(null);
 	const viewRef = useRef<EditorView | null>(null);
 	const onLoadRef = useRef(onLoad);
@@ -102,7 +110,12 @@ export default function Editor({ initialCode, highlights, onLoad, onChange }: Ed
 				fontFamily: "var(--font-mono)",
 			},
 			".cm-highlight": {
-				backgroundColor: ctpAlpha("green", 0.16),
+				backgroundColor: ctpAlpha("text", 0.16),
+				borderRadius: "2px",
+				padding: "0 0 0 2px",
+			},
+			".cm-fault": {
+				backgroundColor: ctpAlpha("red", 0.16),
 				borderRadius: "2px",
 				padding: "0 0 0 2px",
 			},
@@ -142,10 +155,35 @@ export default function Editor({ initialCode, highlights, onLoad, onChange }: Ed
 		const view = viewRef.current;
 		if (!view) return;
 
+		const current = view.state.doc.toString();
+		if (current === initialCode) return;
+
+		view.dispatch({
+			changes: {
+				from: 0,
+				to: view.state.doc.length,
+				insert: initialCode,
+			},
+		});
+	}, [initialCode]);
+
+	useEffect(() => {
+		const view = viewRef.current;
+		if (!view) return;
+
 		view.dispatch({
 			effects: setHighlights.of(highlights),
 		});
-	}, [highlights]);
+	}, [highlights])
+	
+	useEffect(() => {
+		const view = viewRef.current;
+		if (!view || !fault) return;
+
+		view.dispatch({
+			effects: setFault.of(fault.span),
+		});
+	}, [fault]);
 
 	return (
 		<div

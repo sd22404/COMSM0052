@@ -1,9 +1,15 @@
-import { Instrument, Note, PlayWindow } from "@/common/types";
+import { Device, Note, PlayWindow, Sample } from "@/common/types";
 
-export const DEFAULT_SAMPLE_MAP: Map<number, string> = new Map([
-	[60, "/COMSM0052/samples/kicks/CYCdh_AcouKick-01.wav"],
-	[61, "/COMSM0052/samples/snares/Acoustic Snare-01.wav"],
-	[62, "/COMSM0052/samples/hats/Acoustic Hat-01.wav"],
+const SAMPLE_BASE = "/COMSM0052/samples";
+
+function samplePath(group: string, file: string) {
+	return `${SAMPLE_BASE}/${group}/${file}`;
+}
+
+export const DEFAULT_SAMPLE_MAP: Map<number, Sample> = new Map([
+	[60, { path: samplePath("kicks", "CYCdh_AcouKick-01.wav") }],
+	[61, { path: samplePath("snares", "Acoustic Snare-01.wav") }],
+	[62, { path: samplePath("hats", "Acoustic Hat-01.wav") }]
 ]);
 
 const semitoneToNote = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
@@ -66,20 +72,18 @@ export function noteToMidi(note: string): number | undefined {
 }
 
 export class AudioEngine {
-	private samples: Map<number, AudioBuffer> = new Map();
+	private _samples: Map<number, Sample> = DEFAULT_SAMPLE_MAP;
 	private ctx?: AudioContext;
 	private master?: GainNode;
 	private compressor?: DynamicsCompressorNode;
 	private readonly activeSources = new Map<ActiveSource, () => void>();
-	private samplePromise?: Promise<void>;
-	private _sampleMap: Map<number, string> = new Map(DEFAULT_SAMPLE_MAP);
 
 	get time() {
 		return this.ctx?.currentTime ?? 0;
 	}
 
-	get sampleMap() {
-		return this._sampleMap;
+	get samples() {
+		return new Map<number, string>(Array.from(this._samples.entries()).map(([key, value]) => [key, value.path]));
 	}
 
 	private init() {
@@ -119,13 +123,19 @@ export class AudioEngine {
 		if (this.ctx.state === "suspended")
 			await this.ctx.resume();
 
-		this.samplePromise ??= this.loadSamples(this._sampleMap);
-		await this.samplePromise;
+		await Promise.all(
+			Array.from(this._samples.keys().map((midiNote) => this.ensureSampleLoaded(midiNote))),
+		);
 	}
 
 	setMasterVolume(value: number) {
 		if (!this.master) return;
 		this.master.gain.value = (clamp(value, 0, 100) / 100) * MASTER_GAIN;
+	}
+
+	reset() {
+		this.panic();
+		this.setMasterVolume(100);
 	}
 
 	panic() {
@@ -138,28 +148,43 @@ export class AudioEngine {
 		}
 	}
 
-	private async loadSamples(sampleMap: Map<number, string>) {
-		if (!this.ctx) return;
+	private async loadSample(midiNote: number) {
+		const sample = this._samples.get(midiNote);
+		if (!sample || !this.ctx || sample.buf) return;
 
-		for (const [midiNote, path] of sampleMap.entries()) {
-			try {
-				const res = await fetch(path);
-				const buf = await res.arrayBuffer();
-				this.samples.set(midiNote, await this.ctx.decodeAudioData(buf));
-			} catch (error) {
-				console.error(`Failed to load sample #${midiNote}:`, error);
-			}
+		sample.promise = (async () => {
+			const res = await fetch(sample.path);
+			if (!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText}`);
+
+			const buf = await res.arrayBuffer();
+			sample.buf = await this.ctx!.decodeAudioData(buf);
+		})();
+
+		try {
+			await sample.promise;
+		} catch (error) {
+			console.error(`Failed to load sample #${midiNote}:`, error);
+		} finally {
+			sample.promise = undefined;
 		}
+	}
+
+	private ensureSampleLoaded(midiNote: number) {
+		const sample = this._samples.get(midiNote);
+		if (!sample || sample.buf) return;
+
+		if (sample.promise) return sample.promise;
+		return this.loadSample(midiNote);
 	}
 
 	private scheduleSample(note: Note, when: number): PlayWindow | undefined {
 		if (!this.ctx || !this.master) return undefined;
 
-		const buffer = this.samples.get(note.pitch);
-		if (!buffer) return undefined;
+		const sample = this._samples.get(note.pitch);
+		if (!sample?.buf) return undefined;
 
 		const source = this.ctx.createBufferSource();
-		source.buffer = buffer;
+		source.buffer = sample.buf;
 
 		const { volume, panner } = createVolPan(this.ctx, this.master, note.settings.volume, note.settings.pan);
 		source.connect(volume);
@@ -171,7 +196,7 @@ export class AudioEngine {
 		source.start(when);
 		return {
 			start: when,
-			end: when + buffer.duration,
+			end: when + sample.buf.duration,
 		};
 	}
 
@@ -201,7 +226,7 @@ export class AudioEngine {
 		else envelope.gain.setValueAtTime(0.0001, releaseStart);
 
 		const osc = this.ctx.createOscillator();
-		osc.type = note.instrument === Instrument.BASS ? "square" : note.instrument === Instrument.PIANO ? "triangle" : "sawtooth";
+		osc.type = note.device === Device.BASS ? "square" : note.device === Device.PIANO ? "triangle" : "sawtooth";
 		osc.frequency.value = midiToFreq(note.pitch);
 		osc.connect(envelope);
 		envelope.connect(volume);
@@ -225,15 +250,21 @@ export class AudioEngine {
 		const startTime = Math.max(when, this.ctx.currentTime + EPSILON);
 		const noteDuration = Math.max(0, duration);
 
-		switch (note.instrument) {
-			case Instrument.DRUMS:
+		switch (note.device) {
+			case Device.DRUMS:
 				return this.scheduleSample(note, startTime);
-			case Instrument.SYNTH:
-			case Instrument.BASS:
-			case Instrument.PIANO:
+			case Device.SYNTH:
+			case Device.BASS:
+			case Device.PIANO:
 				return this.scheduleSynth(note, startTime, noteDuration);
 			default:
 				return undefined;
 		}
+	}
+
+	async setSample(note: number, sample: string) {
+		this._samples.set(note, { path: sample, buf: undefined });
+		if (!this.ctx) return;
+		await this.ensureSampleLoaded(note);
 	}
 }

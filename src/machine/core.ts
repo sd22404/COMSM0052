@@ -2,18 +2,22 @@ import {
 	CoreState,
 	ExecEvent,
 	Instruction,
-	Instrument,
+	Program,
+	Device,
 	Note,
 	Opcode,
-	Operand,
+	ValOperand,
 	Parameter,
-	Program,
 	Register,
+	RuntimeFault,
 	SynthSettings,
+	OpType,
 } from "@/common/types";
 import { AccessLog } from "@/machine/log";
 import { Memory } from "@/machine/memory";
 import { RegisterFile, createDefaultRegisters } from "@/machine/regfile";
+
+export const ZERO_TIME_BUDGET = 4096;
 
 export function createDefaultCore(id: number): CoreState {
 	return {
@@ -24,13 +28,6 @@ export function createDefaultCore(id: number): CoreState {
 		regs: createDefaultRegisters(),
 	};
 }
-
-const ZERO_TIME_BUDGET = 4096;
-const NOP: Instruction = {
-	opcode: Opcode.NOP,
-	operands: [],
-	span: { from: 0, to: 0 },
-};
 
 interface CoreConfig {
 	id: number;
@@ -62,7 +59,7 @@ export class Core {
 		this.memory = memory;
 		this.parameters = parameters;
 		this.registers = new RegisterFile(this.id, this.log);
-		this.program = program ?? { instrs: [], labels: {} };
+		this.program = program ?? [];
 	}
 
 	private readonly id: number;
@@ -75,6 +72,8 @@ export class Core {
 	private _enabled = false;
 	private _pc = 0;
 	private _beat = 0;
+	private _fault?: RuntimeFault;
+	private zeroTimeSteps = 0;
 
 	get pc() {
 		return this._pc;
@@ -92,6 +91,14 @@ export class Core {
 		return this._enabled;
 	}
 
+	get fault() {
+		return this._fault;
+	}
+
+	get hasProgram() {
+		return this.program.length > 0;
+	}
+
 	get state(): CoreState {
 		return {
 			id: this.id,
@@ -99,90 +106,119 @@ export class Core {
 			pc: this.pc,
 			beat: this.beat,
 			regs: this.regs,
+			fault: this.fault,
 		};
 	}
 
 	load(program: Program) {
 		this.program = program;
-		this._pc = this.normalise(this._pc);
+		this.clearFault();
+		this.rewind();
 	}
 
 	setRegister(reg: Register, val: number) {
 		this.registers.write(reg, val);
 	}
 
+	setEnabled(enabled: boolean) {
+		this._enabled = enabled;
+		if (enabled) this.clearFault();
+	}
+
 	reset(startBeat = 0) {
 		this.registers.reset();
+		this._enabled = false;
+		this.clearFault();
 		this.rewind(startBeat);
 	}
 
-	toggle() {
-		this._enabled = !this._enabled;
+	private clearFault() {
+		this._fault = undefined;
+		this.zeroTimeSteps = 0;
 	}
 
-	private eval(operand?: Operand): number {
-		if (!operand) return 0;
+	private raiseFault(message: string, instr: Instruction) {
+		this._fault = {
+			message,
+			span: instr.span,
+			beat: this._beat,
+			pc: this.normalise(this._pc - 1),
+		};
+		this._enabled = false;
+	}
 
-		switch (operand.mode) {
-			case "mem_direct":
-				return this.memory.read(operand.address);
-			case "mem_indirect": {
-				const address = this.registers.read(operand.reg);
-				return this.memory.read(address);
-			}
-			case "reg_read":
-				return this.registers.read(operand.reg);
-			case "reg_write":
-				return operand.reg;
-			case "label":
-				return this.program.labels[operand.value] ?? 0;
-			default:
+	private eval(operand: ValOperand): number {
+		switch (operand.type) {
+			case OpType.Imm:
 				return operand.value;
+			case OpType.Reg:
+				return this.registers.read(operand.reg);
+			case OpType.Mem: {
+				if (operand.addr.type === OpType.Imm)
+					return this.memory.read(operand.addr.value);
+				const addr = this.registers.read(operand.addr.reg);
+				return this.memory.read(addr);
+			}
 		}
 	}
 
 	private normalise(pc: number): number {
-		if (this.program.instrs.length === 0) return 0;
-		return (pc % this.program.instrs.length + this.program.instrs.length) % this.program.instrs.length;
+		if (this.program.length === 0) return 0;
+		return (pc % this.program.length + this.program.length) % this.program.length;
 	}
 
 	private fetch(pc: number): Instruction {
-		if (this.program.instrs.length === 0) return NOP;
-		return this.program.instrs[this.normalise(pc)];
+		return this.program[this.normalise(pc)];
 	}
 
-	execute(instr: Instruction): ExecEvent {
+	private execute(instr: Instruction): ExecEvent {
 		const beat = this._beat;
 		const mark = this.log.mark(this.id);
-		const [raw1, raw2] = instr.operands;
-		const [val1, val2] = [this.eval(raw1), this.eval(raw2)];
 		let note: Note | undefined;
 
 		switch (instr.opcode) {
-			case Opcode.PLAY:
-				note = this.createNote(val1 as Instrument, val2, 1); // TODO: implement duration
+			case Opcode.PLAY: {
+				const [device, pitch] = instr.operands;
+				note = this.createNote(device.device, this.eval(pitch), 1); // TODO: implement duration
 				break;
-			case Opcode.REST:
-				this._beat = clampBeat(this._beat + val1); // TODO: stall execution here for highlighting purposes?
+			}
+			case Opcode.REST: {
+				const [beats] = instr.operands;
+				const beat = this.eval(beats);
+				if (beat <= 0) {
+					this.raiseFault(`REST must advance by a positive value, received ${beat}.`, instr);
+					break;
+				}
+
+				this._beat = clampBeat(this._beat + beat);
 				break;
-			case Opcode.LOAD:
-				this.registers.write(val1 as Register, val2);
+			}
+			case Opcode.LOAD: {
+				const [dest, val] = instr.operands;
+				this.registers.write(dest.reg, this.eval(val));
 				break;
-			case Opcode.STORE:
-				this.memory.write(val1, val2);
+			}
+			case Opcode.STORE: {
+				const [addr, val] = instr.operands;
+				this.memory.write(this.eval(addr), this.eval(val));
 				break;
-			case Opcode.ADD:
-				this.registers.write(val1 as Register, this.registers.read(val1 as Register) + val2);
+			}
+			case Opcode.ADD: {
+				const [dest, val] = instr.operands;
+				this.registers.write(dest.reg, this.registers.read(dest.reg) + this.eval(val));
 				break;
-			case Opcode.JUMP:
-				this._pc = this.normalise(val1);
+			}
+			case Opcode.JUMP: {
+				const [target] = instr.operands;
+				this._pc = this.normalise(target.addr);
 				break;
-			case Opcode.JMPZ:
-				if (val1 === 0) this._pc = this.normalise(val2);
+			}
+			case Opcode.JMPZ: {
+				const [test, target] = instr.operands;
+				if (this.registers.read(test.reg) === 0)
+					this._pc = this.normalise(target.addr);
 				break;
-			case Opcode.NOP:
-			default:
-				break;
+			}
 		}
 
 		return {
@@ -191,37 +227,43 @@ export class Core {
 			beat,
 			span: instr.span,
 			log: this.log.since(this.id, mark),
-			advanced: instr.opcode === Opcode.PLAY,
 			note,
 		};
 	}
 
-	execUntil(targetBeat: number): ExecEvent[] {
-		const events: ExecEvent[] = [];
-		if (!this._enabled) return events;
-		if (this.program.instrs.length === 0) return events;
-		let zeroTimeInstrs = 0;
+	step(): ExecEvent | undefined {
+		if (!this._enabled || this._fault || this.program.length === 0) return undefined;
 
-		while (this._beat < targetBeat && zeroTimeInstrs < ZERO_TIME_BUDGET) {
-			const event = this.execute(this.fetch(this._pc++));
-			events.push(event);
-			zeroTimeInstrs = event.advanced ? 0 : zeroTimeInstrs + 1;
+		const beatBefore = this._beat;
+		const instr = this.fetch(this._pc++);
+		const event = this.execute(instr);
+
+		if (this._fault) return event;
+
+		if (this._beat > beatBefore) {
+			this.zeroTimeSteps = 0;
+			return event;
 		}
 
-		return events;
+		this.zeroTimeSteps++;
+		if (this.zeroTimeSteps >= ZERO_TIME_BUDGET)
+			this.raiseFault(`Exceeded ${ZERO_TIME_BUDGET} zero-time instructions.`, instr);
+
+		return event;
 	}
 
-	private createNote(instrument: Instrument, pitch: number, length: number): Note {
+	private createNote(device: Device, pitch: number, length: number): Note {
 		return {
 			length,
-			instrument,
+			device,
 			pitch,
 			settings: createSynthSettings(this.regs, this.parameters),
 		};
 	}
 
-	rewind(startBeat = 0) {
+	private rewind(startBeat = 0) {
 		this._pc = 0;
 		this._beat = clampBeat(startBeat);
+		this.zeroTimeSteps = 0;
 	}
 }

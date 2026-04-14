@@ -27,7 +27,7 @@ export class Memory {
 	}
 
 	reset() {
-		this.mem.fill(0);
+		this.mem = createDefaultMemory(this.mem.length);
 	}
 
 	normalise(addr: number) {

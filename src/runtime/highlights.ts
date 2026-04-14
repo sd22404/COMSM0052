@@ -40,7 +40,7 @@ export class Highlights {
 		}
 
 		for (const code of state.code)
-			code && code.sort((left, right) => left.from - right.from || left.to - right.to);
+			if (code) code.sort((left, right) => left.from - right.from || left.to - right.to);
 
 		return state;
 	}

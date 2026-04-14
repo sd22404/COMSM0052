@@ -1,18 +1,18 @@
 import { Runtime, createDefaultRuntime } from "@/runtime/runtime";
-import { Parameter, Register, RuntimeState } from "@/common/types";
+import { CompileResult, Parameter, Register, RuntimeState } from "@/common/types";
 import { useEffect, useState } from "react";
 
 interface RuntimeHook {
-	runtime: RuntimeState;
+	state: RuntimeState;
 	run: () => void;
 	halt: () => void;
 	reset: () => void;
-	load: (coreID: number, code: string) => void;
+	load: (coreID: number, code: string) => CompileResult;
 	setRegister: (coreID: number, reg: Register, value: number) => void;
 	setParameter: (control: Parameter, value: number) => void;
 	setMemory: (addr: number, value: number) => void;
 	setSample: (note: number, sample: string) => void;
-	toggleCore: (index: number) => void;
+	setEnabled: (coreID: number, enabled: boolean) => void;
 }
 
 export default function useRuntime(): RuntimeHook {
@@ -25,7 +25,7 @@ export default function useRuntime(): RuntimeHook {
 	}, [runtime]);
 
 	return {
-		runtime: state,
+		state,
 		run: () => runtime.run(),
 		halt: () => runtime.halt(),
 		reset: () => runtime.reset(),
@@ -34,6 +34,6 @@ export default function useRuntime(): RuntimeHook {
 		setParameter: (param: Parameter, value: number) => runtime.setParameter(param, value),
 		setMemory: (addr: number, value: number) => runtime.setAddress(addr, value),
 		setSample: (note: number, sample: string) => runtime.setSample(note, sample),
-		toggleCore: (id: number) => runtime.toggleCore(id),
+		setEnabled: (coreID: number, enabled: boolean) => runtime.setEnabled(coreID, enabled),
 	};
 }

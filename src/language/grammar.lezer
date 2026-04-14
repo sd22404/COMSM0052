@@ -4,22 +4,21 @@ statement { (Label | Instruction) }
 
 Instruction { Opcode Operand+ }
 
-Operand { Instrument | Register | Immediate | Memory | LabelRef }
+Operand { Immediate | Register | Memory | Device | Identifier }
+
+Memory { "[" (Immediate | Register) "]" }
 
 @tokens {
 	Opcode { "PLAY" | "REST" | "JUMP" | "JMPZ" | "LOAD" | "STORE" | "ADD" }
-	Instrument { "DRUMS" | "BASS" | "PIANO" | "SYNTH" }
+	Device { "DRUMS" | "BASS" | "PIANO" | "SYNTH" }
 	Register { "VOL" | "PAN" | "ATK" | "DEC" | "SUS" | "REL" | "RAND" | "REG0" | "REG1" | "REG2" | "REG3" }
-	Label { identifier ":" }
-	LabelRef { identifier }
-	Immediate { number }
-	Memory { "[" (number | Register) "]" }
-	identifier { @asciiLetter+ @digit* }
-	number { "-"? @digit+ }
+	Label { Identifier ":" }
+	Identifier { @asciiLetter+ @digit* }
+	Immediate { "-"? @digit+ }
 	space { $[ \t\r]+ }
 	newline { "\n" }
 	Comment { ";" ![\n]* }
-	@precedence { Opcode, Instrument, Memory, Immediate, Register, Label, LabelRef }
+	@precedence { Opcode, Device, Register, Label, Identifier }
 }
 
 @skip { space | Comment }

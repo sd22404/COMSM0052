@@ -22,17 +22,17 @@ function parseMemory(input: string): number | undefined {
 interface MemoryProps {
 	memory: number[];
 	highlights: MemoryAccess[];
-	setMemory: (addr: number, val: number) => void;
+	onMemoryChange: (addr: number, val: number) => void;
 }
 
-export default function Memory({ memory, highlights, setMemory }: MemoryProps) {
+export default function Memory({ memory, highlights, onMemoryChange }: MemoryProps) {
 	const [noteView, setNoteView] = useState(false);
 	const [drafts, setDrafts] = useState<(number | string)[]>(memory);
 	const highlightModes = new Map<number, "read" | "write">();
 
 	for (const highlight of highlights) {
 		const current = highlightModes.get(highlight.addr);
-		if (current === "write") continue; // ??
+		if (current === "write") continue;
 		highlightModes.set(highlight.addr, highlight.mode);
 	}
 
@@ -46,7 +46,7 @@ export default function Memory({ memory, highlights, setMemory }: MemoryProps) {
 	);
 
 	return (
-		<Card variant="panel" className="flex-1 min-h-0">
+		<Card id="memory" variant="panel" className="flex-1 min-h-0">
 			<div className="flex h-full w-full flex-col gap-3">
 				<div className="flex items-center justify-between">
 					<Subheading>Memory</Subheading>
@@ -56,7 +56,7 @@ export default function Memory({ memory, highlights, setMemory }: MemoryProps) {
 				</div>
 				<div className="flex min-h-0 flex-col gap-1 overflow-y-auto overflow-x-hidden">
 					{rowStarts.map((startAddr) => (
-						<Card key={startAddr}>
+						<Card key={startAddr} className="p-0">
 							<div className="grid grid-cols-8">
 								{drafts.slice(startAddr, startAddr + STEPS_PER_ROW).map((draft, offset) => {
 									const addr = startAddr + offset;
@@ -106,7 +106,7 @@ export default function Memory({ memory, highlights, setMemory }: MemoryProps) {
 													const nextText = e.target.value;
 													const nextValue = parseMemory(nextText);
 
-													if (nextValue !== undefined) setMemory(addr, nextValue);
+													if (nextValue !== undefined) onMemoryChange(addr, nextValue);
 													setDrafts((drafts) => drafts.map((draft, i) => (i === addr ? nextText : draft)));
 												}}
 											/>

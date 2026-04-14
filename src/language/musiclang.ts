@@ -4,7 +4,8 @@ import { LRLanguage, LanguageSupport, syntaxTree } from "@codemirror/language";
 import { CompletionContext } from "@codemirror/autocomplete";
 import { styleTags, tags } from "@lezer/highlight";
 import { parser } from "./parser";
-import { Opcode, Register, Instrument } from "@/common/types";
+import { Compiler } from "./compiler";
+import { Opcode, Register, Device } from "@/common/types";
 
 const parserWithHighlighting = parser.configure({
 	props: [
@@ -12,11 +13,11 @@ const parserWithHighlighting = parser.configure({
 			Comment: tags.lineComment,
 			Label: tags.labelName,
 			Opcode: tags.keyword,
-			Register: tags.operator,
-			Instrument: tags.typeName,
 			Immediate: tags.number,
+			Register: tags.operator,
 			Memory: tags.string,
-			LabelRef: tags.labelName,
+			Device: tags.typeName,
+			Identifier: tags.labelName,
 		}),
 	],
 });
@@ -48,14 +49,14 @@ function completions(context: CompletionContext) {
 
 	const regs = createOptions(Register, "type").filter(reg => reg.label.includes("REG") || reg.label === "RAND")
 	const allRegs = createOptions(Register, "type");
-	const instruments = createOptions(Instrument, "type");
+	const devices = createOptions(Device, "type");
 	
 	if (["JUMP"].includes(prevWord)) options = [];
-	else if (["PLAY"].includes(prevWord)) options = instruments;
+	else if (["PLAY"].includes(prevWord)) options = devices;
 	else if (["LOAD", "ADD"].includes(prevWord)) options = allRegs;
 	else if (["JMPZ", "REST", "STORE"].includes(prevWord)) options = regs;
 	else if (allRegs.map(reg => reg.label).includes(prevWord)) options = regs;
-	else if (instruments.map(i => i.label).includes(prevWord)) options = regs;
+	else if (devices.map(d => d.label).includes(prevWord)) options = regs;
 
 	return {
 		from,
@@ -78,18 +79,10 @@ export function musiclang() {
 }
 
 export function musiclinter(view: EditorView): readonly Diagnostic[] {
-	const diagnostics: Diagnostic[] = [];
-
-	syntaxTree(view.state).cursor().iterate(node => {
-		if (node.type.isError) {
-			diagnostics.push({
-				from: node.from,
-				to: node.to,
-				severity: "error",
-				message: "Yep. That's a syntax error.",
-			});
-		}},
-	);
-
-	return diagnostics;
+	return Compiler.compile(view.state.doc.toString()).diagnostics.map((diagnostic) => ({
+			from: diagnostic.span.from,
+			to: diagnostic.span.to,
+			severity: diagnostic.severity,
+			message: diagnostic.message,
+		}));
 }

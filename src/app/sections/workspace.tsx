@@ -1,19 +1,19 @@
-import { Register, getDefaultCoreProgram } from "@/common/types";
-import Memory from "./memory";
-import Core from "./core";
+import { Register } from "@/common/types";
+import { useEffect, useState } from "react";
 import useRuntime from "../hooks/useRuntime";
+import useStorage from "../hooks/useStorage";
+import useTutorial from "../hooks/useTutorial";
 import Controls from "./controls";
+import Core from "./core";
+import Memory from "./memory";
 import SampleSelector from "./sampler";
+import Tutorial from "./tutorial";
 
 export default function Workspace() {
 	const {
-		runtime: {
+		state: {
 			running,
-			cpu: {
-				memory,
-				parameters,
-				cores,
-			},
+			cpu,
 			highlights,
 			samples,
 		},
@@ -22,33 +22,79 @@ export default function Workspace() {
 		reset,
 		load,
 		setRegister,
+		setEnabled,
 		setParameter,
 		setMemory,
 		setSample,
-		toggleCore,
 	} = useRuntime();
 
+	const {
+		isClient,
+		storeCode,
+		retrieveCode,
+		storeTutorialComplete,
+		retrieveTutorialComplete,
+	} = useStorage();
+
+	const {
+		state: tutorial,
+		next,
+	} = useTutorial();
+
+	const [showTutorial, setShowTutorial] = useState(false);
+
+	function handleLoad(coreID: number, code: string) {
+		const asm = load(coreID, code);
+		if (!asm.program) return asm;
+
+		storeCode(coreID, code);
+		run(); return asm;
+	}
+
+	useEffect(() => {
+		if (!isClient) return;
+
+		cpu.cores.map((core) => {
+			load(core.id, retrieveCode(core.id));
+		});
+	}, [isClient, retrieveCode]);
+
+	useEffect(() => {
+		if (!isClient) return;
+
+		if (!tutorial.active) storeTutorialComplete(true);
+		setShowTutorial(!retrieveTutorialComplete());
+	}, [isClient, tutorial.active, storeTutorialComplete, retrieveTutorialComplete]);
+
 	return (
-		<div className="flex h-screen w-screen items-start justify-between overflow-hidden gap-4 px-4 pb-4 pt-16">
-			<div className="grid min-h-0 h-full flex-1 auto-rows-fr xl:grid-cols-2 gap-2">
-				{cores.map((state) => (
+		<div id="workspace" className="flex h-screen w-screen items-start justify-between gap-4 overflow-hidden px-4 pb-4 pt-16">
+			{showTutorial && <Tutorial title={tutorial.title} text={tutorial.text} anchorID={tutorial.anchorRef} next={next} />}
+			<div id="cores" className="grid h-full min-h-0 flex-1 auto-rows-fr gap-2 xl:grid-cols-2">
+				{cpu.cores.map((state) => (
 					<Core
 						key={state.id}
 						state={state}
+						initialCode={retrieveCode(state.id)}
 						codeHighlights={highlights.code[state.id] ?? []}
-						regsHighlights={highlights.regs[state.id] ?? []}
-						defaultCode={getDefaultCoreProgram(state.id)}
-						setRegister={(reg: Register, val: number) => setRegister(state.id, reg, val)}
-						toggle={() => toggleCore(state.id)}
-						load={(code) => load(state.id, code)}
+						regHighlights={highlights.regs[state.id] ?? []}
+						onRegisterChange={(reg: Register, val: number) => setRegister(state.id, reg, val)}
+						onEnable={(enabled) => setEnabled(state.id, enabled)}
+						onLoad={(code) => handleLoad(state.id, code)}
 					/>
 				))}
 			</div>
 
 			<div className="flex h-full w-sm flex-col gap-2">
-				<Controls parameters={parameters} setParameter={setParameter} running={running} run={run} halt={halt} reset={reset} />
-				<Memory memory={memory} highlights={highlights.memory} setMemory={setMemory} />
-				<SampleSelector samples={samples} setSample={setSample} />
+				<Controls
+					parameters={cpu.parameters}
+					onParameterChange={setParameter}
+					running={running}
+					run={run}
+					halt={halt}
+					reset={reset}
+				/>
+				<Memory memory={cpu.memory} highlights={highlights.memory} onMemoryChange={setMemory} />
+				<SampleSelector samples={samples} onSampleChange={setSample} />
 			</div>
 		</div>
 	);

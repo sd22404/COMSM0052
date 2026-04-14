@@ -15,7 +15,7 @@ export function createDefaultCPU(): CPUState {
 }
 
 export function createDefaultParameters(): number[] {
-	return [ 120, 100 ]; // BPM, Volume
+	return [120, 100];
 }
 
 export class CPU {
@@ -38,12 +38,14 @@ export class CPU {
 		return {
 			memory: this.memory.snapshot(),
 			parameters: [...this.parameters],
-			cores: this.cores.map(core => core.state),
+			cores: this.cores.map((core) => core.state),
 		};
 	}
 
-	public toggleCore(index: number) {
-		this.cores[index].toggle(); // TODO: toggle on downbeat
+	public setEnabled(coreID: number, enabled: boolean) {
+		const core = this.cores[coreID];
+		if (!core) return;
+		core.setEnabled(enabled);
 	}
 
 	public load(coreID: number, program: Program) {
@@ -52,17 +54,32 @@ export class CPU {
 		core.load(program);
 	}
 
-	public execUntil(beat: number) {
+	private nextCore(targetBeat: number): Core | undefined {
+		let next: Core | undefined;
+
+		for (const core of this.cores) {
+			if (!core.enabled || core.fault || !core.hasProgram || core.beat >= targetBeat)
+				continue;
+
+			if (!next || core.beat < next.beat)
+				next = core;
+		}
+
+		return next;
+	}
+
+	public execUntil(targetBeat: number) {
 		this.log.clear();
 		const events: ExecEvent[] = [];
-		for (const core of this.cores)
-			if (core.enabled) events.push(...core.execUntil(beat));
 
-		events.sort((left, right) => (
-			left.beat - right.beat
-			|| left.coreID - right.coreID
-			|| left.id - right.id
-		));
+		while (true) {
+			const core = this.nextCore(targetBeat);
+			if (!core) break;
+
+			const event = core.step();
+			if (!event) continue;
+			events.push(event);
+		}
 
 		return events;
 	}
@@ -82,8 +99,13 @@ export class CPU {
 	}
 
 	public reset() {
-		// this.memory.reset();
-		for (const core of this.cores) core.reset();
+		this.memory.reset();
+		for (const [index, value] of createDefaultParameters().entries())
+			this.parameters[index] = value;
+
+		for (const core of this.cores)
+			core.reset();
+
 		this.log.clear();
 	}
 }

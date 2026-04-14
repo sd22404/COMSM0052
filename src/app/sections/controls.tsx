@@ -3,23 +3,31 @@ import Card from "@/app/components/card";
 import Input from "@/app/components/input";
 import { Body, Subheading } from "@/app/components/text";
 import { Parameter } from "@/common/types";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import Help from "./help";
 
 interface ControlsProps {
-	parameters: number[];
-	setParameter: (param: Parameter, value: number) => void;
 	running: boolean;
+	parameters: number[];
+	onParameterChange: (param: Parameter, value: number) => void;
 	run: () => void;
 	halt: () => void;
 	reset: () => void;
 }
 
-export default function Controls({ parameters, setParameter, running, run, halt, reset }: ControlsProps){
+export default function Controls({ running, parameters, onParameterChange, run, halt, reset }: ControlsProps){
 	const [drafts, setDrafts] = useState<(number | string)[]>(parameters);
 
+	useEffect(() => {
+		setDrafts(parameters);
+	}, [parameters]);
+
 	return (
-		<Card variant="panel" className="flex flex-col gap-3">
-			<Subheading>Master Controls</Subheading>
+		<Card id="controls" variant="panel" className="flex flex-col gap-3">
+			<div className="flex items-center justify-between">
+				<Subheading>Master Controls</Subheading>
+				<Help />
+			</div>
 
 			<div className="flex justify-between">
 				{drafts.map((value, i) => (
@@ -37,7 +45,7 @@ export default function Controls({ parameters, setParameter, running, run, halt,
 								const valStr = e.target.value;
 								const valInt = parseInt(valStr);
 
-								if (!isNaN(valInt)) setParameter(i, valInt);
+								if (!isNaN(valInt)) onParameterChange(i, valInt);
 								setDrafts(drafts => drafts.map((control, j) => j === i ? valStr : control));
 							}}
 						/>
