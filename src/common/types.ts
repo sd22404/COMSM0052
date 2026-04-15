@@ -197,13 +197,6 @@ export interface HighlightState {
 	memory: MemoryAccess[];
 }
 
-export interface TutorialState {
-	active: boolean;
-	title: string;
-	text: string;
-	anchorRef: string;
-}
-
 export interface Sample {
 	path: string;
 	buf?: AudioBuffer;
@@ -212,6 +205,19 @@ export interface Sample {
 
 export function hasErrors(diagnostics: Diagnostic[]): boolean {
 	return diagnostics.some((diagnostic) => diagnostic.severity === "error");
+}
+
+export interface TutorialState {
+	active: boolean;
+	step: number;
+	lesson: Lesson;
+}
+
+export interface Lesson {
+	title: string;
+	text: string;
+	anchorID?: string;
+	buttonText?: string;
 }
 
 const CORE_PROGRAMS = [

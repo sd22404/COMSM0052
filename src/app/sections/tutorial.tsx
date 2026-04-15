@@ -1,44 +1,60 @@
 import Button from "../components/button";
 import Popup from "../components/popup";
-import { Body, Subsubheading } from "../components/text";
+import { Body, Heading, Subsubheading } from "../components/text";
 import { createPortal } from "react-dom";
-import { ComponentPropsWithoutRef } from "react";
+import { ComponentPropsWithoutRef, useEffect } from "react";
+import { Lesson } from "@/common/types";
 
 interface TutorialProps {
-	title: string;
-	text: string;
-	anchorID: string;
+	lesson: Lesson;
 	next: () => void;
 }
 
 interface PortalProps extends ComponentPropsWithoutRef<"div"> {
-	anchorID: string;
+	anchorID?: string;
 }
 
 function Portal({ children, anchorID, ...props }: PortalProps) {
-	const container = typeof document === "undefined"
-		? null
-		: document.getElementById(anchorID) || document.body;
+	if (typeof document === "undefined") return null;
+	const anchor = anchorID && document.getElementById(anchorID);
 
-	if (!container) return null;
+	useEffect(() => {
+		if (!anchor) return;
+		anchor.classList.add("relative", "z-70");
+		return () => anchor.classList.remove("relative", "z-70");
+	}, [anchor]);
+
 	return (
-		<div className="fixed inset-0 z-5 flex items-center justify-center bg-ctp-crust/80" {...props}>
-		{createPortal(
-			children,
-			container
-		)}
-		</div>
+		<>
+			{createPortal(
+				<div className="fixed inset-0 z-60 bg-ctp-crust/90" {...props} />,
+				document.body
+			)}
+			{anchor
+				? createPortal(
+					<div className="absolute left-full z-80 top-0 ml-4">
+						{children}
+					</div>,
+					anchor
+				)
+				: createPortal(
+					<div className="fixed inset-0 z-80 flex items-center justify-center p-4">
+						{children}
+					</div>,
+					document.body
+				)}
+		</>
 	);
 }
 
-export default function Tutorial({ title, text, anchorID, next }: TutorialProps) {
+export default function Tutorial({ lesson, next }: TutorialProps) {
 	return (
-		<Portal anchorID={anchorID}>
-			<Popup className="w-md flex flex-col gap-4">
-				<Subsubheading>{title}</Subsubheading>
-				<Body className="whitespace-pre-line">{text}</Body>
-				<Button variant="secondary" onClick={() => next()} className="">
-					Next
+		<Portal anchorID={lesson.anchorID}>
+			<Popup className="w-sm flex flex-col gap-4">
+				<Heading className="text-ctp-mauve">{lesson.title}</Heading>
+				<Body className="whitespace-pre-line">{lesson.text}</Body>
+				<Button variant="primary" onClick={() => next()} className="">
+					{lesson.buttonText || "Next"}
 				</Button>
 			</Popup>
 		</Portal>

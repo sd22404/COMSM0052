@@ -149,7 +149,7 @@ export default function Editor({ initialCode, fault, highlights, onLoad, onChang
 			view.destroy();
 			viewRef.current = null;
 		};
-	}, [initialCode]);
+	}, []);
 
 	useEffect(() => {
 		const view = viewRef.current;

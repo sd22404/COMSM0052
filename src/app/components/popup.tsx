@@ -4,6 +4,6 @@ import { cn } from "./cn";
 
 export default function Popup({ className, ...props }: ComponentPropsWithoutRef<"div">) {
 	return (
-		<Card className={cn("fixed z-10 fade-in", className)} {...props} />
+		<Card variant="surface" className={cn("z-10 fade-in backdrop-blur-xs", className)} {...props} />
 	);
 }

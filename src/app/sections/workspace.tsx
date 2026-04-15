@@ -1,5 +1,5 @@
 import { Register } from "@/common/types";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import useRuntime from "../hooks/useRuntime";
 import useStorage from "../hooks/useStorage";
 import useTutorial from "../hooks/useTutorial";
@@ -32,8 +32,6 @@ export default function Workspace() {
 		isClient,
 		storeCode,
 		retrieveCode,
-		storeTutorialComplete,
-		retrieveTutorialComplete,
 	} = useStorage();
 
 	const {
@@ -41,13 +39,12 @@ export default function Workspace() {
 		next,
 	} = useTutorial();
 
-	const [showTutorial, setShowTutorial] = useState(false);
-
 	function handleLoad(coreID: number, code: string) {
 		const asm = load(coreID, code);
 		if (!asm.program) return asm;
 
 		storeCode(coreID, code);
+		setEnabled(coreID, true);
 		run(); return asm;
 	}
 
@@ -59,16 +56,9 @@ export default function Workspace() {
 		});
 	}, [isClient, retrieveCode]);
 
-	useEffect(() => {
-		if (!isClient) return;
-
-		if (!tutorial.active) storeTutorialComplete(true);
-		setShowTutorial(!retrieveTutorialComplete());
-	}, [isClient, tutorial.active, storeTutorialComplete, retrieveTutorialComplete]);
-
 	return (
 		<div id="workspace" className="flex h-screen w-screen items-start justify-between gap-4 overflow-hidden px-4 pb-4 pt-16">
-			{showTutorial && <Tutorial title={tutorial.title} text={tutorial.text} anchorID={tutorial.anchorRef} next={next} />}
+			{tutorial.active && <Tutorial lesson={tutorial.lesson} next={next} />}
 			<div id="cores" className="grid h-full min-h-0 flex-1 auto-rows-fr gap-2 xl:grid-cols-2">
 				{cpu.cores.map((state) => (
 					<Core

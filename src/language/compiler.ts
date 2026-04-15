@@ -54,12 +54,12 @@ function parseDevice(text: string): Device | undefined {
 
 function parseImmOperand(raw: RawOperand, diagnostics: Diagnostic[]): ImmOperand | undefined {
 	if (raw.type !== "Immediate") {
-		diagnostics.push(diagnostic("Expected immediate value.", raw.span));
+		diagnostics.push(diagnostic("expected a number.", raw.span));
 		return undefined;
 	}
 	const value = parseImmediate(raw.text);
 	if (value === undefined) {
-		diagnostics.push(diagnostic(`Invalid immediate value "${raw.text}".`, raw.span));
+		diagnostics.push(diagnostic(`invalid immediate value "${raw.text}".`, raw.span));
 		return undefined;
 	}
 	return { type: OpType.Imm, value, span: raw.span };
@@ -67,12 +67,12 @@ function parseImmOperand(raw: RawOperand, diagnostics: Diagnostic[]): ImmOperand
 
 function parseRegOperand(raw: RawOperand, diagnostics: Diagnostic[]): RegOperand | undefined {
 	if (raw.type !== "Register") {
-		diagnostics.push(diagnostic("Expected register.", raw.span));
+		diagnostics.push(diagnostic("expected a register.", raw.span));
 		return undefined;
 	}
 	const reg = parseRegister(raw.text);
 	if (reg === undefined) {
-		diagnostics.push(diagnostic(`Unknown register "${raw.text}".`, raw.span));
+		diagnostics.push(diagnostic(`invalid register "${raw.text}".`, raw.span));
 		return undefined;
 	}
 
@@ -83,25 +83,25 @@ function parseAddrOperand(raw: RawOperand, diagnostics: Diagnostic[]): AddrOpera
 	if (raw.type == "Immediate") return parseImmOperand(raw, diagnostics);
 	if (raw.type == "Register") return parseRegOperand(raw, diagnostics);
 
-	diagnostics.push(diagnostic("Expected address operand (immediate or register).", raw.span));
+	diagnostics.push(diagnostic("expected a memory address (number or register).", raw.span));
 	return undefined;
 }
 
 function parseMemOperand(raw: RawOperand, diagnostics: Diagnostic[]): MemOperand | undefined {
 	if (raw.type !== "Memory") {
-		diagnostics.push(diagnostic("Expected memory operand.", raw.span));
+		diagnostics.push(diagnostic("expected a memory operand.", raw.span));
 		return undefined;
 	}
 
 	const addr = raw.addr;
 	if (!addr) {
-		diagnostics.push(diagnostic("Memory operand missing address.", raw.span));
+		diagnostics.push(diagnostic("memory operand missing address.", raw.span));
 		return undefined;
 	}
 
 	const addrOp = parseAddrOperand(addr, diagnostics);
 	if (!addrOp) {
-		diagnostics.push(diagnostic("Invalid memory address operand.", raw.span));
+		diagnostics.push(diagnostic("invalid memory address.", raw.span));
 		return undefined;
 	}
 
@@ -110,12 +110,12 @@ function parseMemOperand(raw: RawOperand, diagnostics: Diagnostic[]): MemOperand
 
 function parseDeviceOperand(raw: RawOperand, diagnostics: Diagnostic[]): DeviceOperand | undefined {
 	if (raw.type !== "Device") {
-		diagnostics.push(diagnostic("Expected device operand.", raw.span));
+		diagnostics.push(diagnostic("expected a device operand.", raw.span));
 		return undefined;
 	}
 	const device = parseDevice(raw.text);
 	if (device === undefined) {
-		diagnostics.push(diagnostic(`Unknown device "${raw.text}".`, raw.span));
+		diagnostics.push(diagnostic(`invalid device "${raw.text}".`, raw.span));
 		return undefined;
 	}
 	return { type: OpType.Device, device, span: raw.span };
@@ -125,7 +125,7 @@ function parseLabelOperand(raw: RawOperand, labels: Record<string, number>, diag
 	if (raw.type === "Immediate") {
 		const addr = parseImmediate(raw.text);
 		if (addr === undefined) {
-			diagnostics.push(diagnostic(`Invalid target "${raw.text}".`, raw.span));
+			diagnostics.push(diagnostic(`invalid target "${raw.text}".`, raw.span));
 			return undefined;
 		}
 		return { type: OpType.Label, addr, label: raw.text, span: raw.span };
@@ -134,13 +134,13 @@ function parseLabelOperand(raw: RawOperand, labels: Record<string, number>, diag
 	if (raw.type === "Identifier") {
 		const addr = labels[raw.text];
 		if (addr === undefined) {
-			diagnostics.push(diagnostic(`Label not found "${raw.text}".`, raw.span));
+			diagnostics.push(diagnostic(`label "${raw.text}" not found.`, raw.span));
 			return undefined;
 		}
 		return { type: OpType.Label, addr, label: raw.text, span: raw.span };
 	}
 
-	diagnostics.push(diagnostic("Expected label operand.", raw.span));
+	diagnostics.push(diagnostic("expected a label.", raw.span));
 	return undefined;
 }
 
@@ -149,7 +149,7 @@ function parseValOperand(raw: RawOperand, diagnostics: Diagnostic[]): ValOperand
 	if (raw.type === "Register") return parseRegOperand(raw, diagnostics);
 	if (raw.type === "Memory") return parseMemOperand(raw, diagnostics);
 
-	diagnostics.push(diagnostic("Expected value operand (immediate, register, or memory).", raw.span));
+	diagnostics.push(diagnostic("expected a value (number, register, or memory address).", raw.span));
 	return undefined;
 }
 
@@ -240,7 +240,7 @@ function buildLabels(labels: RawLabel[], diagnostics: Diagnostic[]) {
 
 	for (const label of labels) {
 		if (Object.hasOwn(table, label.name)) {
-			diagnostics.push(diagnostic(`Duplicate label "${label.name}".`, label.span));
+			diagnostics.push(diagnostic(`duplicate label "${label.name}".`, label.span));
 			continue;
 		}
 		table[label.name] = label.addr;
@@ -252,13 +252,13 @@ function buildLabels(labels: RawLabel[], diagnostics: Diagnostic[]) {
 function buildInstruction(raw: RawInstruction, labels: Record<string, number>, diagnostics: Diagnostic[]): Instruction | undefined {
 	const opcodeText = raw.opcodeText;
 	if (!opcodeText) {
-		diagnostics.push(diagnostic("Missing opcode.", raw.opcodeSpan));
+		diagnostics.push(diagnostic("missing opcode.", raw.opcodeSpan));
 		return undefined;
 	}
 
 	const opcode = parseOpcode(opcodeText);
 	if (opcode === undefined) {
-		diagnostics.push(diagnostic(`Unknown opcode "${opcodeText}".`, raw.opcodeSpan));
+		diagnostics.push(diagnostic(`unknown opcode "${opcodeText}".`, raw.opcodeSpan));
 		return undefined;
 	}
 
@@ -335,7 +335,7 @@ function parse(code: string): Diagnostic[] {
 
 		const from = node.from;
 		const to = Math.max(Math.min(code.length, node.from + 1), node.to);
-		diagnostics.push(diagnostic("Syntax error.", span(from, to)));
+		diagnostics.push(diagnostic("syntax error.", span(from, to)));
 	});
 
 	return diagnostics;

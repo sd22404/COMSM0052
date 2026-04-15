@@ -70,7 +70,7 @@ export default function Core({
 					</Card>
 				)}
 
-				<div className="flex flex-1 min-h-0 gap-3 overflow-hidden">
+				<div id={`core-${state.id}-editor`} className="flex flex-1 min-h-0 gap-3 overflow-hidden">
 					<Editor
 						initialCode={initialCode}
 						fault={state.fault}

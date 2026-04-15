@@ -1,6 +1,6 @@
 import { Runtime, createDefaultRuntime } from "@/runtime/runtime";
 import { CompileResult, Parameter, Register, RuntimeState } from "@/common/types";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 interface RuntimeHook {
 	state: RuntimeState;
@@ -24,16 +24,26 @@ export default function useRuntime(): RuntimeHook {
 		return () => runtime.halt();
 	}, [runtime]);
 
-	return {
+	const run = useCallback(() => runtime.run(), [runtime]);
+	const halt = useCallback(() => runtime.halt(), [runtime]);
+	const reset = useCallback(() => runtime.reset(), [runtime]);
+	const load = useCallback((coreID: number, code: string) => runtime.load(coreID, code), [runtime]);
+	const setRegister = useCallback((coreID: number, reg: Register, value: number) => runtime.setRegister(coreID, reg, value), [runtime]);
+	const setParameter = useCallback((param: Parameter, value: number) => runtime.setParameter(param, value), [runtime]);
+	const setMemory = useCallback((addr: number, value: number) => runtime.setAddress(addr, value), [runtime]);
+	const setSample = useCallback((note: number, sample: string) => runtime.setSample(note, sample), [runtime]);
+	const setEnabled = useCallback((coreID: number, enabled: boolean) => runtime.setEnabled(coreID, enabled), [runtime]);
+
+	return useMemo(() => ({
 		state,
-		run: () => runtime.run(),
-		halt: () => runtime.halt(),
-		reset: () => runtime.reset(),
-		load: (coreID: number, code: string) => runtime.load(coreID, code),
-		setRegister: (coreID: number, reg: Register, value: number) => runtime.setRegister(coreID, reg, value),
-		setParameter: (param: Parameter, value: number) => runtime.setParameter(param, value),
-		setMemory: (addr: number, value: number) => runtime.setAddress(addr, value),
-		setSample: (note: number, sample: string) => runtime.setSample(note, sample),
-		setEnabled: (coreID: number, enabled: boolean) => runtime.setEnabled(coreID, enabled),
-	};
+		run,
+		halt,
+		reset,
+		load,
+		setRegister,
+		setParameter,
+		setMemory,
+		setSample,
+		setEnabled,
+	}), [halt, load, reset, run, setEnabled, setMemory, setParameter, setRegister, setSample, state]);
 }

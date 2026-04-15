@@ -1,5 +1,5 @@
-import { Tutorial, createDefaultTutorial } from "@/app/hooks/tutorial";
-import { TutorialState } from "@/common/types";
+import { Tutorial, createDefaultTutorial } from "@/tutorial/tutorial";
+import { TutorialState } from "@/tutorial/types";
 
 import { useEffect, useState } from "react";
 
