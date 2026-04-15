@@ -78,8 +78,9 @@ export default function Core({
 					</Card>
 				)}
 
-				<div id={`core-${state.id}-editor`} className="flex flex-1 min-h-0 gap-3 overflow-hidden">
+				<div className="flex flex-1 min-h-0 gap-3 overflow-hidden">
 					<Editor
+						id={`core-${state.id}-editor`}
 						initialCode={initialCode}
 						fault={state.fault}
 						highlights={(hasChanged || invalid) ? [] : codeHighlights}
@@ -90,6 +91,7 @@ export default function Core({
 						}}
 					/>
 					<Registers
+						id={`core-${state.id}-registers`}
 						registers={state.regs}
 						highlights={regHighlights}
 						onRegisterChange={onRegisterChange}

@@ -58,6 +58,7 @@ const highlightField = StateField.define<DecorationSet>({
 });
 
 interface EditorProps {
+	id?: string;
 	initialCode: string;
 	fault?: RuntimeFault;
 	highlights: CodeSpan[];
@@ -65,7 +66,7 @@ interface EditorProps {
 	onChange: (code: string) => void;
 }
 
-export default function Editor({ initialCode, fault, highlights, onLoad, onChange }: EditorProps) {
+export default function Editor({ id, initialCode, fault, highlights, onLoad, onChange }: EditorProps) {
 	const editorRef = useRef<HTMLDivElement>(null);
 	const viewRef = useRef<EditorView | null>(null);
 	const initialCodeRef = useRef(initialCode);
@@ -188,6 +189,7 @@ export default function Editor({ initialCode, fault, highlights, onLoad, onChang
 
 	return (
 		<div
+			id={id}
 			ref={editorRef}
 			className="min-h-0 min-w-0 flex-1 rounded"
 		/>

@@ -6,12 +6,13 @@ import { useEffect, useState } from "react";
 import Card from "../components/card";
 
 interface RegisterProps {
+	id?: string;
 	registers: number[];
 	highlights: RegisterAccess[];
 	onRegisterChange: (reg: Register, val: number) => void;
 }
 
-export default function Registers({ registers, highlights, onRegisterChange }: RegisterProps) {
+export default function Registers({ id, registers, highlights, onRegisterChange }: RegisterProps) {
 	const [drafts, setDrafts] = useState<(number | string)[]>(registers);
 	const highlightModes = new Map<Register, "read" | "write">();
 
@@ -26,7 +27,7 @@ export default function Registers({ registers, highlights, onRegisterChange }: R
 	}, [registers]);
 
 	return (
-		<Card className="p-0 flex flex-col min-h-0 overflow-y-auto overflow-x-hidden">
+		<Card id={id} className="p-0 flex flex-col min-h-0 overflow-y-auto overflow-x-hidden">
 			{drafts.map((draft, i) => {
 				const reg = i as Register;
 				const read = highlightModes.get(reg) === "read";

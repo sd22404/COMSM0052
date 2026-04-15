@@ -217,6 +217,7 @@ export interface Lesson {
 	title: string;
 	text: string;
 	anchorID?: string;
+	side?: "left" | "right";
 	buttonText?: string;
 }
 

@@ -10,7 +10,7 @@ interface SampleSelectorProps {
 }
 
 export default function SampleSelector({ samples, onSampleChange }: SampleSelectorProps) {
-	const [open, setOpen] = useState(false);
+	const [open, setOpen] = useState(true);
 	void onSampleChange;
 
 	return (
