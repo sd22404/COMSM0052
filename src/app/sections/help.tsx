@@ -34,36 +34,34 @@ function HelpModal({ open, onClose }: { open: boolean; onClose: () => void }) {
 				<HelpBlock
 					title="Controls"
 					lines={[
-						<><strong>Ctrl+Enter</strong>: Load the focused code into its matching core.</>,
-						<><strong>Active/Idle</strong>: Indicators for the status of each core. Click to toggle. Enabling takes effect on the next down beat.</>,
-						<><strong>Unloaded</strong>: Shows when editor text differs from the last valid program loaded in that core.</>,
-						<><strong>Invalid</strong>: The editor has semantic or syntax errors, so load is blocked and the last valid program stays active.</>,
-						<><strong>Faulted</strong>: The core hit a runtime error such as a zero-time loop or a non-positive <strong>REST</strong>.</>,
-						<><strong>Reset</strong>: Restores machine state, registers, memory, tempo, and enabled flags to defaults while keeping your editor text.</>,
-						<><strong>Master BPM</strong> and <strong>VOL</strong>: Overall tempo and volume controls.</>,
 						<><strong>Escape</strong>: Close this popup.</>,
+						<><strong>Ctrl+Enter</strong>: Load the focused code into its core.</>,
+						<><strong>Start/Stop Audio</strong>: Toggle audio playback.</>,
+						<><strong>Reset</strong>: Resets registers, memory, tempo, and enabled flags to defaults while keeping your editor code.</>,
+						<><strong>BPM</strong> and <strong>VOL</strong>: Overall tempo and volume controls.</>,
 					]}
 				/>
 				<HelpBlock
 					title="Registers"
 					lines={[
 						<><strong>VOL</strong> controls the volume of each core.</>,
-						<><strong>PAN</strong> controls stereo position per core.</>,
+						<><strong>PAN</strong> controls stereo position of each core&apos;s sound.</>,
 						<><strong>ATK</strong>, <strong>DEC</strong>, <strong>SUS</strong>, and <strong>REL</strong> shape the synth envelope.</>,
 						<><strong>REG0</strong> through <strong>REG3</strong> are general purpose VM registers for your own program logic.</>,
+						<><strong>RAND</strong> generates random numbers less than its value for use in your programs.</>,
 					]}
 				/>
 				<HelpBlock
 					title="Syntax"
 					lines={[
-						<><strong>PLAY <em>instrument note</em></strong>: Emit a note at the core&apos;s current beat without advancing time.</>,
-						<><strong>REST <em>beats</em></strong>: Advance the core&apos;s musical beat by <em>beats</em>.</>,
+						<><strong>PLAY <em>instrument note</em></strong>: Play a note at the core&apos;s current beat without advancing time.</>,
+						<><strong>REST <em>ticks</em></strong>: Wait the core for a number of ticks. A tick is a quarter of a beat.</>,
 						<><strong>LOAD <em>register value</em></strong>: Write a value into a register.</>,
 						<><strong>STORE <em>address value</em></strong>: Write a value into shared memory using an immediate address or register-held address.</>,
 						<><strong>ADD <em>register value</em></strong>: Add a value to an existing register.</>,
-						<><strong><em>label</em>:</strong> Declare a jump target.</>,
-						<><strong>JUMP <em>label|index</em></strong>: Jump unconditionally.</>,
-						<><strong>JMPZ <em>register</em> <em>label|index</em></strong>: Jump if the register is zero.</>,
+						<><strong><em>label</em>:</strong> Declare a place to jump to.</>,
+						<><strong>JUMP <em>label|index</em></strong>: Jump to a label or instruction index.</>,
+						<><strong>JMPZ <em>register</em> <em>label|index</em></strong>: Jump to the label or index if the register holds zero.</>,
 					]}
 				/>
 			</Card>

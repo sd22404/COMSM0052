@@ -15,11 +15,11 @@ export enum Register {
 	DEC,
 	SUS,
 	REL,
-	RAND,
 	REG0,
 	REG1,
 	REG2,
 	REG3,
+	RAND,
 }
 
 export enum Device {
@@ -207,18 +207,51 @@ export function hasErrors(diagnostics: Diagnostic[]): boolean {
 	return diagnostics.some((diagnostic) => diagnostic.severity === "error");
 }
 
-export interface TutorialState {
-	active: boolean;
-	step: number;
-	lesson: Lesson;
-}
+export type TutorialSide = "left" | "right";
+export type TutorialPanel = "controls" | "memory" | "samples";
+export type TutorialPhase = "tour" | "lessons";
 
-export interface Lesson {
+export interface TourStep {
+	id: string;
 	title: string;
 	text: string;
 	anchorID?: string;
-	side?: "left" | "right";
+	side?: TutorialSide;
 	buttonText?: string;
+}
+
+export interface LessonCore {
+	coreID: number;
+	title: string;
+	description: string;
+	starterCode: string;
+}
+
+export interface CodeLesson {
+	id: string;
+	title: string;
+	summary: string;
+	concept: string;
+	instructions: string[];
+	hints?: string[];
+	requiredCoreIDs: number[];
+	visibleCoreIDs: number[];
+	visiblePanels: TutorialPanel[];
+	cores: LessonCore[];
+	successText: string;
+	continueText?: string;
+}
+
+export interface TutorialProgress {
+	phase: TutorialPhase;
+	tourStep: number;
+	lessonIndex: number;
+}
+
+export interface TutorialStatus {
+	completed: boolean;
+	skipped: boolean;
+	progress: TutorialProgress;
 }
 
 const CORE_PROGRAMS = [

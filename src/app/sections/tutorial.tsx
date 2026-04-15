@@ -1,18 +1,22 @@
+"use client";
+
+import { TourStep } from "@/common/types";
+import { ComponentPropsWithoutRef, useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import Button from "../components/button";
 import Popup from "../components/popup";
-import { Body, Heading } from "../components/text";
-import { createPortal } from "react-dom";
-import { ComponentPropsWithoutRef, useEffect, useState } from "react";
-import { Lesson } from "@/common/types";
+import { Body, Eyebrow, Heading } from "../components/text";
 
-interface TutorialProps {
-	lesson: Lesson;
-	next: () => void;
+interface TutorialSpotlightProps {
+	step: TourStep;
+	stepIndex: number;
+	stepCount: number;
+	onNext: () => void;
 }
 
 interface PortalProps extends ComponentPropsWithoutRef<"div"> {
 	anchorID?: string;
-	side?: Lesson["side"];
+	side?: TourStep["side"];
 }
 
 const POPUP_OFFSET = 16;
@@ -20,30 +24,26 @@ const POPUP_OFFSET = 16;
 function Portal({ children, anchorID, side = "right", ...props }: PortalProps) {
 	const hasDocument = typeof document !== "undefined";
 	const anchor = hasDocument && anchorID ? document.getElementById(anchorID) : null;
-	const [anchorRect, setAnchorRect] = useState<DOMRect | null>(null);
+	const [layoutVersion, setLayoutVersion] = useState(0);
+	void layoutVersion;
 
 	useEffect(() => {
-		if (!anchor) {
-			setAnchorRect(null);
-			return;
-		}
+		if (!anchor) return;
 
-		const updateAnchorRect = () => setAnchorRect(anchor.getBoundingClientRect());
-		updateAnchorRect();
-
+		const refresh = () => setLayoutVersion((current) => current + 1);
 		const resizeObserver =
 			typeof ResizeObserver !== "undefined"
-				? new ResizeObserver(updateAnchorRect)
+				? new ResizeObserver(refresh)
 				: null;
-		resizeObserver?.observe(anchor);
 
-		window.addEventListener("resize", updateAnchorRect);
-		window.addEventListener("scroll", updateAnchorRect, true);
+		resizeObserver?.observe(anchor);
+		window.addEventListener("resize", refresh);
+		window.addEventListener("scroll", refresh, true);
 
 		return () => {
 			resizeObserver?.disconnect();
-			window.removeEventListener("resize", updateAnchorRect);
-			window.removeEventListener("scroll", updateAnchorRect, true);
+			window.removeEventListener("resize", refresh);
+			window.removeEventListener("scroll", refresh, true);
 		};
 	}, [anchor]);
 
@@ -55,6 +55,7 @@ function Portal({ children, anchorID, side = "right", ...props }: PortalProps) {
 
 	if (!hasDocument) return null;
 
+	const anchorRect = anchor?.getBoundingClientRect() ?? null;
 	const anchoredStyle =
 		anchorRect && side === "left"
 			? {
@@ -73,35 +74,43 @@ function Portal({ children, anchorID, side = "right", ...props }: PortalProps) {
 		<>
 			{createPortal(
 				<div className="fixed inset-0 z-60 bg-ctp-crust/90" {...props} />,
-				document.body
+				document.body,
 			)}
 			{anchor && anchorRect
 				? createPortal(
 					<div className="fixed z-80" style={anchoredStyle}>
 						{children}
 					</div>,
-					document.body
+					document.body,
 				)
 				: createPortal(
 					<div className="fixed inset-0 z-80 flex items-center justify-center p-4">
 						{children}
 					</div>,
-					document.body
+					document.body,
 				)}
 		</>
 	);
 }
 
-export default function Tutorial({ lesson, next }: TutorialProps) {
+export default function TutorialSpotlight({
+	step,
+	stepIndex,
+	stepCount,
+	onNext,
+}: TutorialSpotlightProps) {
 	return (
-		<Portal anchorID={lesson.anchorID} side={lesson.side}>
-			<Popup className="w-sm flex flex-col gap-4">
-				<Heading tone="mauve">{lesson.title}</Heading>
-				<Body className="whitespace-pre-line">{lesson.text}</Body>
-				<Button variant="primary" onClick={() => next()}>
-					{lesson.buttonText || "Next"}
+		<Portal anchorID={step.anchorID} side={step.side}>
+			<Popup className="flex w-[22rem] flex-col gap-4">
+				<Eyebrow tone="mauve">
+					Tour step {stepIndex + 1} of {stepCount}
+				</Eyebrow>
+				<Heading tone="mauve">{step.title}</Heading>
+				<Body className="whitespace-pre-line">{step.text}</Body>
+				<Button variant="primary" onClick={onNext}>
+					{step.buttonText || "Next"}
 				</Button>
 			</Popup>
 		</Portal>
-	)
+	);
 }

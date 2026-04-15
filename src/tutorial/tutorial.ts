@@ -1,46 +1,60 @@
-import { TutorialState } from "@/common/types";
-import { LESSONS } from "./lessons";
+import { TutorialPhase, TutorialProgress, TutorialStatus } from "@/common/types";
 
-export function createDefaultTutorial(): TutorialState {
+export const TUTORIAL_STATUS_KEY = "music-machine:tutorial";
+
+function isTutorialPhase(value: unknown): value is TutorialPhase {
+	return value === "tour" || value === "lessons";
+}
+
+function clampIndex(value: unknown): number {
+	return typeof value === "number" && Number.isFinite(value) && value >= 0
+		? Math.floor(value)
+		: 0;
+}
+
+export function createDefaultTutorialProgress(): TutorialProgress {
 	return {
-		active: true,
-		step: 0,
-		lesson: LESSONS[0],
+		phase: "tour",
+		tourStep: 0,
+		lessonIndex: 0,
 	};
 }
 
-export class Tutorial {
-	private step: number = 0;
-	private broadcast?: (state: TutorialState) => void;
+export function createDefaultTutorialStatus(): TutorialStatus {
+	return {
+		completed: false,
+		skipped: false,
+		progress: createDefaultTutorialProgress(),
+	};
+}
 
-	get state(): TutorialState {
-		return {
-			active: this.step < LESSONS.length,
-			step: this.step,
-			lesson: this.lesson,
-		};
-	}
+export function normaliseTutorialStatus(value: unknown): TutorialStatus {
+	if (!value || typeof value !== "object")
+		return createDefaultTutorialStatus();
 
-	get lesson() {
-		return LESSONS[this.step];
-	}
+	const record = value as Record<string, unknown>;
+	const progressRecord =
+		record.progress && typeof record.progress === "object"
+			? record.progress as Record<string, unknown>
+			: {};
 
-	setBroadcast(fn: (state: TutorialState) => void) {
-		this.broadcast = fn;
-		this.notify();
-	}
+	return {
+		completed: record.completed === true,
+		skipped: record.skipped === true,
+		progress: {
+			phase: isTutorialPhase(progressRecord.phase) ? progressRecord.phase : "tour",
+			tourStep: clampIndex(progressRecord.tourStep),
+			lessonIndex: clampIndex(progressRecord.lessonIndex),
+		},
+	};
+}
 
-	next() {
-		this.step++;
-		this.notify();
-	}
+export function readTutorialStatus(rawValue: string | null): TutorialStatus {
+	if (!rawValue) return createDefaultTutorialStatus();
 
-	reset() {
-		this.step = 0;
-		this.notify();
-	}
-
-	private notify() {
-		this.broadcast?.(this.state);
+	try {
+		return normaliseTutorialStatus(JSON.parse(rawValue));
+	} catch {
+		return createDefaultTutorialStatus();
 	}
 }
