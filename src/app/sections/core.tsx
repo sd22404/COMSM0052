@@ -1,5 +1,6 @@
 import Card from "@/app/components/card";
-import { Pill, PillButton } from "@/app/components/pill";
+import Pill from "@/app/components/pill";
+import Tooltip from "@/app/components/tooltip";
 import { Body, Subsubheading } from "@/app/components/text";
 import { Compiler } from "@/language/compiler";
 import { CompileResult, CodeSpan, CoreState, hasErrors, Register, RegisterAccess } from "@/common/types";
@@ -45,20 +46,27 @@ export default function Core({
 		<Card id={`core-${state.id}`} variant="panel" className="flex h-full min-h-0 w-full min-w-0 gap-3">
 			<div className="flex min-w-0 flex-1 flex-col gap-3">
 				<div className="flex items-center justify-between gap-3">
-					<div className="flex min-w-0 items-center gap-4 overflow-auto">
-						<Subsubheading className="truncate">Core {state.id}</Subsubheading>
-						<div className="flex items-center gap-2">
-							<PillButton variant={status} size="sm" onClick={() => onEnable(!state.enabled)}>
-								{status}
-							</PillButton>
-							{state.fault && <Pill variant="danger" size="sm">faulted</Pill>}
-							{!state.fault && invalid && <Pill variant="danger" size="sm">invalid</Pill>}
-							{!state.fault && hasChanged && (
-								<Pill variant="warning" size="sm" title="Press Ctrl+Enter in this editor to load changes.">
-									unloaded
-								</Pill>
-							)}
-						</div>
+					<div className="flex min-w-0 items-center gap-4">
+						<Subsubheading tone="blue" className="min-w-0 flex-1 truncate">Core {state.id}</Subsubheading>
+							<div className="flex items-center gap-2">
+								<Tooltip text="click to enable/disable" align="end" className="shrink-0">
+									<Pill type="button" variant={status} size="sm" onClick={() => onEnable(!state.enabled)}>
+										{status}
+									</Pill>
+								</Tooltip>
+								{state.fault && 
+								<Tooltip text="a runtime error has occured" align="end" className="shrink-0">
+									<Pill variant="danger" size="sm">faulted</Pill>
+								</Tooltip>}
+								{!state.fault && invalid &&
+								<Tooltip text="the code contains errors" align="end" className="shrink-0">
+									<Pill variant="danger" size="sm">invalid</Pill>
+								</Tooltip>}
+								{!state.fault && hasChanged &&
+								<Tooltip text="press CTRL+ENTER to load" align="end" className="shrink-0">
+									<Pill variant="warning" size="sm">unloaded</Pill>
+								</Tooltip>}
+							</div>
 					</div>
 				</div>
 

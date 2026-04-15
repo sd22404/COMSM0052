@@ -1,22 +1,53 @@
 import { ComponentPropsWithoutRef } from "react";
 import { cn } from "./cn";
 
-export function Heading({ className, ...props }: ComponentPropsWithoutRef<"h1">) {
-	return <h1 className={cn("text-2xl font-bold text-ctp-text", className)} {...props} />;
+type TextTone = "default" | "subtle" | "blue" | "mauve" | "peach" | "green";
+
+const TONE_CLASSES: Record<TextTone, string> = {
+	default: "text-ctp-text",
+	subtle: "text-ctp-subtext0",
+	blue: "text-ctp-blue",
+	mauve: "text-ctp-mauve",
+	peach: "text-ctp-peach",
+	green: "text-ctp-green",
+};
+
+interface HeadingProps extends ComponentPropsWithoutRef<"h1"> {
+	tone?: TextTone;
 }
 
-export function Subheading({ className, ...props }: ComponentPropsWithoutRef<"h2">) {
-	return <h2 className={cn("text-xl font-semibold text-ctp-text", className)} {...props} />;
+interface SubheadingProps extends ComponentPropsWithoutRef<"h2"> {
+	tone?: TextTone;
 }
 
-export function Subsubheading({ className, ...props }: ComponentPropsWithoutRef<"h3">) {
-	return <h3 className={cn("text-lg font-medium text-ctp-text", className)} {...props} />;
+interface SubsubheadingProps extends ComponentPropsWithoutRef<"h3"> {
+	tone?: TextTone;
 }
 
-export function Body({ className, ...props }: ComponentPropsWithoutRef<"p">) {
-	return <p className={cn("text-base text-ctp-text", className)} {...props} />;
+interface BodyProps extends ComponentPropsWithoutRef<"p"> {
+	tone?: TextTone;
 }
 
-export function Eyebrow({ className, ...props }: ComponentPropsWithoutRef<"span">) {
-	return <span className={cn("text-xs font-semibold uppercase tracking-widest text-ctp-overlay1", className)} {...props} />;
+interface EyebrowProps extends ComponentPropsWithoutRef<"span"> {
+	tone?: TextTone;
+}
+
+export function Heading({ className, tone = "default", ...props }: HeadingProps) {
+	return <h1 className={cn("text-2xl font-bold", TONE_CLASSES[tone], className)} {...props} />;
+}
+
+export function Subheading({ className, tone = "default", ...props }: SubheadingProps) {
+	return <h2 className={cn("text-xl font-semibold", TONE_CLASSES[tone], className)} {...props} />;
+}
+
+export function Subsubheading({ className, tone = "default", ...props }: SubsubheadingProps) {
+	return <h3 className={cn("text-lg font-medium", TONE_CLASSES[tone], className)} {...props} />;
+}
+
+export function Body({ className, tone = "default", ...props }: BodyProps) {
+	return <p className={cn("text-base", TONE_CLASSES[tone], className)} {...props} />;
+}
+
+export function Eyebrow({ className, tone = "subtle", ...props }: EyebrowProps) {
+	return <span className={cn("text-xs font-semibold uppercase tracking-widest", TONE_CLASSES[tone], className)} {...props} />;
 }

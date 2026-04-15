@@ -49,7 +49,7 @@ export default function Memory({ memory, highlights, onMemoryChange }: MemoryPro
 		<Card id="memory" variant="panel" className="flex-1 min-h-0">
 			<div className="flex h-full w-full flex-col gap-3">
 				<div className="flex items-center justify-between">
-					<Subheading>Memory</Subheading>
+					<Subheading tone="blue">Memory</Subheading>
 					<Button size="sm" variant="primary" onClick={() => setNoteView((value) => !value)}>
 						{noteView ? "Show numbers" : "Show notes"}
 					</Button>

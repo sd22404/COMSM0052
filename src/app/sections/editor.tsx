@@ -68,6 +68,7 @@ interface EditorProps {
 export default function Editor({ initialCode, fault, highlights, onLoad, onChange }: EditorProps) {
 	const editorRef = useRef<HTMLDivElement>(null);
 	const viewRef = useRef<EditorView | null>(null);
+	const initialCodeRef = useRef(initialCode);
 	const onLoadRef = useRef(onLoad);
 	const onChangeRef = useRef(onChange);
 
@@ -125,7 +126,7 @@ export default function Editor({ initialCode, fault, highlights, onLoad, onChang
 		});
 
 		const view = new EditorView({
-			doc: initialCode,
+			doc: initialCodeRef.current,
 			parent: editorRef.current,
 			extensions: [
 				keymap.of([loadKeybind]),

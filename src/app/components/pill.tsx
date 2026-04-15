@@ -26,29 +26,30 @@ const SIZE_CLASSES: Record<PillSize, string> = {
 interface PillProps extends ComponentPropsWithoutRef<"span"> {
 	variant?: PillVariant;
 	size?: PillSize;
+	type?: "pill" | "button";
 }
 
-export function Pill({ className, variant = "idle", size = "md", ...props }: PillProps) {
+export default function Pill({ className, variant = "idle", size = "md", type = "pill", ...props }: PillProps) {
+	if (type === "button") {
+		return (
+			<button
+				className={cn(
+					"rounded-full font-semibold uppercase tracking-widest",
+					VARIANT_CLASSES[variant],
+					VARIANT_HOVER_CLASSES[variant],
+					SIZE_CLASSES[size],
+					className
+				)}
+				{...props}
+			/>
+		);
+	}
+
 	return (
 		<span
 			className={cn(
 				"rounded-full font-semibold uppercase tracking-widest",
 				VARIANT_CLASSES[variant],
-				SIZE_CLASSES[size],
-				className
-			)}
-			{...props}
-		/>
-	);
-}
-
-export function PillButton({ className, variant = "idle", size = "md", ...props }: PillProps) {
-	return (
-		<button
-			className={cn(
-				"rounded-full font-semibold uppercase tracking-widest",
-				VARIANT_CLASSES[variant],
-				VARIANT_HOVER_CLASSES[variant],
 				SIZE_CLASSES[size],
 				className
 			)}

@@ -25,14 +25,14 @@ export default function Controls({ running, parameters, onParameterChange, run, 
 	return (
 		<Card id="controls" variant="panel" className="flex flex-col gap-3">
 			<div className="flex items-center justify-between">
-				<Subheading>Master Controls</Subheading>
+				<Subheading tone="green">Master Controls</Subheading>
 				<Help />
 			</div>
 
 			<div className="flex justify-between">
 				{drafts.map((value, i) => (
 					<div key={i} className="flex items-center gap-4">
-						<Body className="text-xl font-semibold text-ctp-teal">
+						<Body tone="green" className="text-xl font-semibold">
 							{Parameter[i]}
 						</Body>
 						<Input

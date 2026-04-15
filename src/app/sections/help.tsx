@@ -8,9 +8,14 @@ import { useEffect, useState } from "react";
 function HelpBlock({ title, lines }: { title: string; lines: ReactNode[] }) {
 	return (
 		<div className="flex flex-col gap-2">
-			<Subheading>{title}</Subheading>
+			<Subheading tone="mauve">{title}</Subheading>
 			{lines.map((line, index) => (
-				<span key={`${title}-${index}`} className="text-ctp-subtext0">{line}</span>
+				<span
+					key={`${title}-${index}`}
+					className="text-ctp-subtext0 [&_strong]:font-semibold [&_strong]:text-ctp-blue"
+				>
+					{line}
+				</span>
 			))}
 		</div>
 	);
@@ -85,7 +90,11 @@ export default function Help() {
 	return (
 		<>
 			<HelpModal open={showHelp} onClose={() => setShowHelp(false)} />
-			<Button variant="secondary" onClick={() => setShowHelp((current) => !current)}>
+			<Button
+				variant="secondary"
+				tone="mauve"
+				onClick={() => setShowHelp((current) => !current)}
+			>
 				Help
 			</Button>
 		</>

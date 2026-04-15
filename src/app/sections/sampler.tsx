@@ -11,12 +11,18 @@ interface SampleSelectorProps {
 
 export default function SampleSelector({ samples, onSampleChange }: SampleSelectorProps) {
 	const [open, setOpen] = useState(false);
+	void onSampleChange;
 
 	return (
 		<Card id="samples" title="Sampler" variant="panel" className="w-full min-h-0">
 			<div className="flex items-center justify-between">
-				<Subheading>Sample Selector</Subheading>
-				<Button variant="secondary" onClick={() => setOpen((value) => !value)} className="h-1h w-1h">
+				<Subheading tone="peach">Drum Note Map</Subheading>
+				<Button
+					variant="secondary"
+					tone="peach"
+					onClick={() => setOpen((value) => !value)}
+					className="h-1h w-1h"
+				>
 					{open ? "Hide" : "Show"}
 				</Button>
 			</div>
@@ -29,8 +35,12 @@ export default function SampleSelector({ samples, onSampleChange }: SampleSelect
 			>
 				<div className="overflow-hidden p-4">
 					{Array.from(samples.entries()).map(([note, sample]) => (
-						<Body key={note}>
-							{note}: {sample.toString().split("/").pop()}
+						<Body key={note} tone="subtle" className="flex items-center justify-between gap-4">
+							<span className="font-semibold text-ctp-peach">{note}</span>
+							<span className="truncate text-right">{
+								note == 60 ? "Kick" : note == 61 ? "Snare" : note == 62 ? "Hi-Hat" : sample.toString().split("/").pop()
+							}</span>
+							{/* <span className="truncate text-right">{sample.toString().split("/").pop()}</span> */}
 						</Body>
 					))}
 				</div>

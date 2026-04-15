@@ -1,5 +1,5 @@
 import { Register } from "@/common/types";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import useRuntime from "../hooks/useRuntime";
 import useStorage from "../hooks/useStorage";
 import useTutorial from "../hooks/useTutorial";
@@ -38,6 +38,12 @@ export default function Workspace() {
 		state: tutorial,
 		next,
 	} = useTutorial();
+	const coreIDs = useRef(cpu.cores.map((core) => core.id));
+	const loadRef = useRef(load);
+
+	useEffect(() => {
+		loadRef.current = load;
+	}, [load]);
 
 	function handleLoad(coreID: number, code: string) {
 		const asm = load(coreID, code);
@@ -50,9 +56,8 @@ export default function Workspace() {
 
 	useEffect(() => {
 		if (!isClient) return;
-
-		cpu.cores.map((core) => {
-			load(core.id, retrieveCode(core.id));
+		coreIDs.current.forEach((coreID) => {
+			loadRef.current(coreID, retrieveCode(coreID));
 		});
 	}, [isClient, retrieveCode]);
 
