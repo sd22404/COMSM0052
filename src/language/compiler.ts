@@ -166,6 +166,14 @@ function requireArity(raw: RawInstruction, expected: number, diagnostics: Diagno
 	return false;
 }
 
+function requireArityRange(raw: RawInstruction, min: number, max: number, diagnostics: Diagnostic[]): boolean {
+	if (raw.operands.length >= min && raw.operands.length <= max) return true;
+
+	const name = raw.opcodeText ?? "UNKNOWN";
+	diagnostics.push(diagnostic(`${name} expects ${min} or ${max} operands.`, raw.span));
+	return false;
+}
+
 function buildRaw(code: string) {
 	const tree = parser.parse(code);
 	const cursor = tree.cursor();
@@ -264,20 +272,24 @@ function buildInstruction(raw: RawInstruction, labels: Record<string, number>, d
 
 	switch (opcode) {
 		case Opcode.PLAY: {
-			if (!requireArity(raw, 2, diagnostics)) return undefined;
+			if (!requireArityRange(raw, 2, 3, diagnostics)) return undefined;
 			const device = parseDeviceOperand(raw.operands[0], diagnostics);
 			const pitch = parseValOperand(raw.operands[1], diagnostics);
-			if (!device || !pitch) return undefined;
+			const durationRaw = raw.operands[2];
+			const duration = durationRaw
+				? parseValOperand(durationRaw, diagnostics)
+				: undefined;
+			if (!device || !pitch || (durationRaw && !duration)) return undefined;
 
-			return { opcode, operands: [device, pitch], span: raw.span };
+			return { opcode, operands: duration ? [device, pitch, duration] : [device, pitch], span: raw.span };
 		}
 
 		case Opcode.REST: {
 			if (!requireArity(raw, 1, diagnostics)) return undefined;
-			const beats = parseValOperand(raw.operands[0], diagnostics);
-			if (!beats) return undefined;
+			const ticks = parseValOperand(raw.operands[0], diagnostics);
+			if (!ticks) return undefined;
 
-			return { opcode, operands: [beats], span: raw.span };
+			return { opcode, operands: [ticks], span: raw.span };
 		}
 
 		case Opcode.LOAD: {

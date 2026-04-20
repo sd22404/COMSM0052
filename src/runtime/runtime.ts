@@ -57,13 +57,13 @@ export class Runtime {
 	}
 
 	private tick() {
-		const targetBeat = this.transport.lookahead(this.audio.time, LOOKAHEAD_SECONDS);
-		if (!targetBeat) return;
+		const targetTick = this.transport.lookahead(this.audio.time, LOOKAHEAD_SECONDS);
+		if (!targetTick) return;
 
-		const events = this.cpu.execUntil(targetBeat);
+		const events = this.cpu.execUntil(targetTick);
 
 		for (const event of events) {
-			const window = this.scheduleNote(event.beat, event.note);
+			const window = this.scheduleNote(event.tick, event.note);
 			if (!window) continue;
 
 			this.highlights.push({
@@ -79,10 +79,10 @@ export class Runtime {
 		this.notify();
 	}
 
-	private scheduleNote(beat: number, note?: Note): PlayWindow | undefined {
-		const when = this.transport.timeAt(beat);
+	private scheduleNote(tick: number, note?: Note): PlayWindow | undefined {
+		const when = this.transport.timeAt(tick);
 		if (!note) return {start: when, end: when + EXECUTION_HIGHLIGHT_TIME};
-		const duration = this.transport.makeDuration(beat, beat + note.length);
+		const duration = this.transport.makeDuration(tick, tick + note.length);
 		return this.audio.schedule(note, when, duration);
 	}
 
@@ -145,7 +145,7 @@ export class Runtime {
 			return result;
 		}
 
-		this.cpu.load(coreID, result.program);
+		this.cpu.load(coreID, result.program, this.transport.downbeatAt(this.audio.time));
 		this.highlights.clearCore(coreID, this.audio.time);
 		this.notify();
 		return result;
@@ -173,10 +173,10 @@ export class Runtime {
 	}
 
 	setEnabled(coreID: number, enabled: boolean) {
-		const startBeat = !enabled || !this.running ? undefined
-			: this.transport.downBeatAt(this.audio.time);
+		const startTick = !enabled || !this.running ? undefined
+			: this.transport.downbeatAt(this.audio.time);
 
-		this.cpu.setEnabled(coreID, enabled, startBeat);
+		this.cpu.setEnabled(coreID, enabled, startTick);
 		this.notify();
 	}
 }

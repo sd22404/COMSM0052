@@ -54,7 +54,7 @@ function HelpModal({ open, onClose }: { open: boolean; onClose: () => void }) {
 				<HelpBlock
 					title="Syntax"
 					lines={[
-						<><strong>PLAY <em>instrument note</em></strong>: Play a note at the core&apos;s current beat without advancing time.</>,
+						<><strong>PLAY <em>instrument note [ticks]</em></strong>: Play a note at the core&apos;s current tick without advancing time; duration defaults to 1 tick.</>,
 						<><strong>REST <em>ticks</em></strong>: Wait the core for a number of ticks. A tick is a quarter of a beat.</>,
 						<><strong>LOAD <em>register value</em></strong>: Write a value into a register.</>,
 						<><strong>STORE <em>address value</em></strong>: Write a value into shared memory using an immediate address or register-held address.</>,

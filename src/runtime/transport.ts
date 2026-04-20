@@ -3,16 +3,16 @@ import { TransportState } from "@/common/types";
 const MIN_BPM = 1;
 const EPSILON = 1e-6;
 
-const CLICK_PER_BEAT = 4;
+const TICKS_PER_BEAT = 4;
 
 interface PendingBPM {
 	time: number;
-	beat: number;
+	tick: number;
 	bpm: number;
 }
 
 function clampBPM(value: number) { return Math.max(MIN_BPM, value); }
-function clampBeat(value: number) { return Math.max(0, value); }
+function clampTick(value: number) { return Math.max(0, value); }
 
 export function createDefaultTransport(): TransportState {
 	return {
@@ -31,8 +31,8 @@ export class Transport {
 	private activeBPM: number;
 	private targetBPM: number;
 	private anchorTime = 0;
-	private anchorBeat = 0;
-	private horizonBeat = 0;
+	private anchorTick = 0;
+	private horizonTick = 0;
 	private pendingBPM?: PendingBPM;
 
 	get bpm() {
@@ -42,91 +42,91 @@ export class Transport {
 	get state(): TransportState {
 		return {
 			bpm: this.bpm,
-			horizon: this.horizonBeat,
+			horizon: this.horizonTick,
 		};
 	}
 
-	private secondsPerBeat(bpm: number = this.activeBPM) { return 60 / (clampBPM(bpm) * CLICK_PER_BEAT); }
-	private beatsToSeconds(beats: number, bpm: number = this.activeBPM) { return beats * this.secondsPerBeat(bpm); }
-	private secondsToBeats(seconds: number, bpm: number = this.activeBPM) { return seconds / this.secondsPerBeat(bpm); }
+	private secondsPerTick(bpm: number = this.activeBPM) { return 60 / (clampBPM(bpm) * TICKS_PER_BEAT); }
+	private ticksToSeconds(ticks: number, bpm: number = this.activeBPM) { return ticks * this.secondsPerTick(bpm); }
+	private secondsToTicks(seconds: number, bpm: number = this.activeBPM) { return seconds / this.secondsPerTick(bpm); }
 
 	private applyBPM(now: number) {
 		const pending = this.pendingBPM;
 		if (!pending || now + EPSILON < pending.time) return;
 
 		this.anchorTime = pending.time;
-		this.anchorBeat = pending.beat;
+		this.anchorTick = pending.tick;
 		this.activeBPM = pending.bpm;
 		this.pendingBPM = undefined;
 	}
 
-	start(audioTime: number, startBeat = this.anchorBeat) {
+	start(audioTime: number, startTick = this.anchorTick) {
 		this.anchorTime = audioTime;
-		this.anchorBeat = clampBeat(startBeat);
-		this.horizonBeat = this.anchorBeat;
+		this.anchorTick = clampTick(startTick);
+		this.horizonTick = this.anchorTick;
 		this.pendingBPM = undefined;
 	}
 
 	halt(audioTime: number) {
 		this.applyBPM(audioTime);
-		const beat = this.beatAt(audioTime);
+		const tick = this.tickAt(audioTime);
 
 		this.anchorTime = audioTime;
-		this.anchorBeat = beat;
-		this.horizonBeat = beat;
+		this.anchorTick = tick;
+		this.horizonTick = tick;
 		this.activeBPM = this.targetBPM;
 		this.pendingBPM = undefined;
 	}
 
 	reset() {
 		this.anchorTime = 0;
-		this.anchorBeat = 0;
-		this.horizonBeat = 0;
+		this.anchorTick = 0;
+		this.horizonTick = 0;
 		this.activeBPM = this.targetBPM;
 		this.pendingBPM = undefined;
 	}
 
-	downBeatAt(audioTime: number) {
-		const beat = this.beatAt(audioTime);
-		return Math.max(0, Math.ceil((beat - EPSILON) / CLICK_PER_BEAT) * CLICK_PER_BEAT);
+	downbeatAt(audioTime: number) {
+		const tick = this.tickAt(audioTime);
+		return Math.max(0, Math.ceil((tick - EPSILON) / TICKS_PER_BEAT) * TICKS_PER_BEAT);
 	}
 
-	private beatAt(audioTime: number) {
+	private tickAt(audioTime: number) {
 		const clampedTime = Math.max(audioTime, this.anchorTime);
 		const pending = this.pendingBPM;
 
 		if (!pending || clampedTime + EPSILON < pending.time)
-			return clampBeat(this.anchorBeat + this.secondsToBeats(clampedTime - this.anchorTime));
+			return clampTick(this.anchorTick + this.secondsToTicks(clampedTime - this.anchorTime));
 
-		return clampBeat(pending.beat + this.secondsToBeats(clampedTime - pending.time, pending.bpm));
+		return clampTick(pending.tick + this.secondsToTicks(clampedTime - pending.time, pending.bpm));
 	}
 
-	timeAt(beat: number) {
-		const clamped = clampBeat(beat);
+	timeAt(tick: number) {
+		const clamped = clampTick(tick);
 		const pending = this.pendingBPM;
 
-		if (!pending || clamped + EPSILON < pending.beat)
-			return this.anchorTime + this.beatsToSeconds(clamped - this.anchorBeat);
+		if (!pending || clamped + EPSILON < pending.tick)
+			return this.anchorTime + this.ticksToSeconds(clamped - this.anchorTick);
 
-		return pending.time + this.beatsToSeconds(clamped - pending.beat, pending.bpm);
+		return pending.time + this.ticksToSeconds(clamped - pending.tick, pending.bpm);
 	}
 
-	makeDuration(fromBeat: number, toBeat: number) {
-		const startBeat = clampBeat(fromBeat);
-		const endBeat = clampBeat(toBeat);
-		return Math.max(0, this.timeAt(endBeat) - this.timeAt(startBeat));
+	makeDuration(fromTick: number, toTick: number) {
+		const startTick = clampTick(fromTick);
+		const endTick = clampTick(toTick);
+		return Math.max(0, this.timeAt(endTick) - this.timeAt(startTick));
 	}
 
 	lookahead(audioTime: number, seconds: number): number | undefined {
 		this.applyBPM(audioTime);
 
-		const fromBeat = Math.max(this.horizonBeat, this.beatAt(audioTime));
-		const toBeat = this.beatAt(audioTime + Math.max(0, seconds));
+		const fromTick = Math.max(this.horizonTick, this.tickAt(audioTime));
+		const toTick = this.tickAt(audioTime + Math.max(0, seconds));
 
-		if (toBeat <= fromBeat + EPSILON) return undefined;
+		if (toTick <= fromTick + EPSILON) return undefined;
 
-		this.horizonBeat = toBeat;
-		return toBeat;
+		this.horizonTick = toTick;
+		return toTick;
 	}
 
 	setBPM(nextBPM: number, audioTime: number) {
@@ -134,18 +134,18 @@ export class Transport {
 		this.targetBPM = bpm;
 		this.applyBPM(audioTime);
 
-		const currentBeat = this.beatAt(audioTime);
-		if (this.horizonBeat <= currentBeat + EPSILON) {
+		const currentTick = this.tickAt(audioTime);
+		if (this.horizonTick <= currentTick + EPSILON) {
 			this.anchorTime = audioTime;
-			this.anchorBeat = currentBeat;
+			this.anchorTick = currentTick;
 			this.activeBPM = bpm;
 			this.pendingBPM = undefined;
 			return;
 		}
 
 		this.pendingBPM = {
-			time: this.timeAt(this.horizonBeat),
-			beat: this.horizonBeat,
+			time: this.timeAt(this.horizonTick),
+			tick: this.horizonTick,
 			bpm,
 		};
 	}

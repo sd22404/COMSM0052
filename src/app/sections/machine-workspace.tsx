@@ -92,9 +92,8 @@ export default function MachineWorkspace({
 		if (!result.program) return result;
 
 		storeCode(storageScope, coreID, code);
-		setEnabled(coreID, true);
-		run();
 		onCoreLoadRef.current?.({ coreID, code, result });
+		if (!running) run();
 		return result;
 	}
 
@@ -104,7 +103,7 @@ export default function MachineWorkspace({
 				id="cores"
 				className={cn(
 					"grid h-full min-h-0 flex-1 auto-rows-fr gap-2",
-					resolvedCoreIDs.length > 1 && "xl:grid-cols-2",
+					resolvedCoreIDs.length > 1 && "2xl:grid-cols-2",
 				)}
 			>
 				{cpu.cores

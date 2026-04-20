@@ -24,7 +24,7 @@ export function createDefaultCore(id: number): CoreState {
 		id,
 		enabled: false,
 		pc: 0,
-		beat: 0,
+		tick: 0,
 		regs: createDefaultRegisters(),
 	};
 }
@@ -37,7 +37,7 @@ interface CoreConfig {
 	program?: Program;
 }
 
-function clampBeat(value: number) {
+function clampTick(value: number) {
 	return Math.max(0, value);
 }
 
@@ -71,7 +71,7 @@ export class Core {
 	private seq = 0;
 	private _enabled = false;
 	private _pc = 0;
-	private _beat = 0;
+	private _tick = 0;
 	private _fault?: RuntimeFault;
 	private zeroTimeSteps = 0;
 
@@ -79,8 +79,8 @@ export class Core {
 		return this._pc;
 	}
 
-	get beat() {
-		return this._beat;
+	get tick() {
+		return this._tick;
 	}
 
 	get regs() {
@@ -104,35 +104,42 @@ export class Core {
 			id: this.id,
 			enabled: this.enabled,
 			pc: this.pc,
-			beat: this.beat,
+			tick: this.tick,
 			regs: this.regs,
 			fault: this.fault,
 		};
 	}
 
-	load(program: Program) {
+	load(program: Program, startTick = this._tick) {
+		const wasEnabled = this._enabled;
 		this.program = program;
 		this.clearFault();
-		this.rewind();
+
+		if (this._pc >= program.length)
+			this._pc = 0;
+
+		this._enabled = true;
+		if (!wasEnabled)
+			this._tick = clampTick(startTick);
 	}
 
 	setRegister(reg: Register, val: number) {
 		this.registers.write(reg, val);
 	}
 
-	setEnabled(enabled: boolean, startBeat = this._beat) {
+	setEnabled(enabled: boolean, startTick = this._tick) {
 		this._enabled = enabled;
 		if (!enabled) return;
 
 		this.clearFault();
-		this.rewind(startBeat);
+		this.rewind(startTick);
 	}
 
-	reset(startBeat?: number) {
+	reset(startTick?: number) {
 		this.registers.reset();
 		this._enabled = false;
 		this.clearFault();
-		this.rewind(startBeat);
+		this.rewind(startTick);
 	}
 
 	private clearFault() {
@@ -144,7 +151,7 @@ export class Core {
 		this._fault = {
 			message,
 			span: instr.span,
-			beat: this._beat,
+			tick: this._tick,
 			pc: this.normalise(this._pc - 1),
 		};
 		this._enabled = false;
@@ -175,25 +182,31 @@ export class Core {
 	}
 
 	private execute(instr: Instruction): ExecEvent {
-		const beat = this._beat;
+		const tick = this._tick;
 		const mark = this.log.mark(this.id);
 		let note: Note | undefined;
 
 		switch (instr.opcode) {
 			case Opcode.PLAY: {
-				const [device, pitch] = instr.operands;
-				note = this.createNote(device.device, this.eval(pitch), 1); // TODO: implement duration
-				break;
-			}
-			case Opcode.REST: {
-				const [beats] = instr.operands;
-				const beat = this.eval(beats);
-				if (beat <= 0) {
-					this.raiseFault(`REST must advance by a positive value, received ${beat}.`, instr);
+				const [device, pitch, duration] = instr.operands;
+				const length = duration ? this.eval(duration) : 1;
+				if (length <= 0) {
+					this.raiseFault(`PLAY duration must be a positive value, received ${length}.`, instr);
 					break;
 				}
 
-				this._beat = clampBeat(this._beat + beat);
+				note = this.createNote(device.device, this.eval(pitch), length);
+				break;
+			}
+			case Opcode.REST: {
+				const [ticks] = instr.operands;
+				const tick = this.eval(ticks);
+				if (tick <= 0) {
+					this.raiseFault(`REST must advance by a positive value, received ${tick}.`, instr);
+					break;
+				}
+
+				this._tick = clampTick(this._tick + tick);
 				break;
 			}
 			case Opcode.LOAD: {
@@ -227,7 +240,7 @@ export class Core {
 		return {
 			id: this.seq++,
 			coreID: this.id,
-			beat,
+			tick: tick,
 			span: instr.span,
 			log: this.log.since(this.id, mark),
 			note,
@@ -237,13 +250,13 @@ export class Core {
 	step(): ExecEvent | undefined {
 		if (!this._enabled || this._fault || this.program.length === 0) return undefined;
 
-		const beatBefore = this._beat;
+		const tickBefore = this._tick;
 		const instr = this.fetch(this._pc++);
 		const event = this.execute(instr);
 
 		if (this._fault) return event;
 
-		if (this._beat > beatBefore) {
+		if (this._tick > tickBefore) {
 			this.zeroTimeSteps = 0;
 			return event;
 		}
@@ -264,9 +277,9 @@ export class Core {
 		};
 	}
 
-	private rewind(startBeat = 0) {
+	private rewind(startTick = 0) {
 		this._pc = 0;
-		this._beat = clampBeat(startBeat);
+		this._tick = clampTick(startTick);
 		this.zeroTimeSteps = 0;
 	}
 }

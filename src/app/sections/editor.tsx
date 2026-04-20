@@ -121,7 +121,11 @@ export default function Editor({ id, initialCode, fault, highlights, onLoad, onC
 				borderRadius: "2px",
 				padding: "0 0 0 2px",
 			},
+			".cm-activeLine": {
+				backgroundColor: ctpAlpha("surface2", 0.16),
+			},
 			".cm-activeLineGutter": {
+				backgroundColor: ctpAlpha("surface2", 0.16),
 				color: ctp("lavender"),
 			},
 		});

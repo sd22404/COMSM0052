@@ -94,7 +94,7 @@ interface BaseInstruction<Op extends Opcode, Ops extends readonly unknown[]> {
 }
 
 export type Instruction =
-	| BaseInstruction<Opcode.PLAY, [DeviceOperand, ValOperand]>
+	| BaseInstruction<Opcode.PLAY, [DeviceOperand, ValOperand, ValOperand?]>
 	| BaseInstruction<Opcode.REST, [ValOperand]>
 	| BaseInstruction<Opcode.LOAD, [RegOperand, ValOperand]>
 	| BaseInstruction<Opcode.STORE, [AddrOperand, ValOperand]>
@@ -150,7 +150,7 @@ export interface EventLog {
 export interface ExecEvent {
 	id: number;
 	coreID: number;
-	beat: number;
+	tick: number;
 	span: CodeSpan;
 	log: EventLog;
 	note?: Note;
@@ -159,7 +159,7 @@ export interface ExecEvent {
 export interface RuntimeFault {
 	message: string;
 	span: CodeSpan;
-	beat: number;
+	tick: number;
 	pc: number;
 }
 
@@ -167,7 +167,7 @@ export interface CoreState {
 	id: number;
 	enabled: boolean;
 	pc: number;
-	beat: number;
+	tick: number;
 	regs: number[];
 	fault?: RuntimeFault;
 }

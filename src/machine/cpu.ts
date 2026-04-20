@@ -42,38 +42,38 @@ export class CPU {
 		};
 	}
 
-	public setEnabled(coreID: number, enabled: boolean, startBeat?: number) {
+	public setEnabled(coreID: number, enabled: boolean, startTick?: number) {
 		const core = this.cores[coreID];
 		if (!core) return;
-		core.setEnabled(enabled, startBeat);
+		core.setEnabled(enabled, startTick);
 	}
 
-	public load(coreID: number, program: Program) {
+	public load(coreID: number, program: Program, startTick?: number) {
 		const core = this.cores[coreID];
 		if (!core) return;
-		core.load(program);
+		core.load(program, startTick);
 	}
 
-	private nextCore(targetBeat: number): Core | undefined {
+	private nextCore(targetTick: number): Core | undefined {
 		let next: Core | undefined;
 
 		for (const core of this.cores) {
-			if (!core.enabled || core.fault || !core.hasProgram || core.beat >= targetBeat)
+			if (!core.enabled || core.fault || !core.hasProgram || core.tick >= targetTick)
 				continue;
 
-			if (!next || core.beat < next.beat)
+			if (!next || core.tick < next.tick)
 				next = core;
 		}
 
 		return next;
 	}
 
-	public execUntil(targetBeat: number) {
+	public execUntil(targetTick: number) {
 		this.log.clear();
 		const events: ExecEvent[] = [];
 
 		while (true) {
-			const core = this.nextCore(targetBeat);
+			const core = this.nextCore(targetTick);
 			if (!core) break;
 
 			const event = core.step();
