@@ -45,12 +45,11 @@ export const TOUR_STEPS: TourStep[] = [
 		anchorID: "samples",
 		side: "left",
 		text: "The drum map controls which note numbers trigger which drum sounds.\n\nThe default pattern is 60 for kick, 61 for snare, and 62 for hi-hat, but you can assign any built-in sample to any MIDI note.",
-		//\n\nYou will use it later when you combine a melody core with a drum core in the final lesson.",
 	},
 	{
 		id: "tour-finish",
 		title: "Ready for the lessons",
-		text: "The next phase switches to structured exercises.\n\nEach lesson contains starter code with missing pieces. Fill those gaps, load the result, and Continue will unlock once the lesson code compiles successfully.",
+		text: "The next phase switches to structured exercises. Music Machine measures time in ticks: each beat is divided into 4 ticks.\n\nEach lesson contains starter code with missing pieces. Fill those gaps, load the result, and Continue will unlock once the lesson code compiles successfully.",
 		buttonText: "Begin lesson 1",
 	},
 ];
@@ -58,94 +57,115 @@ export const TOUR_STEPS: TourStep[] = [
 export const CODE_LESSONS: CodeLesson[] = [
 	{
 		id: "play-and-rest",
-		title: "Lesson 1: Play and Rest",
-		summary: "Load a simple loop, choose a note, and decide how long the core should wait between repeats.",
-		concept: "PLAY makes a sound and REST waits for a number of ticks.",
+		title: "Lesson 1: Play, Rest, And Ticks",
 		instructions: [
-			"Replace the missing pitch with a MIDI note number such as 60.",
-			"Replace the missing rest length with a positive number of ticks.",
+			"Replace NOTE with a MIDI note number such as 60.",
+			"Replace TICKS with a positive rest length. Use 4 for one beat.",
 			"Load core 0 once the program compiles.",
 		],
 		hints: [
 			"Middle C is 60.",
-			"Each beat is divided into 4 ticks, so REST 4 waits for one beat.",
+			"Each beat is divided into 4 ticks, so REST 4 waits for exactly one beat.",
+			"JUMP loop sends execution back to the label named loop.",
 		],
-		requiredCoreIDs: [0],
-		visibleCoreIDs: [0],
 		visiblePanels: ["controls"],
 		cores: [
 			{
 				coreID: 0,
-				title: "Core 0",
-				description: "Add the first note and rest values, then load the loop.",
-				starterCode: `; Lesson 1: finish the missing values
+				starterCode: `; Lesson 1: play, rest, repeat
+; Music Machine divides each beat into 4 ticks.
 loop:
-PLAY PIANO NOTE ; replace NOTE with a MIDI note number (0 - 127)
-REST LENGTH ; and LENGTH with a positive number of ticks
+PLAY PIANO NOTE ; replace NOTE with a MIDI note number, like 60
+REST TICKS ; replace TICKS with 4 for one beat
 JUMP loop`,
 			},
 		],
-		successText: "Core 0 has a valid program loaded. Continue is now unlocked.",
 	},
 	{
 		id: "shape-with-registers",
 		title: "Lesson 2: Shape Sound with Registers",
-		summary: "Use registers to change how the synth sounds before it plays.",
-		concept: "LOAD writes values into registers like VOL, PAN, ATK, and REL.",
 		instructions: [
-			"Replace the missing register values with numbers that shape the sound.",
+			"Replace the missing VOL, PAN, ATK, DEC, SUS, and REL values.",
+			"Listen for the difference between SYNTH, BASS, and PIANO.",
 			"Load core 0 after the code is valid.",
-			"Try different values before you continue so you can hear the effect.",
 		],
 		hints: [
-			"PAN ranges from left to right with negative and positive numbers.",
-			"Short attack and release values make the note tighter.",
+			"VOL and SUS are useful between 0 and 100.",
+			"PAN uses negative values for left and positive values for right.",
+			"ATK, DEC, and REL are envelope times in milliseconds.",
 		],
-		requiredCoreIDs: [0],
-		visibleCoreIDs: [0],
 		visiblePanels: ["controls"],
 		cores: [
 			{
 				coreID: 0,
-				title: "Core 0",
-				description: "Fill the sound-shaping register values, then load the loop.",
-				starterCode: `; Lesson 2: use registers to shape a synth note
+				starterCode: `; Lesson 2: shape three instruments
 LOAD VOL LOUDNESS ; replace LOUDNESS with a number from 0 to 100
-LOAD PAN STEREO ; and STEREO with a number from -100 (left) to 100 (right)
-LOAD ATK ATTACK ; how long it takes for the note to reach full volume in milliseconds
-LOAD REL RELEASE ; how long it takes for the note to fade out after releasing in milliseconds
+LOAD PAN STEREO ; replace STEREO with -100 to 100
+LOAD ATK ATTACK ; attack time in milliseconds
+LOAD DEC DECAY ; decay time in milliseconds
+LOAD SUS SUSTAIN ; sustain level from 0 to 100
+LOAD REL RELEASE ; release time in milliseconds
 
 loop:
-PLAY SYNTH 64
+PLAY SYNTH 64 2
+REST 2
+PLAY BASS 40 2
+REST 2
+PLAY PIANO 67 4
 REST 4
 JUMP loop`,
 			},
 		],
-		successText: "Core 0 compiled and loaded with your register choices.",
 	},
 	{
-		id: "loops-and-branches",
-		title: "Lesson 3: Loops and Branches",
-		summary: "Step through a short melody in memory and loop back once the counter reaches zero.",
-		concept: "ADD updates registers, JMPZ branches on zero, and JUMP keeps the loop moving.",
+		id: "memory-and-register-values",
+		title: "Lesson 3: Memory And Register Values",
 		instructions: [
-			"Fill the increment that advances REG0 through memory.",
-			"Replace the missing jump target so the loop continues correctly.",
-			"Load core 0 after the program compiles.",
+			"Replace ADDRESS with a valid memory cell from 0 to 31.",
+			"Replace NOTE with a MIDI note to store at that address.",
+			"Load core 0 and watch the memory panel highlight reads and writes.",
 		],
 		hints: [
-			"The default melody notes live in memory cells 8 through 11.",
-			"REG1 already counts down toward zero.",
+			"Address 12 is unused by the default melodies.",
+			"STORE REG0 REG1 writes to the memory address held in REG0.",
+			"[12] reads a direct address, while [REG0] reads the address held in a register.",
 		],
-		requiredCoreIDs: [0],
-		visibleCoreIDs: [0],
 		visiblePanels: ["controls", "memory"],
 		cores: [
 			{
 				coreID: 0,
-				title: "Core 0",
-				description: "Complete the loop logic so the melody walks through memory repeatedly.",
-				starterCode: `; Lesson 3: finish the loop logic
+				starterCode: `; Lesson 3: write and read shared memory
+LOAD REG0 ADDRESS ; replace ADDRESS with a memory cell, such as 12
+LOAD REG1 NOTE ; replace NOTE with a MIDI note, such as 64
+STORE REG0 REG1 ; writes REG1 into the address held by REG0
+
+loop:
+PLAY PIANO [12] ; direct memory read
+REST 2
+PLAY SYNTH [REG0] ; register-held memory read
+REST 2
+JUMP loop`,
+			},
+		],
+	},
+	{
+		id: "loops-and-branches",
+		title: "Lesson 4: Loops And Branches",
+		instructions: [
+			"Fill STEP so REG0 advances through the melody in memory.",
+			"Replace TARGET with the label that keeps the loop running.",
+			"Load core 0 after the program compiles.",
+		],
+		hints: [
+			"The default melody notes live in memory cells 8 through 11.",
+			"REG1 counts down with ADD REG1 -1.",
+			"JMPZ REG1 restart jumps only when REG1 reaches zero.",
+		],
+		visiblePanels: ["controls", "memory"],
+		cores: [
+			{
+				coreID: 0,
+				starterCode: `; Lesson 4: finish the loop logic
 LOAD REG0 8
 LOAD REG1 4
 
@@ -163,86 +183,75 @@ LOAD REG1 4
 JUMP loop`,
 			},
 		],
-		successText: "Core 0 compiled and loaded with a working branch structure.",
 	},
 	{
-		id: "shared-memory",
-		title: "Lesson 4: Shared Memory",
-		summary: "Write a note into shared memory, then read it back from the same core.",
-		concept: "STORE writes into global memory and [address] reads it back later.",
+		id: "random-patterns-and-durations",
+		title: "Lesson 5: Random Patterns And Durations",
 		instructions: [
-			"Replace the missing address with the memory cell that should hold the note.",
-			"Load core 0 once the program compiles.",
-			"Watch the memory panel while the program runs to see the read and write highlights.",
+			"Replace RANGE with the number of random notes to choose from.",
+			"Replace LENGTH with a note duration in ticks.",
+			"Load core 0 and listen for the melody to vary each loop.",
 		],
 		hints: [
-			"Address 12 is unused by the default melodies, so it is a good one to use.",
+			"RAND returns a random number from 0 up to one less than its stored value.",
+			"REG0 holds the generated pitch, REG1 holds the note duration, REG2 holds the base pitch, and REG3 holds the rest length.",
+			"PLAY SYNTH REG0 REG1 uses REG1 as the optional duration operand.",
 		],
-		requiredCoreIDs: [0],
-		visibleCoreIDs: [0],
-		visiblePanels: ["controls", "memory"],
+		visiblePanels: ["controls"],
 		cores: [
 			{
 				coreID: 0,
-				title: "Core 0",
-				description: "Store a note in shared memory, then play it back from that address.",
-				starterCode: `; Lesson 4: write a note into shared memory
-LOAD REG0 72
+				starterCode: `; Lesson 5: random notes with explicit durations
+LOAD RAND RANGE ; replace RANGE with a random bound, such as 5
+LOAD REG2 60 ; base pitch
+LOAD REG3 4 ; one beat, because 4 ticks = 1 beat
 
 loop:
-STORE ADDRESS REG0
-PLAY PIANO [12]
-REST 4
+LOAD REG0 REG2
+ADD REG0 RAND ; add a fresh random offset to the base pitch
+LOAD REG1 LENGTH ; replace LENGTH with a duration in ticks
+PLAY SYNTH REG0 REG1
+REST REG3
 JUMP loop`,
 			},
 		],
-		successText: "Core 0 compiled and loaded with a shared-memory read/write loop.",
 	},
 	{
-		id: "two-core-arrangement",
-		title: "Lesson 5: Two-Core Arrangement",
-		summary: "Use one core for melody and one for drums, with shared memory connecting them.",
-		concept: "Multiple cores can run together, and memory lets them share musical state.",
+		id: "multi-core-drum-arrangement",
+		title: "Lesson 6: Multi-Core Drum Arrangement",
 		instructions: [
-			"Complete both visible cores.",
-			"Core 1 should write a note into memory cell 12 and trigger a drum pattern.",
-			"Load both cores. Continue unlocks only after both programs compile and load.",
+			"Assign a sample to MIDI note 63 in the Drum Note Map.",
+			"Complete both cores: core 0 reads memory cell 12, and core 1 writes that cell.",
+			"Replace DRUMNOTE with 63, then load both cores.",
 		],
 		hints: [
-			"Kick is note 60 and hi-hat is note 62.",
-			"Core 0 already reads memory cell 12.",
+			"Defaults are 60 Kick, 61 Snare, and 62 Hi-Hat.",
+			"Core 1 writes the shared melody note before triggering the drum pattern.",
+			"The sample-map task is not checked by Continue, so do it before loading DRUMNOTE.",
 		],
-		requiredCoreIDs: [0, 1],
-		visibleCoreIDs: [0, 1],
 		visiblePanels: ["controls", "memory", "samples"],
 		cores: [
 			{
 				coreID: 0,
-				title: "Core 0",
-				description: "This melody core plays whatever note lives in memory cell 12.",
-				starterCode: `; Lesson 5, core 0: melody lane
+				starterCode: `; Lesson 6, core 0: melody lane
 loop:
-PLAY PIANO [12]
+PLAY PIANO [12] LENGTH ; replace LENGTH with 4 ticks
 REST 4
 JUMP loop`,
 			},
 			{
 				coreID: 1,
-				title: "Core 1",
-				description: "Write the missing shared-memory note and finish the drum hit.",
-				starterCode: `; Lesson 5, core 1: drum beat
-LOAD REG0 76
+				starterCode: `; Lesson 6, core 1: drum beat and shared note
+LOAD REG0 NOTE ; replace NOTE with the MIDI pitch core 0 should play
 
 loop:
 STORE 12 REG0
 PLAY DRUMS 60
 REST 2
-PLAY DRUMS DRUMNOTE
+PLAY DRUMS DRUMNOTE ; assign this note in the Drum Note Map first
 REST 2
 JUMP loop`,
 			},
 		],
-		successText: "Both tutorial cores have valid programs loaded together.",
-		continueText: "Finish tutorial",
 	},
 ];

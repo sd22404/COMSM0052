@@ -49,21 +49,21 @@ export default function Core({
 					<div className="flex min-w-0 items-center gap-4">
 						<Subsubheading tone="blue" className="min-w-0 flex-1 truncate">Core {state.id}</Subsubheading>
 							<div className="flex items-center gap-2">
-								<Tooltip text="click to enable/disable" align="end" className="shrink-0">
+								<Tooltip text="click to enable/disable" align="start" className="shrink-0">
 									<Pill type="button" variant={status} size="sm" onClick={() => onEnable(!state.enabled)}>
 										{status}
 									</Pill>
 								</Tooltip>
 								{state.fault && 
-								<Tooltip text="a runtime error has occurred" align="end" className="shrink-0">
+								<Tooltip text="a runtime error has occurred" align="start" className="shrink-0">
 									<Pill variant="danger" size="sm">faulted</Pill>
 								</Tooltip>}
 								{!state.fault && invalid &&
-								<Tooltip text="the code contains errors" align="end" className="shrink-0">
+								<Tooltip text="the code contains errors" align="start" className="shrink-0">
 									<Pill variant="danger" size="sm">invalid</Pill>
 								</Tooltip>}
 								{!state.fault && hasChanged &&
-								<Tooltip text="press CTRL+ENTER to load" align="end" className="shrink-0">
+								<Tooltip text="press CTRL+ENTER to load" align="start" className="shrink-0">
 									<Pill variant="warning" size="sm">unloaded</Pill>
 								</Tooltip>}
 							</div>

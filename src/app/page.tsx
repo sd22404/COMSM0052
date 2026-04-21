@@ -6,6 +6,7 @@ import { Subheading } from "@/app/components/text";
 import useStorage from "@/app/hooks/useStorage";
 import Header from "@/app/sections/header";
 import Workspace from "@/app/sections/workspace";
+import { getDefaultCode } from "@/common/types";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 
@@ -36,7 +37,12 @@ export default function Home() {
 	return (
 		<Background>
 			<Header />
-			<Workspace />
+			<div className="h-screen w-screen px-4 pb-4 pt-16">
+				<Workspace
+					storageScope="app"
+					defaultCodeForCore={getDefaultCode}
+				/>
+			</div>
 		</Background>
 	);
 }

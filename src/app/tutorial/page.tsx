@@ -6,7 +6,7 @@ import Card from "@/app/components/card";
 import { Body, Eyebrow, Heading, Subheading } from "@/app/components/text";
 import useStorage from "@/app/hooks/useStorage";
 import Header from "@/app/sections/header";
-import MachineWorkspace from "@/app/sections/machine-workspace";
+import Workspace from "@/app/sections/workspace";
 import TutorialSpotlight from "@/app/sections/tutorial";
 import { getDefaultCode } from "@/common/types";
 import { CODE_LESSONS, TOUR_STEPS } from "@/tutorial/lessons";
@@ -41,11 +41,9 @@ function CompletionView({
 			<Header />
 			<div className="flex h-screen items-center justify-center px-4 pt-12">
 				<Card variant="panel" className="flex w-full max-w-2xl flex-col gap-4">
-					<Eyebrow tone="green">Tutorial Complete</Eyebrow>
-					<Heading tone="green">You have finished the guided path.</Heading>
+					<Heading tone="green">Tutorial Complete</Heading>
 					<Body tone="subtle">
-						The main workspace will now open without redirecting. You can return here
-						any time to review the lessons or restart the tutorial from the beginning.
+						You can return here at any time with the link in the top right corner to review the lessons or restart the tutorial.
 					</Body>
 					<div className="grid gap-2 sm:grid-cols-2">
 						<Button variant="primary" onClick={onOpenApp}>
@@ -86,15 +84,20 @@ export default function TutorialPage() {
 	const activeLesson = inTour ? undefined : CODE_LESSONS[lessonIndex];
 	const activeStep = inTour ? TOUR_STEPS[tourStepIndex] : undefined;
 	const lessonScope = activeLesson ? `tutorial:lesson:${activeLesson.id}` : undefined;
+	const lessonCoreIDs = useMemo(
+		() => activeLesson?.cores.map((core) => core.coreID) ?? [],
+		[activeLesson],
+	);
 	const lessonCodeMap = useMemo(
 		() => new Map(activeLesson?.cores.map((core) => [core.coreID, core.starterCode]) ?? []),
 		[activeLesson],
 	);
 	const loadedCoreIDs = activeLesson ? lessonLoads[activeLesson.id] ?? [] : [];
-	const lessonReady =
-		activeLesson
-			? activeLesson.requiredCoreIDs.every((coreID) => loadedCoreIDs.includes(coreID))
-			: false;
+	const loadedCoreCount = loadedCoreIDs.filter((coreID) => lessonCoreIDs.includes(coreID)).length;
+	const lessonReady = activeLesson
+		? lessonCoreIDs.every((coreID) => loadedCoreIDs.includes(coreID))
+		: false;
+	const continueText = lessonIndex + 1 >= CODE_LESSONS.length ? "Finish tutorial" : "Continue";
 
 	const handleLessonLoad = useCallback((coreID: number) => {
 		if (!activeLesson) return;
@@ -201,82 +204,28 @@ export default function TutorialPage() {
 	return (
 		<Background className="min-h-screen">
 			<Header />
-			<div className="h-screen px-4 pb-4 pt-16">
+			<div className="h-screen w-screen overflow-hidden px-4 pb-4 pt-16">
 				<div className="flex h-full min-h-0 flex-col gap-4 lg:flex-row">
-					<aside className="flex w-full shrink-0 flex-col gap-4 overflow-y-auto lg:w-[24rem]">
-						<Card variant="panel" className="flex flex-col gap-3" id="tutorial-guide">
+					<aside className="flex max-h-[42vh] min-h-0 w-full shrink-0 flex-col gap-2 lg:h-full lg:max-h-none lg:w-sm">
+						<Card variant="panel" className="flex shrink-0 flex-col gap-3">
 							<Eyebrow tone="mauve">
 								{inTour
 									? `Phase 1 of 2 · Tour ${tourStepIndex + 1}/${TOUR_STEPS.length}`
 									: `Phase 2 of 2 · Lesson ${lessonIndex + 1}/${CODE_LESSONS.length}`}
 							</Eyebrow>
-							<Heading tone="mauve">
-								{inTour ? "Interface tour" : activeLesson?.title}
-							</Heading>
-							{/* <Body tone="subtle">
-								{inTour
-									? "Use the spotlight prompts to walk through the interface. When the tour ends, the lesson panel here will switch to hands-on exercises."
-									: activeLesson?.summary}
-							</Body> */}
 
 							{!inTour && activeLesson && (
 								<>
-									<Card variant="surface" className="flex flex-col gap-2">
-										<Eyebrow tone="blue">Concept</Eyebrow>
-										<Body>{activeLesson.concept}</Body>
-									</Card>
-
-									<div className="flex flex-col gap-2">
-										<Subheading tone="blue">Instructions</Subheading>
-										<ul className="space-y-2 text-sm text-ctp-subtext0">
-											{activeLesson.instructions.map((instruction) => (
-												<li key={instruction} className="leading-relaxed">
-													{instruction}
-												</li>
-											))}
-										</ul>
-									</div>
-
-									{/* <div className="flex flex-col gap-2">
-										<Subheading tone="green">Visible Cores</Subheading>
-										{activeLesson.cores.map((core) => (
-											<Card key={core.coreID} variant="surface" className="flex flex-col gap-1">
-												<Eyebrow tone="green">{core.title}</Eyebrow>
-												<Body className="text-sm">{core.description}</Body>
-											</Card>
-										))}
-									</div> */}
-
-									{activeLesson.hints && (
-										<div className="flex flex-col gap-2">
-											<Subheading tone="peach">Hints</Subheading>
-											<ul className="space-y-2 text-sm text-ctp-subtext0">
-												{activeLesson.hints.map((hint) => (
-													<li key={hint} className="leading-relaxed">
-														{hint}
-													</li>
-												))}
-											</ul>
-										</div>
-									)}
-
-									<Card variant="surface" className="flex flex-col gap-2">
-										<Eyebrow tone={lessonReady ? "green" : "default"}>
-											{lessonReady ? "Ready to continue" : "Waiting for valid loads"}
-										</Eyebrow>
-										<Body>
-											Loaded cores: {loadedCoreIDs.length}/{activeLesson.requiredCoreIDs.length}
-										</Body>
-										{/* <Body tone="subtle">{activeLesson.successText}</Body> */}
-									</Card>
-
-									<div className="grid gap-2 sm:grid-cols-2">
+									<Body tone={lessonReady ? "green" : "subtle"} className="text-sm">
+										Loaded cores: {loadedCoreCount}/{lessonCoreIDs.length}
+									</Body>
+									<div className="grid gap-2">
 										<Button
 											variant="primary"
 											onClick={handleAdvanceLesson}
 											disabled={!lessonReady}
 										>
-											{activeLesson.continueText || "Continue"}
+											{continueText}
 										</Button>
 										<Button variant="secondary" onClick={handleResetCurrentLesson}>
 											Reset lesson code
@@ -284,29 +233,61 @@ export default function TutorialPage() {
 									</div>
 								</>
 							)}
+
+							<div className="grid gap-2">
+								<div className="grid grid-cols-2 gap-2">
+									<Button variant="ghost" onClick={handleRestart}>
+										Restart Tutorial
+									</Button>
+									<Button variant="ghost" onClick={handleSkip}>
+										Skip Tutorial
+									</Button>
+								</div>
+							</div>
 						</Card>
 
-						<Card variant="panel" className="flex flex-col gap-3">
-							<Subheading tone="green">Tutorial Controls</Subheading>
-							<Body tone="subtle">
-								Skipping preserves your current progress and stops future redirects from
-								the home page until you finish the tutorial.
-							</Body>
-							<div className="grid gap-2">
-								<Button variant="secondary" onClick={handleSkip}>
-									Skip for now
-								</Button>
-								<Button variant="ghost" onClick={handleRestart}>
-									Restart tutorial
-								</Button>
-								<Button variant="ghost" onClick={() => router.push("/")}>
-									Back to the app
-								</Button>
-							</div>
+						<Card
+							variant="panel"
+							className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto"
+							id="tutorial-guide"
+						>
+							<Heading tone="mauve">
+								{inTour ? "Interface tour" : activeLesson?.title}
+							</Heading>
+
+							{!inTour && activeLesson && (
+								<>
+									<div className="flex flex-col gap-2">
+										<Subheading tone="blue">Tasks</Subheading>
+										<ul className="space-y-2 pl-4 text-sm text-ctp-subtext0">
+											{activeLesson.instructions.map((instruction) => (
+												<li key={instruction} className="list-disc leading-relaxed">
+													{instruction}
+												</li>
+											))}
+										</ul>
+									</div>
+
+									{activeLesson.hints && (
+										<details className="text-sm text-ctp-subtext0">
+											<summary className="cursor-pointer select-none font-semibold text-ctp-peach">
+												Hints
+											</summary>
+											<ul className="mt-2 space-y-2 pl-4">
+												{activeLesson.hints.map((hint) => (
+													<li key={hint} className="list-disc leading-relaxed">
+														{hint}
+													</li>
+												))}
+											</ul>
+										</details>
+									)}
+								</>
+							)}
 						</Card>
 					</aside>
 
-					<div className="min-h-[28rem] min-w-0 flex-1">
+					<div className="min-h-0 min-w-0 flex-1">
 						{inTour ? (
 							<>
 								<TutorialSpotlight
@@ -315,7 +296,7 @@ export default function TutorialPage() {
 									stepCount={TOUR_STEPS.length}
 									onNext={handleAdvanceTour}
 								/>
-								<MachineWorkspace
+								<Workspace
 									key={`tutorial-tour:${workspaceVersion}`}
 									storageScope="tutorial:tour"
 									defaultCodeForCore={getDefaultCode}
@@ -325,11 +306,11 @@ export default function TutorialPage() {
 								/>
 							</>
 						) : activeLesson && lessonScope ? (
-							<MachineWorkspace
+							<Workspace
 								key={`${lessonScope}:${workspaceVersion}`}
 								storageScope={lessonScope}
 								defaultCodeForCore={lessonDefaultCode}
-								visibleCoreIDs={activeLesson.visibleCoreIDs}
+								visibleCoreIDs={lessonCoreIDs}
 								visiblePanels={activeLesson.visiblePanels}
 								className="h-full"
 								onCoreLoad={({ coreID, result }) => {

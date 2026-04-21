@@ -3,7 +3,7 @@ import Popup from "./popup";
 import { cn } from "./cn";
 
 type TooltipSide = "top" | "bottom";
-type TooltipAlign = "start" | "center" | "end";
+type TooltipAlign = "start" | "centre" | "end";
 
 const SIDE_CLASSES: Record<TooltipSide, string> = {
 	top: "bottom-full mb-2 translate-y-1",
@@ -12,7 +12,7 @@ const SIDE_CLASSES: Record<TooltipSide, string> = {
 
 const ALIGN_CLASSES: Record<TooltipAlign, string> = {
 	start: "left-0",
-	center: "left-1/2 -translate-x-1/2",
+	centre: "left-1/2 -translate-x-1/2",
 	end: "right-0",
 };
 
@@ -29,7 +29,7 @@ export default function Tooltip({
 	text,
 	contentClassName,
 	side = "bottom",
-	align = "center",
+	align = "centre",
 	...props
 }: TooltipProps) {
 	return (
@@ -37,7 +37,7 @@ export default function Tooltip({
 			{children}
 			<Popup
 				className={cn(
-					"pointer-events-none absolute z-20 w-max max-w-72 px-2 py-1.5 text-xs leading-relaxed text-ctp-subtext0 opacity-0 shadow-lg transition duration-150",
+					"pointer-events-none absolute z-20 w-max max-w-72 px-2 py-1.5 text-xs text-ctp-subtext0 opacity-0 shadow-lg transition duration-150",
 					SIDE_CLASSES[side],
 					ALIGN_CLASSES[align],
 					"group-hover/tooltip:translate-y-0 group-hover/tooltip:opacity-100",

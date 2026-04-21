@@ -228,24 +228,16 @@ export interface TourStep {
 
 export interface LessonCore {
 	coreID: number;
-	title: string;
-	description: string;
 	starterCode: string;
 }
 
 export interface CodeLesson {
 	id: string;
 	title: string;
-	summary: string;
-	concept: string;
 	instructions: string[];
 	hints?: string[];
-	requiredCoreIDs: number[];
-	visibleCoreIDs: number[];
 	visiblePanels: TutorialPanel[];
 	cores: LessonCore[];
-	successText: string;
-	continueText?: string;
 }
 
 export interface TutorialProgress {
@@ -272,7 +264,7 @@ LOAD REG0 0 ; try setting this to eight!
 LOAD REG1 8
 
 loop:
-PLAY PIANO [REG0] ; uses register as memory address
+PLAY PIANO [REG0] 1 ; uses register as memory address
 REST 4 ; try adjusting this!
 
 ADD REG0 1
@@ -308,7 +300,7 @@ LOAD DEC 180
 LOAD REL 180
 
 REST 2
-PLAY PIANO 60
+PLAY PIANO 60 2
 REST 2`,
 ];
 
