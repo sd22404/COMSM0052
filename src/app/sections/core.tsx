@@ -55,7 +55,7 @@ export default function Core({
 									</Pill>
 								</Tooltip>
 								{state.fault && 
-								<Tooltip text="a runtime error has occured" align="end" className="shrink-0">
+								<Tooltip text="a runtime error has occurred" align="end" className="shrink-0">
 									<Pill variant="danger" size="sm">faulted</Pill>
 								</Tooltip>}
 								{!state.fault && invalid &&

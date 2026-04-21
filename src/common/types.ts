@@ -203,6 +203,12 @@ export interface Sample {
 	promise?: Promise<void>;
 }
 
+export interface SampleOption {
+	id: string;
+	label: string;
+	path: string;
+}
+
 export function hasErrors(diagnostics: Diagnostic[]): boolean {
 	return diagnostics.some((diagnostic) => diagnostic.severity === "error");
 }

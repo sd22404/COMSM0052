@@ -51,6 +51,7 @@ export default function MachineWorkspace({
 		setParameter,
 		setMemory,
 		setSample,
+		unsetSample,
 	} = useRuntime();
 
 	const { ready, storeCode, retrieveCode } = useStorage();
@@ -142,7 +143,7 @@ export default function MachineWorkspace({
 						/>
 					)}
 					{visiblePanelSet.has("samples") && (
-						<SampleSelector samples={samples} onSampleChange={setSample} />
+						<SampleSelector samples={samples} onSampleChange={setSample} onSampleRemove={unsetSample} />
 					)}
 				</div>
 			)}

@@ -12,6 +12,7 @@ interface RuntimeHook {
 	setParameter: (control: Parameter, value: number) => void;
 	setMemory: (addr: number, value: number) => void;
 	setSample: (note: number, sample: string) => void;
+	unsetSample: (note: number) => void;
 	setEnabled: (coreID: number, enabled: boolean) => void;
 }
 
@@ -32,6 +33,7 @@ export default function useRuntime(): RuntimeHook {
 	const setParameter = useCallback((param: Parameter, value: number) => runtime.setParameter(param, value), [runtime]);
 	const setMemory = useCallback((addr: number, value: number) => runtime.setAddress(addr, value), [runtime]);
 	const setSample = useCallback((note: number, sample: string) => runtime.setSample(note, sample), [runtime]);
+	const unsetSample = useCallback((note: number) => runtime.unsetSample(note), [runtime]);
 	const setEnabled = useCallback((coreID: number, enabled: boolean) => runtime.setEnabled(coreID, enabled), [runtime]);
 
 	return useMemo(() => ({
@@ -44,6 +46,7 @@ export default function useRuntime(): RuntimeHook {
 		setParameter,
 		setMemory,
 		setSample,
+		unsetSample,
 		setEnabled,
-	}), [halt, load, reset, run, setEnabled, setMemory, setParameter, setRegister, setSample, state]);
+	}), [halt, load, reset, run, setEnabled, setMemory, setParameter, setRegister, setSample, unsetSample, state]);
 }

@@ -1,5 +1,12 @@
 import { AccessLog } from "./log";
 
+export class MemoryAddressError extends Error {
+	constructor(public readonly addr: number, size: number) {
+		super(`Memory address ${addr} is out of range. Valid addresses are 0-${size - 1}.`);
+		this.name = "MemoryAddressError";
+	}
+}
+
 export function createDefaultMemory(size: number): number[] {
 	const mem = new Array(size).fill(0);
 	mem[0] = 58;
@@ -30,19 +37,22 @@ export class Memory {
 		this.mem = createDefaultMemory(this.mem.length);
 	}
 
-	normalise(addr: number) {
-		return ((addr % this.mem.length) + this.mem.length) % this.mem.length;
+	private resolveAddress(addr: number) {
+		if (!Number.isInteger(addr) || addr < 0 || addr >= this.mem.length)
+			throw new MemoryAddressError(addr, this.mem.length);
+
+		return addr;
 	}
 
 	read(addr: number): number {
-		const normalised = this.normalise(addr);
-		this.log.recordMemory(normalised, "read");
-		return this.mem[normalised];
+		const resolved = this.resolveAddress(addr);
+		this.log.recordMemory(resolved, "read");
+		return this.mem[resolved];
 	}
 
 	write(addr: number, value: number) {
-		const normalised = this.normalise(addr);
-		this.mem[normalised] = value;
-		this.log.recordMemory(normalised, "write");
+		const resolved = this.resolveAddress(addr);
+		this.mem[resolved] = value;
+		this.log.recordMemory(resolved, "write");
 	}
 }

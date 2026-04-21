@@ -14,7 +14,7 @@ import {
 	OpType,
 } from "@/common/types";
 import { AccessLog } from "@/machine/log";
-import { Memory } from "@/machine/memory";
+import { Memory, MemoryAddressError } from "@/machine/memory";
 import { RegisterFile, createDefaultRegisters } from "@/machine/regfile";
 
 export const ZERO_TIME_BUDGET = 4096;
@@ -186,54 +186,62 @@ export class Core {
 		const mark = this.log.mark(this.id);
 		let note: Note | undefined;
 
-		switch (instr.opcode) {
-			case Opcode.PLAY: {
-				const [device, pitch, duration] = instr.operands;
-				const length = duration ? this.eval(duration) : 1;
-				if (length <= 0) {
-					this.raiseFault(`PLAY duration must be a positive value, received ${length}.`, instr);
+		try {
+			switch (instr.opcode) {
+				case Opcode.PLAY: {
+					const [device, pitch, duration] = instr.operands;
+					const length = duration ? this.eval(duration) : 1;
+					if (length <= 0) {
+						this.raiseFault(`PLAY duration must be a positive value, received ${length}.`, instr);
+						break;
+					}
+
+					note = this.createNote(device.device, this.eval(pitch), length);
 					break;
 				}
+				case Opcode.REST: {
+					const [ticks] = instr.operands;
+					const tick = this.eval(ticks);
+					if (tick <= 0) {
+						this.raiseFault(`REST must advance by a positive value, received ${tick}.`, instr);
+						break;
+					}
 
-				note = this.createNote(device.device, this.eval(pitch), length);
-				break;
-			}
-			case Opcode.REST: {
-				const [ticks] = instr.operands;
-				const tick = this.eval(ticks);
-				if (tick <= 0) {
-					this.raiseFault(`REST must advance by a positive value, received ${tick}.`, instr);
+					this._tick = clampTick(this._tick + tick);
 					break;
 				}
-
-				this._tick = clampTick(this._tick + tick);
-				break;
-			}
-			case Opcode.LOAD: {
-				const [dest, val] = instr.operands;
-				this.registers.write(dest.reg, this.eval(val));
-				break;
-			}
-			case Opcode.STORE: {
-				const [addr, val] = instr.operands;
-				this.memory.write(this.eval(addr), this.eval(val));
-				break;
-			}
-			case Opcode.ADD: {
-				const [dest, val] = instr.operands;
-				this.registers.write(dest.reg, this.registers.read(dest.reg) + this.eval(val));
-				break;
-			}
-			case Opcode.JUMP: {
-				const [target] = instr.operands;
-				this._pc = this.normalise(target.addr);
-				break;
-			}
-			case Opcode.JMPZ: {
-				const [test, target] = instr.operands;
-				if (this.registers.read(test.reg) === 0)
+				case Opcode.LOAD: {
+					const [dest, val] = instr.operands;
+					this.registers.write(dest.reg, this.eval(val));
+					break;
+				}
+				case Opcode.STORE: {
+					const [addr, val] = instr.operands;
+					this.memory.write(this.eval(addr), this.eval(val));
+					break;
+				}
+				case Opcode.ADD: {
+					const [dest, val] = instr.operands;
+					this.registers.write(dest.reg, this.registers.read(dest.reg) + this.eval(val));
+					break;
+				}
+				case Opcode.JUMP: {
+					const [target] = instr.operands;
 					this._pc = this.normalise(target.addr);
-				break;
+					break;
+				}
+				case Opcode.JMPZ: {
+					const [test, target] = instr.operands;
+					if (this.registers.read(test.reg) === 0)
+						this._pc = this.normalise(target.addr);
+					break;
+				}
+			}
+		} catch (error) {
+			if (error instanceof MemoryAddressError) {
+				this.raiseFault(error.message, instr);
+			} else {
+				throw error;
 			}
 		}
 

@@ -57,11 +57,12 @@ function HelpModal({ open, onClose }: { open: boolean; onClose: () => void }) {
 						<><strong>PLAY <em>instrument note [ticks]</em></strong>: Play a note at the core&apos;s current tick without advancing time; duration defaults to 1 tick.</>,
 						<><strong>REST <em>ticks</em></strong>: Wait the core for a number of ticks. A tick is a quarter of a beat.</>,
 						<><strong>LOAD <em>register value</em></strong>: Write a value into a register.</>,
-						<><strong>STORE <em>address value</em></strong>: Write a value into shared memory using an immediate address or register-held address.</>,
+						<><strong>STORE <em>address value</em></strong>: Write a value into shared memory using an immediate address or register-held address. Valid memory addresses are 0-31.</>,
 						<><strong>ADD <em>register value</em></strong>: Add a value to an existing register.</>,
 						<><strong><em>label</em>:</strong> Declare a place to jump to.</>,
 						<><strong>JUMP <em>label|index</em></strong>: Jump to a label or instruction index.</>,
 						<><strong>JMPZ <em>register</em> <em>label|index</em></strong>: Jump to the label or index if the register holds zero.</>,
+						<>Reading or writing outside memory stops that core with a runtime fault.</>,
 					]}
 				/>
 			</Card>

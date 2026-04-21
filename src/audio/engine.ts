@@ -1,4 +1,4 @@
-import { Device, Note, PlayWindow, Sample } from "@/common/types";
+import { Device, Note, PlayWindow, Sample, SampleOption } from "@/common/types";
 
 const SAMPLE_BASE = "/COMSM0052/samples";
 
@@ -6,11 +6,39 @@ function samplePath(group: string, file: string) {
 	return `${SAMPLE_BASE}/${group}/${file}`;
 }
 
-export const DEFAULT_SAMPLE_MAP: Map<number, Sample> = new Map([
-	[60, { path: samplePath("kicks", "CYCdh_AcouKick-01.wav") }],
-	[61, { path: samplePath("snares", "Acoustic Snare-01.wav") }],
-	[62, { path: samplePath("hats", "Acoustic Hat-01.wav") }]
-]);
+export const SAMPLE_OPTIONS: SampleOption[] = [
+	{ id: "kick-acoustic", label: "Kick", path: samplePath("kicks", "CYCdh_AcouKick-01.wav") },
+	{ id: "kick-tight", label: "Kick Tight", path: samplePath("kicks", "CYCdh_AcouKick-05.wav") },
+	{ id: "kick-deep", label: "Kick Deep", path: samplePath("kicks", "CYCdh_AcouKick-11.wav") },
+	{ id: "snare-acoustic", label: "Snare", path: samplePath("snares", "Acoustic Snare-01.wav") },
+	{ id: "snare-bright", label: "Snare Bright", path: samplePath("snares", "Acoustic Snare-03.wav") },
+	{ id: "hat-closed", label: "Hi-Hat", path: samplePath("hats", "Acoustic Hat-01.wav") },
+	{ id: "hat-open", label: "Open Hat", path: samplePath("hats", "Acoustic Hat-04.wav") },
+	{ id: "crash", label: "Crash", path: samplePath("cymbals", "CYCdh_Crash-03.wav") },
+];
+
+const SAMPLE_PATHS = new Set(SAMPLE_OPTIONS.map((sample) => sample.path));
+const DEFAULT_SAMPLE_ASSIGNMENTS: Array<[number, string]> = [
+	[60, samplePath("kicks", "CYCdh_AcouKick-01.wav")],
+	[61, samplePath("snares", "Acoustic Snare-01.wav")],
+	[62, samplePath("hats", "Acoustic Hat-01.wav")],
+];
+
+function isMidiNote(note: number) {
+	return Number.isInteger(note) && note >= 0 && note <= 127;
+}
+
+export function isKnownSamplePath(path: string) {
+	return SAMPLE_PATHS.has(path);
+}
+
+export function createDefaultSampleMap(): Map<number, Sample> {
+	return new Map(DEFAULT_SAMPLE_ASSIGNMENTS.map(([note, path]) => [note, { path }]));
+}
+
+export function createDefaultSamplePaths(): Map<number, string> {
+	return new Map(DEFAULT_SAMPLE_ASSIGNMENTS);
+}
 
 const semitoneToNote = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
 const noteToSemitone: Record<string, number> = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 };
@@ -72,7 +100,7 @@ export function noteToMidi(note: string): number | undefined {
 }
 
 export class AudioEngine {
-	private _samples: Map<number, Sample> = DEFAULT_SAMPLE_MAP;
+	private _samples = createDefaultSampleMap();
 	private ctx?: AudioContext;
 	private master?: GainNode;
 	private compressor?: DynamicsCompressorNode;
@@ -124,7 +152,7 @@ export class AudioEngine {
 			await this.ctx.resume();
 
 		await Promise.all(
-			Array.from(this._samples.keys().map((midiNote) => this.ensureSampleLoaded(midiNote))),
+			Array.from(this._samples.keys(), (midiNote) => this.ensureSampleLoaded(midiNote)),
 		);
 	}
 
@@ -262,9 +290,16 @@ export class AudioEngine {
 		}
 	}
 
-	async setSample(note: number, sample: string) {
-		this._samples.set(note, { path: sample, buf: undefined });
+	async setSample(note: number, samplePath: string) {
+		if (!isMidiNote(note) || !isKnownSamplePath(samplePath)) return;
+
+		this._samples.set(note, { path: samplePath, buf: undefined });
 		if (!this.ctx) return;
 		await this.ensureSampleLoaded(note);
+	}
+
+	unsetSample(note: number) {
+		if (!isMidiNote(note)) return;
+		this._samples.delete(note);
 	}
 }

@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-	title: "COMSM0052",
-	description: "musiclang"
+	title: "Music Machine",
+	description: "A live coding environment for learning assembly and computer architecture through music.",
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode; }>) {

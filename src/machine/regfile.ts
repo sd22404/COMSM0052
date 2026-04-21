@@ -9,11 +9,11 @@ export function createDefaultRegisters(): number[] {
 		40,  // Decay
 		100, // Sustain
 		40,  // Release
-		8,   // Random
 		0,   // REG0
 		0,   // REG1
 		0,   // REG2
 		0,   // REG3
+		8,   // Random
 	];
 }
 
@@ -38,8 +38,12 @@ export class RegisterFile {
 
 	read(reg: Register): number {
 		this.log.recordRegister(this.id, reg, "read");
-		if (reg == Register.RAND)
-			return Math.floor(Math.random() * (this.regs[Register.RAND] + 1));
+		if (reg == Register.RAND) {
+			const bound = this.regs[Register.RAND];
+			if (bound <= 0) return 0;
+			return Math.floor(Math.random() * bound);
+		}
+
 		return this.regs[reg];
 	}
 

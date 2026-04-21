@@ -37,14 +37,14 @@ export const TOUR_STEPS: TourStep[] = [
 		title: "Shared Memory",
 		anchorID: "memory",
 		side: "left",
-		text: "Memory is shared across all cores.\n\nPrograms can STORE values here and read them back later with [address] or [register]. That is how separate cores coordinate with each other.",
+		text: "Memory is shared across all cores.\n\nPrograms can STORE values here and read them back later with [address] or [register]. Valid addresses are 0-31; reading or writing outside that range faults the current core.",
 	},
 	{
 		id: "samples",
 		title: "Drum Map",
 		anchorID: "samples",
 		side: "left",
-		text: "The drum map shows which note numbers trigger which drum sounds.",
+		text: "The drum map controls which note numbers trigger which drum sounds.\n\nThe default pattern is 60 for kick, 61 for snare, and 62 for hi-hat, but you can assign any built-in sample to any MIDI note.",
 		//\n\nYou will use it later when you combine a melody core with a drum core in the final lesson.",
 	},
 	{

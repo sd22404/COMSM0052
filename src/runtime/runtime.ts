@@ -1,5 +1,5 @@
 import { CompileResult, Note, Parameter, PlayWindow, Register, RuntimeState } from "@/common/types";
-import { AudioEngine, DEFAULT_SAMPLE_MAP } from "@/audio/engine";
+import { AudioEngine, createDefaultSamplePaths } from "@/audio/engine";
 import { Compiler } from "@/language/compiler";
 import { CPU, createDefaultCPU } from "@/machine/cpu";
 import { Transport, createDefaultTransport } from "./transport";
@@ -14,9 +14,7 @@ export function createDefaultRuntime() {
 		cpu: createDefaultCPU(),
 		transport: createDefaultTransport(),
 		highlights: createDefaultHighlights(),
-		samples: new Map<number, string>(
-			Array.from(DEFAULT_SAMPLE_MAP.entries()).map(([note, sample]) => [note, sample.path]),
-		),
+		samples: createDefaultSamplePaths(),
 	};
 }
 
@@ -170,6 +168,11 @@ export class Runtime {
 
 	setSample(note: number, sample: string) {
 		void this.audio.setSample(note, sample).finally(() => this.notify());
+	}
+
+	unsetSample(note: number) {
+		this.audio.unsetSample(note);
+		this.notify();
 	}
 
 	setEnabled(coreID: number, enabled: boolean) {
