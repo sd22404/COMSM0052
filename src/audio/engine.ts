@@ -1,6 +1,7 @@
 import { Device, Note, PlayWindow, Sample, SampleOption } from "@/common/types";
+import config from "@/next.config";
 
-const SAMPLE_BASE = "/COMSM0052/samples";
+const SAMPLE_BASE = config.assetPrefix + "samples";
 
 function samplePath(group: string, file: string) {
 	return `${SAMPLE_BASE}/${group}/${file}`;

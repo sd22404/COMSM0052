@@ -17,6 +17,7 @@ export function createDefaultTutorialProgress(): TutorialProgress {
 		phase: "tour",
 		tourStep: 0,
 		lessonIndex: 0,
+		lessonStep: 0,
 	};
 }
 
@@ -45,6 +46,7 @@ export function normaliseTutorialStatus(value: unknown): TutorialStatus {
 			phase: isTutorialPhase(progressRecord.phase) ? progressRecord.phase : "tour",
 			tourStep: clampIndex(progressRecord.tourStep),
 			lessonIndex: clampIndex(progressRecord.lessonIndex),
+			lessonStep: clampIndex(progressRecord.lessonStep),
 		},
 	};
 }

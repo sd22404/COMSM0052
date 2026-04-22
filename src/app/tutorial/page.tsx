@@ -8,13 +8,37 @@ import useStorage from "@/app/hooks/useStorage";
 import Header from "@/app/sections/header";
 import Workspace from "@/app/sections/workspace";
 import TutorialSpotlight from "@/app/sections/tutorial";
-import { getDefaultCode } from "@/common/types";
+import { getDefaultCode, type LessonStepType } from "@/common/types";
 import { CODE_LESSONS, TOUR_STEPS } from "@/tutorial/lessons";
 import { useRouter } from "next/navigation";
 import { useCallback, useMemo, useState } from "react";
 
 const TOUR_CORE_IDS = [0, 1];
 const TOUR_PANELS: Array<"controls" | "memory" | "samples"> = ["controls", "memory", "samples"];
+const STEP_TYPE_LABELS: Record<LessonStepType, string> = {
+	concept: "Concept",
+	syntax: "Syntax",
+	system: "What happens",
+	task: "Task",
+};
+
+function InlineText({ text }: { text: string }) {
+	return (
+		<>
+			{text.split(/(`[^`]+`)/g).map((part, index) => {
+				if (part.startsWith("`") && part.endsWith("`")) {
+					return (
+						<code key={index} className="rounded bg-ctp-crust px-1 py-0.5 text-ctp-text">
+							{part.slice(1, -1)}
+						</code>
+					);
+				}
+
+				return <span key={index}>{part}</span>;
+			})}
+		</>
+	);
+}
 
 function LoadingShell() {
 	return (
@@ -82,7 +106,12 @@ export default function TutorialPage() {
 	);
 	const inTour = tutorialStatus.progress.phase === "tour";
 	const activeLesson = inTour ? undefined : CODE_LESSONS[lessonIndex];
-	const activeStep = inTour ? TOUR_STEPS[tourStepIndex] : undefined;
+	const activeTourStep = inTour ? TOUR_STEPS[tourStepIndex] : undefined;
+	const lessonStepIndex = useMemo(() => {
+		if (!activeLesson) return 0;
+		return Math.min(tutorialStatus.progress.lessonStep, activeLesson.steps.length - 1);
+	}, [activeLesson, tutorialStatus.progress.lessonStep]);
+	const activeLessonStep = activeLesson?.steps[lessonStepIndex];
 	const lessonScope = activeLesson ? `tutorial:lesson:${activeLesson.id}` : undefined;
 	const lessonCoreIDs = useMemo(
 		() => activeLesson?.cores.map((core) => core.coreID) ?? [],
@@ -97,6 +126,10 @@ export default function TutorialPage() {
 	const lessonReady = activeLesson
 		? lessonCoreIDs.every((coreID) => loadedCoreIDs.includes(coreID))
 		: false;
+	const finalLessonStep = activeLesson
+		? lessonStepIndex + 1 >= activeLesson.steps.length
+		: false;
+	const canAdvanceLesson = lessonReady && finalLessonStep;
 	const continueText = lessonIndex + 1 >= CODE_LESSONS.length ? "Finish tutorial" : "Continue";
 
 	const handleLessonLoad = useCallback((coreID: number) => {
@@ -139,6 +172,13 @@ export default function TutorialPage() {
 			...current,
 			[activeLesson.id]: [],
 		}));
+		setTutorialStatus((current) => ({
+			...current,
+			progress: {
+				...current.progress,
+				lessonStep: 0,
+			},
+		}));
 		setWorkspaceVersion((current) => current + 1);
 	}
 
@@ -161,12 +201,28 @@ export default function TutorialPage() {
 				phase: "lessons",
 				tourStep: TOUR_STEPS.length - 1,
 				lessonIndex: 0,
+				lessonStep: 0,
+			},
+		}));
+	}
+
+	function handleLessonStep(delta: number) {
+		if (!activeLesson) return;
+		const maxStep = activeLesson.steps.length - 1;
+		const nextStep = Math.min(maxStep, Math.max(0, lessonStepIndex + delta));
+
+		setTutorialStatus((current) => ({
+			...current,
+			progress: {
+				...current.progress,
+				phase: "lessons",
+				lessonStep: nextStep,
 			},
 		}));
 	}
 
 	function handleAdvanceLesson() {
-		if (!activeLesson || !lessonReady) return;
+		if (!activeLesson || !canAdvanceLesson) return;
 
 		if (lessonIndex + 1 < CODE_LESSONS.length) {
 			setTutorialStatus((current) => ({
@@ -175,6 +231,7 @@ export default function TutorialPage() {
 					...current.progress,
 					phase: "lessons",
 					lessonIndex: lessonIndex + 1,
+					lessonStep: 0,
 				},
 			}));
 			return;
@@ -188,6 +245,7 @@ export default function TutorialPage() {
 				...current.progress,
 				phase: "lessons",
 				lessonIndex,
+				lessonStep: lessonStepIndex,
 			},
 		}));
 	}
@@ -216,6 +274,9 @@ export default function TutorialPage() {
 
 							{!inTour && activeLesson && (
 								<>
+									<Body tone="subtle" className="text-sm">
+										Step {lessonStepIndex + 1}/{activeLesson.steps.length}
+									</Body>
 									<Body tone={lessonReady ? "green" : "subtle"} className="text-sm">
 										Loaded cores: {loadedCoreCount}/{lessonCoreIDs.length}
 									</Body>
@@ -223,9 +284,9 @@ export default function TutorialPage() {
 										<Button
 											variant="primary"
 											onClick={handleAdvanceLesson}
-											disabled={!lessonReady}
+											disabled={!canAdvanceLesson}
 										>
-											{continueText}
+											{finalLessonStep ? continueText : "Finish lesson steps"}
 										</Button>
 										<Button variant="secondary" onClick={handleResetCurrentLesson}>
 											Reset lesson code
@@ -257,30 +318,55 @@ export default function TutorialPage() {
 
 							{!inTour && activeLesson && (
 								<>
-									<div className="flex flex-col gap-2">
-										<Subheading tone="blue">Tasks</Subheading>
-										<ul className="space-y-2 pl-4 text-sm text-ctp-subtext0">
-											{activeLesson.instructions.map((instruction) => (
-												<li key={instruction} className="list-disc leading-relaxed">
-													{instruction}
-												</li>
-											))}
-										</ul>
-									</div>
+									{activeLessonStep && (
+										<div className="flex min-h-0 flex-1 flex-col gap-4">
+											<div className="flex items-center justify-between gap-3">
+												<Eyebrow tone="peach">
+													{STEP_TYPE_LABELS[activeLessonStep.type]}
+												</Eyebrow>
+												<Eyebrow tone="subtle">
+													{lessonStepIndex + 1}/{activeLesson.steps.length}
+												</Eyebrow>
+											</div>
 
-									{activeLesson.hints && (
-										<details className="text-sm text-ctp-subtext0">
-											<summary className="cursor-pointer select-none font-semibold text-ctp-peach">
-												Hints
-											</summary>
-											<ul className="mt-2 space-y-2 pl-4">
-												{activeLesson.hints.map((hint) => (
-													<li key={hint} className="list-disc leading-relaxed">
-														{hint}
-													</li>
-												))}
-											</ul>
-										</details>
+											<div className="flex flex-col gap-3">
+												<Subheading tone="blue">{activeLessonStep.title}</Subheading>
+												<Body tone="subtle" className="text-sm leading-relaxed">
+													<InlineText text={activeLessonStep.body} />
+												</Body>
+												{activeLessonStep.bullets && (
+													<ul className="space-y-2 pl-4 text-sm text-ctp-subtext0">
+														{activeLessonStep.bullets.map((bullet) => (
+															<li key={bullet} className="list-disc leading-relaxed">
+																<InlineText text={bullet} />
+															</li>
+														))}
+													</ul>
+												)}
+												{activeLessonStep.code && (
+													<pre className="overflow-x-auto rounded border border-ctp-surface0 bg-ctp-crust p-3 text-xs leading-relaxed text-ctp-text">
+														<code>{activeLessonStep.code}</code>
+													</pre>
+												)}
+											</div>
+
+											<div className="mt-auto grid grid-cols-2 gap-2">
+												<Button
+													variant="secondary"
+													onClick={() => handleLessonStep(-1)}
+													disabled={lessonStepIndex === 0}
+												>
+													Back
+												</Button>
+												<Button
+													variant="primary"
+													onClick={() => handleLessonStep(1)}
+													disabled={finalLessonStep}
+												>
+													Next step
+												</Button>
+											</div>
+										</div>
 									)}
 								</>
 							)}
@@ -291,7 +377,7 @@ export default function TutorialPage() {
 						{inTour ? (
 							<>
 								<TutorialSpotlight
-									step={activeStep ?? TOUR_STEPS[0]}
+									step={activeTourStep ?? TOUR_STEPS[0]}
 									stepIndex={tourStepIndex}
 									stepCount={TOUR_STEPS.length}
 									onNext={handleAdvanceTour}

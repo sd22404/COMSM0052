@@ -41,7 +41,7 @@ export class RegisterFile {
 		if (reg == Register.RAND) {
 			const bound = this.regs[Register.RAND];
 			if (bound <= 0) return 0;
-			return Math.floor(Math.random() * bound);
+			return Math.floor(Math.random() * (bound + 1));
 		}
 
 		return this.regs[reg];

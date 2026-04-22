@@ -231,11 +231,20 @@ export interface LessonCore {
 	starterCode: string;
 }
 
+export type LessonStepType = "concept" | "syntax" | "system" | "task";
+
+export interface LessonStep {
+	title: string;
+	type: LessonStepType;
+	body: string;
+	bullets?: string[];
+	code?: string;
+}
+
 export interface CodeLesson {
 	id: string;
 	title: string;
-	instructions: string[];
-	hints?: string[];
+	steps: LessonStep[];
 	visiblePanels: TutorialPanel[];
 	cores: LessonCore[];
 }
@@ -244,6 +253,7 @@ export interface TutorialProgress {
 	phase: TutorialPhase;
 	tourStep: number;
 	lessonIndex: number;
+	lessonStep: number;
 }
 
 export interface TutorialStatus {
@@ -254,59 +264,62 @@ export interface TutorialStatus {
 
 const CORE_PROGRAMS = [
 	`; Core 0: melody
+; Try changing VOL for loudness, or ATK/DEC/REL for softer shapes.
 top:
-LOAD VOL 54
-LOAD ATK 10
-LOAD DEC 180
-LOAD REL 180
+LOAD VOL 54 ; core 0 volume (0-100)
+LOAD ATK 10 ; attack time in milliseconds
+LOAD DEC 180 ; decay time in milliseconds
+LOAD REL 180 ; release time in milliseconds
 
-LOAD REG0 0 ; try setting this to eight!
-LOAD REG1 8
+LOAD REG0 0 ; memory start address. try 8 for the second melody.
+LOAD REG1 8 ; how many memory notes to play before restarting
 
 loop:
-PLAY PIANO [REG0] 1 ; uses register as memory address
-REST 4 ; try adjusting this!
+PLAY PIANO [REG0] 1 ; [REG0] reads memory at the address held in REG0
+REST 4 ; rhythm speed. Try 2 for faster notes or 8 for slower notes.
 
-ADD REG0 1
-ADD REG1 -1
+ADD REG0 1 ; move to the next memory address
+ADD REG1 -1 ; count one note down
 JMPZ REG1 top
 JUMP loop`,
 	`; Core 1: drums
-LOAD VOL 88
-LOAD PAN -10
+; drum notes use the Drum Note Map: 60 kick, 61 snare, 62 hi-hat.
+LOAD VOL 88 ;
+LOAD PAN -10 ; negative pans left, positive pans right
 
-PLAY DRUMS 60 ; uses immediate value
+PLAY DRUMS 60 ; kick
+REST 2 ; change REST values to reshape the groove
+PLAY DRUMS 62 ; hi-hat
 REST 2
-PLAY DRUMS 62
+PLAY DRUMS 61 ; snare
 REST 2
-PLAY DRUMS 61
-REST 2
-PLAY DRUMS 62
+PLAY DRUMS 62 ; hi-hat
 REST 1
-PLAY DRUMS 62
+PLAY DRUMS 62 ; a short extra hat hit
 REST 1
-PLAY DRUMS 60
+PLAY DRUMS 60 ; kick
 REST 2
-PLAY DRUMS 62
+PLAY DRUMS 62 ; hi-hat
 REST 2
-PLAY DRUMS 61
+PLAY DRUMS 61 ; snare
 REST 2
-PLAY DRUMS 62
+PLAY DRUMS 62 ; hi-hat
 REST 2`,
-	`; Core 2
+	`; Core 2: offset piano
+; This part starts late, then repeats because programs wrap around.
 LOAD VOL 42
-LOAD ATK 10
-LOAD DEC 180
-LOAD REL 180
+LOAD ATK 10 ; try 200 for a slow fade in
+LOAD DEC 180 ; decay time in milliseconds
+LOAD REL 180 ; try 500 for a longer tail
 
-REST 2
-PLAY PIANO 60 2
-REST 2`,
+REST 2 ; start offset before the note
+PLAY PIANO 60 2 ; pitch 60 is middle C, 2 is duration in ticks
+REST 2 ; space before this short program loops`,
 ];
 
 export function getDefaultCode(coreID: number) {
 	return CORE_PROGRAMS[coreID] ?? `; Core ${coreID}
-; Press Ctrl+Enter to assign this program.
+; write this program yourself!
 LOAD VOL 100
 
 loop:
