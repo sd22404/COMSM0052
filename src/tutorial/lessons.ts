@@ -181,9 +181,12 @@ LOAD REG0 64`,
 				type: "syntax",
 				body: "The envelope registers describe how each played note starts, fades, holds, and releases.",
 				bullets: [
+					"Attack describes how quickly the note reaches its peak volume when played.",
+					"Decay describes how quickly the note falls to the sustain level.",
+					"Sustain describes the volume of the note until it is released.",
+					"Release describes how quickly the note fades to silence after its duration ends.",
 					"`ATK`, `DEC`, and `REL` are times in milliseconds.",
 					"`SUS` is a level from 0 to 100.",
-					"Large attack and release values make softer, slower shapes.",
 				],
 			},
 			{
