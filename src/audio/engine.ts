@@ -1,4 +1,7 @@
 import { Instrument } from "@/core/types";
+import config from "@/next.config"
+
+const SAMPLE_BASE = config.assetPrefix + "samples";
 
 const midiToFreq = function(note: number): number {
 	const A = 440;
@@ -16,9 +19,9 @@ export const midiToNote = function(midi: number): string {
 }
 
 const SAMPLE_MAP: Map<number, string> = new Map([
-	[60, "/COMSM0052/samples/kick.wav"],
-	[61, "/COMSM0052/samples/snare.wav"],
-	[62, "/COMSM0052/samples/hat.wav"],
+	[60, `${SAMPLE_BASE}/kick.wav`],
+	[61, `${SAMPLE_BASE}/snare.wav`],
+	[62, `${SAMPLE_BASE}/hat.wav`],
 ]);
 
 export class AudioEngine {
