@@ -1,6 +1,7 @@
 import { TransportState } from "@/common/types";
 
 const MIN_BPM = 1;
+const MAX_BPM = 300;
 const EPSILON = 1e-6;
 
 const TICKS_PER_BEAT = 4;
@@ -11,7 +12,7 @@ interface PendingBPM {
 	bpm: number;
 }
 
-function clampBPM(value: number) { return Math.max(MIN_BPM, value); }
+function clampBPM(value: number) { return Math.min(Math.max(MIN_BPM, value), MAX_BPM); }
 function clampTick(value: number) { return Math.max(0, value); }
 
 export function createDefaultTransport(): TransportState {

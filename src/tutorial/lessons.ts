@@ -1,83 +1,21 @@
-import { CodeLesson, TourStep } from "@/common/types";
-
-export const TOUR_STEPS: TourStep[] = [
-	{
-		id: "welcome",
-		title: "Welcome",
-		text: "Music Machine is a live coding environment for creating music while learning assembly-level programming.\n\nThe tour introduces the interface first, then the lessons break the language into small pieces: instructions, syntax, values, memory, and timing.",
-		buttonText: "Start the tour",
-	},
-	{
-		id: "core-grid",
-		title: "Cores",
-		anchorID: "core-0",
-		text: "Each core runs one independent program.\n\nCores share the same global beat, but each core has its own registers and position in its code. You can use separate cores for melody, drums, bass, or logic that writes to shared memory.",
-	},
-	{
-		id: "machine-time",
-		title: "Ticks And Time",
-		anchorID: "core-0",
-		text: "Music Machine measures time in ticks. One beat is divided into 4 ticks.\n\nMost instructions happen immediately. PLAY queues a note without moving the core forward in time. REST advances that core's time, which is how programs make rhythm and avoid running forever all at once.",
-	},
-	{
-		id: "editor",
-		title: "Code Editor",
-		anchorID: "core-0-editor",
-		text: "This is where you write code for a single core.\n\nPress Ctrl+Enter to compile and load the current text into that core. You can do this during playback to update the core's running program without stopping the whole machine. When playback is running, highlights show which instructions have just been executed.",
-	},
-	{
-		id: "registers",
-		title: "Registers",
-		anchorID: "core-0-registers",
-		text: "Registers are private storage for a core.\n\nVOL and PAN shape loudness and stereo position. ATK, DEC, SUS, and REL shape the envelope. REG0 through REG3 are general-purpose values for your own use as counters, pitches, addresses, and durations. RAND returns a fresh random number when read. You can type into register cells during playback, and later instructions on that core will read the updated values.",
-	},
-	{
-		id: "status",
-		title: "Loading And Faults",
-		anchorID: "core-0",
-		text: "A core can be idle, active, invalid, unloaded, or faulted.\n\nInvalid means the editor text does not compile. Unloaded means the editor has changed since the last successful load. Faulted means the program compiled, but something went wrong while running, such as reading memory outside addresses 0-31.",
-	},
-	{
-		id: "controls",
-		title: "Master Controls",
-		anchorID: "controls",
-		side: "left",
-		text: "These controls affect the whole machine.\n\nBPM sets tempo. VOL sets global output volume. Start and Stop Audio control playback. Reset returns memory and each core's registers, tempo, volume, and status to their defaults while keeping their program text.",
-	},
-	{
-		id: "memory",
-		title: "Shared Memory",
-		anchorID: "memory",
-		side: "left",
-		text: "Memory is shared by every core.\n\nUse STORE to write values. Use [12] to read a direct memory address, or [REG0] to read the address currently held in REG0. Valid addresses are 0-31, and memory highlights show reads and writes as the machine runs. You can type into memory cells during playback to change values that future memory reads will use.",
-	},
-	{
-		id: "samples",
-		title: "Drum Map",
-		anchorID: "samples",
-		side: "left",
-		text: "The drum map controls which MIDI note numbers trigger which drum samples.\n\nThe defaults are 60 for kick, 61 for snare, and 62 for hi-hat. You can assign any built-in sample to another note number and trigger it with PLAY DRUMS.",
-	},
-	{
-		id: "help",
-		title: "Help Guide",
-		anchorID: "controls",
-		side: "left",
-		text: "The Help button is a syntax guide and controls reference.\n\nUse it when you want to check an instruction shape, register name, memory-addressing form, or keyboard shortcut without leaving the workspace.",
-	},
-	{
-		id: "tour-finish",
-		title: "Ready For Lessons",
-		text: "The next phase switches to guided exercises.\n\nEach lesson has small explanation steps. Read through them, edit the starter code, load the required cores, and then continue to the next lesson. If playback is already running, Ctrl+Enter updates the focused core without stopping everything else.",
-		buttonText: "Begin lessons",
-	},
-];
+import { CodeLesson } from "@/common/types";
 
 export const CODE_LESSONS: CodeLesson[] = [
 	{
 		id: "play-and-rest",
 		title: "Lesson 1: Play, Rest, And Ticks",
 		steps: [
+			{
+				title: "Using this lesson",
+				type: "guide",
+				body: "This panel is your lesson navigator. Read the current step here, move with Back and Next, and use the status card above to see when the lesson is ready to finish.",
+				bullets: [
+					"The status card shows the lesson number, step number, and how many required cores have loaded.",
+					"`Continue` stays disabled until you reach the last step and load every required core.",
+					"`Reset lesson code` restores this lesson's starter code without changing the rest of the tutorial.",
+				],
+				spotlightTargets: ["tutorial-status"],
+			},
 			{
 				title: "The shape of a program",
 				type: "concept",
@@ -125,13 +63,24 @@ JUMP loop`,
 				],
 			},
 			{
+				title: "Loading and running core 0",
+				type: "guide",
+				body: "This lesson uses core 0. Replace the placeholders in its editor, then load that code and use the master controls to hear it.",
+				bullets: [
+					"Core 0's badges show whether the code is active, unloaded, invalid, or faulted.",
+					"Press `Ctrl+Enter` inside the editor to load the current code into core 0.",
+					"Use the master controls to start or stop audio, and reload core 0 whenever you change the code.",
+				],
+				spotlightTargets: ["core-0", "core-0-editor", "controls"],
+			},
+			{
 				title: "Your task",
 				type: "task",
 				body: "Fill in the missing note and rest length, then load core 0.",
 				bullets: [
 					"Replace `NOTE` with a MIDI note number such as 60.",
 					"Replace `TICKS` with a positive rest length. Use 4 for one beat.",
-					"Press Ctrl+Enter in the editor to load the core. You can press it again during playback after changing the code.",
+					"Load core 0 after both placeholders are filled in.",
 				],
 			},
 		],
@@ -152,6 +101,16 @@ JUMP loop`,
 		id: "shape-with-registers",
 		title: "Lesson 2: Shape Sound With Registers",
 		steps: [
+			{
+				title: "Register column",
+				type: "guide",
+				body: "This column shows the live register values for core 0. Keep an eye on it when the lesson asks you to shape the sound or experiment while playback is running.",
+				bullets: [
+					"The sound-shaping registers and the general-purpose registers all live here.",
+					"Typing into a register cell changes the value later instructions on this core will read.",
+				],
+				spotlightTargets: ["core-0-registers"],
+			},
 			{
 				title: "Registers hold settings",
 				type: "concept",
@@ -195,9 +154,7 @@ LOAD REG0 64`,
 				body: "When a `PLAY` instruction runs, the core reads its current sound registers and stores those settings on the note event.",
 				bullets: [
 					"Changing a register affects later notes on that core.",
-					"You can type into register cells during playback to try new values without editing the code.",
 					"Each core has its own registers, so one core's `VOL` does not change another core.",
-					"Register highlights show which settings were read or written.",
 				],
 			},
 			{
@@ -208,7 +165,7 @@ LOAD REG0 64`,
 					"Use `VOL` and `SUS` values between 0 and 100.",
 					"Use negative `PAN` values for left and positive values for right.",
 					"Try short and long envelope times to hear the difference.",
-					"Press Ctrl+Enter during playback whenever you want to reload the edited code.",
+					"Load core 0 and listen to how the three devices respond.",
 				],
 			},
 		],
@@ -240,14 +197,23 @@ JUMP loop`,
 		title: "Lesson 3: Memory And Register Values",
 		steps: [
 			{
+				title: "Memory panel",
+				type: "guide",
+				body: "This panel is where the shared memory cells for the next lesson live. Keep it visible while you load code, watch the values change, and try edits during playback.",
+				bullets: [
+					"Each box is one memory address.",
+					"Reads and writes will highlight here while the program runs.",
+					"Typing a new value into a cell changes what future memory reads return.",
+				],
+				spotlightTargets: ["memory"],
+			},
+			{
 				title: "Shared memory",
 				type: "concept",
 				body: "Memory is a shared row of 32 numbered cells. Every core can read and write it, so memory is how cores can coordinate.",
 				bullets: [
 					"Valid addresses are integers from 0 to 31.",
 					"Each memory cell holds one number.",
-					"You can type into memory cells during playback, and future reads will use the new values.",
-					"Reads highlight blue, and writes highlight peach.",
 				],
 			},
 			{
@@ -292,8 +258,8 @@ PLAY SYNTH [REG0]`,
 				bullets: [
 					"Replace `ADDRESS` with 12 so the direct read and register-held read point at the same cell.",
 					"Replace `NOTE` with a MIDI note number such as 64.",
-					"Load core 0 and watch the memory panel highlight the write and reads.",
-					"While it plays, type a different number into memory cell 12 to hear future reads change.",
+					"Load core 0 and watch the write and reads highlight as they happen.",
+					"While it plays, type a different number into address 12 to hear future reads change.",
 				],
 			},
 		],
@@ -464,6 +430,16 @@ JUMP loop`,
 		title: "Lesson 6: Multi-Core Drum Arrangement",
 		steps: [
 			{
+				title: "Second core",
+				type: "guide",
+				body: "This lesson uses two cores at the same time. Core 1 handles the drum lane while core 0 reads the shared melody note.",
+				bullets: [
+					"Core 1 has its own editor and registers, just like core 0.",
+					"Both required cores must be loaded before this lesson can finish.",
+				],
+				spotlightTargets: ["core-1"],
+			},
+			{
 				title: "Cores can coordinate",
 				type: "concept",
 				body: "Each core has private registers, but all cores share memory. That makes memory useful for passing musical values between parts.",
@@ -481,8 +457,17 @@ JUMP loop`,
 					"Core 1's `REG0` is private to core 1.",
 					"Memory address 12 is shared and visible to every core.",
 					"Core 0 can use `PLAY PIANO [12]` to read the latest shared value.",
-					"You can type into memory or register cells during playback to edit the shared value live.",
 				],
+			},
+			{
+				title: "Drum note map",
+				type: "guide",
+				body: "Use this panel to map a MIDI note number to a drum sample before you run the full arrangement.",
+				bullets: [
+					"Assign a sample to the extra drum note the task asks for.",
+					"After a note is mapped here, `PLAY DRUMS` with that note will trigger the chosen sample.",
+				],
+				spotlightTargets: ["samples"],
 			},
 			{
 				title: "Drum notes",
@@ -490,8 +475,7 @@ JUMP loop`,
 				body: "`PLAY DRUMS note` uses the drum map rather than a pitched synth voice.",
 				bullets: [
 					"The default drum notes are 60 for kick, 61 for snare, and 62 for hi-hat.",
-					"You can assign another sample to MIDI note 63 in the Drum Note Map.",
-					"After mapping it, `PLAY DRUMS 63` triggers that sample.",
+					"If note 63 is mapped to a sample, `PLAY DRUMS 63` triggers that sound.",
 				],
 			},
 			{

@@ -6,6 +6,10 @@ import { Parameter } from "@/common/types";
 import { useEffect, useState } from "react";
 import Help from "./help";
 
+function clamp(value: number, min: number, max: number) {
+	return Math.min(max, Math.max(min, value));
+}
+
 interface ControlsProps {
 	running: boolean;
 	parameters: number[];
@@ -30,27 +34,35 @@ export default function Controls({ running, parameters, onParameterChange, run, 
 			</div>
 
 			<div className="flex justify-between">
-				{drafts.map((value, i) => (
-					<div key={i} className="flex items-center gap-4">
-						<Body tone="green" className="text-xl font-semibold">
-							{Parameter[i]}
-						</Body>
-						<Input
-							className="w-20 text-xl"
-							type="number"
-							min={i === Parameter.VOL ? 0 : 1}
-							max={i === Parameter.VOL ? 100 : 300}
-							value={value}
-							onChange={(e) => {
-								const valStr = e.target.value;
-								const valInt = parseInt(valStr);
+				{drafts.map((value, i) => {
+					const min = i === Parameter.VOL ? 0 : 1;
+					const max = i === Parameter.VOL ? 100 : 300;
 
-								if (!isNaN(valInt)) onParameterChange(i, valInt);
-								setDrafts(drafts => drafts.map((control, j) => j === i ? valStr : control));
-							}}
-						/>
-					</div>
-				))}
+					return (
+						<div key={i} className="flex items-center gap-4">
+							<Body tone="peach" className="text-xl font-semibold">
+								{Parameter[i]}
+							</Body>
+							<Input
+								className="w-20 text-xl"
+								type="number"
+								min={min}
+								max={max}
+								value={value}
+								onChange={(e) => {
+									const valStr = e.target.value;
+									const valInt = valStr.trim() === "" ? NaN : parseInt(valStr);
+									const nextValue = isFinite(valInt)
+										? clamp(Math.trunc(valInt), min, max)
+										: undefined;
+
+									if (nextValue !== undefined) onParameterChange(i, nextValue);
+									setDrafts(drafts => drafts.map((control, j) => j === i ? nextValue ?? valStr : control));
+								}}
+							/>
+						</div>
+					);
+				})}
 			</div>
 	
 

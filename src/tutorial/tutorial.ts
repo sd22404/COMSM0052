@@ -1,10 +1,6 @@
-import { TutorialPhase, TutorialProgress, TutorialStatus } from "@/common/types";
+import { TutorialProgress, TutorialStatus } from "@/common/types";
 
-export const TUTORIAL_STATUS_KEY = "music-machine:tutorial";
-
-function isTutorialPhase(value: unknown): value is TutorialPhase {
-	return value === "tour" || value === "lessons";
-}
+export const TUTORIAL_STATUS_KEY = "music-machine:tutorial:inline";
 
 function clampIndex(value: unknown): number {
 	return typeof value === "number" && Number.isFinite(value) && value >= 0
@@ -14,8 +10,6 @@ function clampIndex(value: unknown): number {
 
 export function createDefaultTutorialProgress(): TutorialProgress {
 	return {
-		phase: "tour",
-		tourStep: 0,
 		lessonIndex: 0,
 		lessonStep: 0,
 	};
@@ -34,17 +28,18 @@ export function normaliseTutorialStatus(value: unknown): TutorialStatus {
 		return createDefaultTutorialStatus();
 
 	const record = value as Record<string, unknown>;
-	const progressRecord =
-		record.progress && typeof record.progress === "object"
-			? record.progress as Record<string, unknown>
-			: {};
+	if (!record.progress || typeof record.progress !== "object")
+		return createDefaultTutorialStatus();
+
+	const progressRecord = record.progress as Record<string, unknown>;
+	const progressKeys = Object.keys(progressRecord);
+	if (progressKeys.some((key) => key !== "lessonIndex" && key !== "lessonStep"))
+		return createDefaultTutorialStatus();
 
 	return {
 		completed: record.completed === true,
 		skipped: record.skipped === true,
 		progress: {
-			phase: isTutorialPhase(progressRecord.phase) ? progressRecord.phase : "tour",
-			tourStep: clampIndex(progressRecord.tourStep),
 			lessonIndex: clampIndex(progressRecord.lessonIndex),
 			lessonStep: clampIndex(progressRecord.lessonStep),
 		},

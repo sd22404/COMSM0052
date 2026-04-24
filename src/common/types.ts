@@ -213,25 +213,14 @@ export function hasErrors(diagnostics: Diagnostic[]): boolean {
 	return diagnostics.some((diagnostic) => diagnostic.severity === "error");
 }
 
-export type TutorialSide = "left" | "right";
 export type TutorialPanel = "controls" | "memory" | "samples";
-export type TutorialPhase = "tour" | "lessons";
-
-export interface TourStep {
-	id: string;
-	title: string;
-	text: string;
-	anchorID?: string;
-	side?: TutorialSide;
-	buttonText?: string;
-}
 
 export interface LessonCore {
 	coreID: number;
 	starterCode: string;
 }
 
-export type LessonStepType = "concept" | "syntax" | "system" | "task";
+export type LessonStepType = "guide" | "concept" | "syntax" | "system" | "task";
 
 export interface LessonStep {
 	title: string;
@@ -239,6 +228,7 @@ export interface LessonStep {
 	body: string;
 	bullets?: string[];
 	code?: string;
+	spotlightTargets?: string[];
 }
 
 export interface CodeLesson {
@@ -250,8 +240,6 @@ export interface CodeLesson {
 }
 
 export interface TutorialProgress {
-	phase: TutorialPhase;
-	tourStep: number;
 	lessonIndex: number;
 	lessonStep: number;
 }
