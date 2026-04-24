@@ -10,11 +10,33 @@ type HelpTab = "syntax" | "controls";
 type HelpTone = "blue" | "green" | "mauve" | "peach";
 
 const HELP_TONE_CLASSES: Record<HelpTone, string> = {
-	blue: "[&_code]:border-ctp-blue/30 [&_code]:text-ctp-blue",// [&_strong]:text-ctp-blue",
-	green: "[&_code]:border-ctp-green/30 [&_code]:text-ctp-green",// [&_strong]:text-ctp-green",
-	mauve: "[&_code]:border-ctp-mauve/30 [&_code]:text-ctp-mauve",// [&_strong]:text-ctp-mauve",
-	peach: "[&_code]:border-ctp-peach/30 [&_code]:text-ctp-peach",// [&_strong]:text-ctp-peach",
+	blue: "[&_code]:border-ctp-blue/30 [&_code]:text-ctp-blue",
+	green: "[&_code]:border-ctp-green/30 [&_code]:text-ctp-green",
+	mauve: "[&_code]:border-ctp-mauve/30 [&_code]:text-ctp-mauve",
+	peach: "[&_code]:border-ctp-peach/30 [&_code]:text-ctp-peach",
 };
+
+const ACCENT_TONE_CLASSES: Record<HelpTone, string> = {
+	blue: "text-ctp-blue",
+	green: "text-ctp-green",
+	mauve: "text-ctp-mauve",
+	peach: "text-ctp-peach",
+};
+
+const CODE_TONE_CLASSES: Record<HelpTone, string> = {
+	blue: "!border-ctp-blue/30 !text-ctp-blue",
+	green: "!border-ctp-green/30 !text-ctp-green",
+	mauve: "!border-ctp-mauve/30 !text-ctp-mauve",
+	peach: "!border-ctp-peach/30 !text-ctp-peach",
+};
+
+function Accent({ children, tone }: { children: ReactNode; tone: HelpTone }) {
+	return <span className={cn("font-semibold", ACCENT_TONE_CLASSES[tone])}>{children}</span>;
+}
+
+function HelpCode({ children, tone }: { children: ReactNode; tone?: HelpTone }) {
+	return <code className={tone ? CODE_TONE_CLASSES[tone] : undefined}>{children}</code>;
+}
 
 function HelpBlock({
 	title,
@@ -62,10 +84,10 @@ function TabButton({
 			className={cn(
 				"rounded px-3 py-2 text-sm font-semibold transition-colors hover:cursor-pointer",
 				active && "bg-ctp-blue text-ctp-base",
-				!active && tone === "blue" && "bg-ctp-surface0 text-ctp-blue hover:bg-ctp-blue/15",
-				!active && tone === "green" && "bg-ctp-surface0 text-ctp-green hover:bg-ctp-green/15",
-				!active && tone === "mauve" && "bg-ctp-surface0 text-ctp-mauve hover:bg-ctp-mauve/15",
-				!active && tone === "peach" && "bg-ctp-surface0 text-ctp-peach hover:bg-ctp-peach/15",
+				!active && tone === "blue" && "bg-ctp-surface0/60 text-ctp-blue/80 hover:bg-ctp-blue/10 hover:text-ctp-blue",
+				!active && tone === "green" && "bg-ctp-surface0/60 text-ctp-green/80 hover:bg-ctp-green/10 hover:text-ctp-green",
+				!active && tone === "mauve" && "bg-ctp-surface0/60 text-ctp-mauve/80 hover:bg-ctp-mauve/10 hover:text-ctp-mauve",
+				!active && tone === "peach" && "bg-ctp-surface0/60 text-ctp-peach/80 hover:bg-ctp-peach/10 hover:text-ctp-peach",
 			)}
 			onClick={onClick}
 		>
@@ -79,20 +101,18 @@ function SyntaxGuide() {
 		<div className="grid gap-6 lg:grid-cols-2">
 			<HelpBlock
 				title="Program Shape"
-				tone="mauve"
 				lines={[
 					<><strong>Comments</strong>: <code>;</code> runs to end of line.</>,
 					<><strong>Instructions</strong>: opcode, then space-separated operands.</>,
-					<><strong>Labels</strong>: <code>name:</code> marks a jump target and takes no time.</>,
-					<><strong>Names</strong>: Opcodes, registers, and devices are uppercase: <code>PLAY</code>, <code>REG0</code>, <code>PIANO</code>.</>,
+					<><strong>Labels</strong>: <HelpCode tone="mauve">name:</HelpCode> marks a jump target and takes no time.</>,
+					<><strong>Names</strong>: Opcodes, registers, and devices are uppercase: <code>PLAY</code>, <HelpCode tone="mauve">REG0</HelpCode>, <code>PIANO</code>.</>,
 				]}
 			/>
 			<HelpBlock
 				title="Operands"
-				tone="mauve"
 				lines={[
 					<><strong>Numbers</strong>: <code>60</code>, <code>4</code>, <code>-1</code>.</>,
-					<><strong>Registers</strong>: <code>VOL</code>, <code>PAN</code>, <code>ATK</code>, <code>DEC</code>, <code>SUS</code>, <code>REL</code>, <code>REG0</code>-<code>REG3</code>, <code>RAND</code>.</>,
+					<><strong>Registers</strong>: <HelpCode tone="mauve">VOL</HelpCode>, <HelpCode tone="mauve">PAN</HelpCode>, <HelpCode tone="mauve">ATK</HelpCode>, <HelpCode tone="mauve">REL</HelpCode>, <HelpCode tone="mauve">REG0</HelpCode>-<HelpCode tone="mauve">REG3</HelpCode>, <HelpCode tone="mauve">RAND</HelpCode>.</>,
 					<><strong>Devices</strong>: <code>SYNTH</code>, <code>DRUMS</code>, <code>BASS</code>, <code>PIANO</code>.</>,
 					<><strong>Values</strong>: number, register, or memory read.</>,
 				]}
@@ -109,7 +129,7 @@ function SyntaxGuide() {
 			/>
 			<HelpBlock
 				title="Registers"
-				tone="green"
+				tone="mauve"
 				lines={[
 					<><strong>VOL</strong>: per-core volume.</>,
 					<><strong>PAN</strong>: negative left, positive right.</>,
@@ -120,7 +140,6 @@ function SyntaxGuide() {
 			/>
 			<HelpBlock
 				title="Sound And Time"
-				tone="green"
 				lines={[
 					<><strong><code>PLAY DEVICE pitch (ticks)</code></strong>: play now; duration defaults to <code>1</code>.</>,
 					<><strong><code>REST ticks</code></strong>: move this core forward.</>,
@@ -139,7 +158,7 @@ function SyntaxGuide() {
 			/>
 			<HelpBlock
 				title="Flow Instructions"
-				tone="blue"
+				tone="mauve"
 				lines={[
 					<><strong><code>JUMP label</code></strong>: always move to a label or instruction index.</>,
 					<><strong><code>JMPZ register label</code></strong>: jump only when the register is zero.</>,
@@ -173,9 +192,8 @@ function ControlsGuide() {
 			/>
 			<HelpBlock
 				title="Master Controls"
-				tone="green"
 				lines={[
-					<><strong>Start / Stop</strong>: toggle playback.</>,
+					<><strong>Start / Stop</strong>: toggle playback; <Accent tone="green">Start Audio</Accent> resumes active cores.</>,
 					<><strong>Reset</strong>: reset memory, registers, transport, and enabled cores; keep editor text.</>,
 					<><strong>BPM</strong>: global tempo.</>,
 					<><strong>VOL</strong>: global output, separate from core <code>VOL</code>.</>,
@@ -186,10 +204,10 @@ function ControlsGuide() {
 				tone="mauve"
 				lines={[
 					<><strong>Idle</strong>: stopped or no active program.</>,
-					<><strong>Active</strong>: loaded and running.</>,
-					<><strong>Invalid</strong>: compile errors.</>,
+					<><Accent tone="green">Active</Accent>: loaded and running.</>,
+					<><Accent tone="peach">Invalid</Accent>: compile errors.</>,
 					<><strong>Unloaded</strong>: editor changed since load.</>,
-					<><strong>Faulted</strong>: runtime stopped that core.</>,
+					<><Accent tone="peach">Faulted</Accent>: runtime stopped that core.</>,
 				]}
 			/>
 			<HelpBlock
@@ -203,7 +221,7 @@ function ControlsGuide() {
 			/>
 			<HelpBlock
 				title="Memory Panel"
-				tone="blue"
+				tone="peach"
 				lines={[
 					<>Edit cells live during playback.</>,
 					<><strong>Show notes</strong>: display MIDI values as note names.</>,
@@ -236,7 +254,7 @@ function HelpModal({ open, onClose }: { open: boolean; onClose: () => void }) {
 			>
 				<div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
 					<div className="flex flex-col gap-1">
-						<Eyebrow tone="mauve">Reference</Eyebrow>
+						<Eyebrow tone="blue">Reference</Eyebrow>
 						<Subheading tone="blue">Help Guide</Subheading>
 					</div>
 					<div className="grid grid-cols-2 gap-2">
@@ -249,7 +267,7 @@ function HelpModal({ open, onClose }: { open: boolean; onClose: () => void }) {
 					</div>
 				</div>
 
-				<Body tone="peach" className="text-sm">
+				<Body tone="subtle" className="text-sm">
 					{activeTab === "syntax"
 						? "Instruction shapes, operands, memory, and faults."
 						: "Shortcuts, playback, status, memory, and samples."}
