@@ -63,7 +63,7 @@ export default function Core({
 									<Pill variant="danger" size="sm">invalid</Pill>
 								</Tooltip>}
 								{!state.fault && hasChanged &&
-								<Tooltip text="press CTRL+ENTER to load" align="start" className="shrink-0">
+								<Tooltip text="press Ctrl+Enter (Cmd+Enter on Mac) to load" align="start" className="shrink-0">
 									<Pill variant="warning" size="sm">unloaded</Pill>
 								</Tooltip>}
 							</div>

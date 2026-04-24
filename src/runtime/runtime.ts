@@ -121,6 +121,7 @@ export class Runtime {
 			this.interval = undefined;
 		}
 
+		this.cpu.resetPCs();
 		this.transport.halt(this.audio.time);
 		this.audio.panic();
 		this.highlights.clear();

@@ -250,7 +250,7 @@ export default function TutorialPage() {
 									{finalLessonStep ? continueText : "Finish lesson steps"}
 								</Button>
 								<Button variant="secondary" onClick={handleResetCurrentLesson}>
-									Reset lesson code
+									Reset Lesson
 								</Button>
 							</div>
 

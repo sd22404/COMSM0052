@@ -11,7 +11,7 @@ Memory { "[" (Immediate | Register) "]" }
 @tokens {
 	Opcode { "PLAY" | "REST" | "JUMP" | "JMPZ" | "LOAD" | "STORE" | "ADD" }
 	Device { "DRUMS" | "BASS" | "PIANO" | "SYNTH" }
-	Register { "VOL" | "PAN" | "ATK" | "DEC" | "SUS" | "REL" | "RAND" | "REG0" | "REG1" | "REG2" | "REG3" }
+	Register { "VOL" | "PAN" | "ATK" | "REL" | "RAND" | "REG0" | "REG1" | "REG2" | "REG3" }
 	Label { Identifier ":" }
 	Identifier { @asciiLetter+ @digit* }
 	Immediate { "-"? @digit+ }

@@ -5,10 +5,8 @@ export function createDefaultRegisters(): number[] {
 	return [
 		100, // Volume
 		0,   // Pan
-		10,  // Attack
-		40,  // Decay
-		100, // Sustain
-		40,  // Release
+		20,  // Attack
+		100,  // Release
 		0,   // REG0
 		0,   // REG1
 		0,   // REG2

@@ -98,6 +98,11 @@ export class CPU {
 		core.setRegister(register, value);
 	}
 
+	public resetPCs() {
+		for (const core of this.cores)
+			core.resetPC();
+	}
+
 	public reset() {
 		this.memory.reset();
 		for (const [index, value] of createDefaultParameters().entries())

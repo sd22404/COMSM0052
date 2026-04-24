@@ -166,7 +166,7 @@ function ControlsGuide() {
 				title="Keyboard"
 				tone="blue"
 				lines={[
-					<><strong>Ctrl+Enter</strong>: compile/load focused core, even during playback.</>,
+					<><strong>Ctrl+Enter</strong> (<strong>Cmd+Enter</strong> on Mac): compile/load focused core, even during playback.</>,
 					<><strong>Escape</strong>: close Help.</>,
 					<>Tab and Shift+Tab move through controls.</>,
 				]}

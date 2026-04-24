@@ -12,8 +12,6 @@ export enum Register {
 	VOL,
 	PAN,
 	ATK,
-	DEC,
-	SUS,
 	REL,
 	REG0,
 	REG1,
@@ -113,8 +111,6 @@ export interface SynthSettings {
 	volume: number;
 	pan: number;
 	attack: number;
-	decay: number;
-	sustain: number;
 	release: number;
 }
 
@@ -256,7 +252,6 @@ const CORE_PROGRAMS = [
 top:
 LOAD VOL 54 ; core 0 volume (0-100)
 LOAD ATK 10 ; attack time in milliseconds
-LOAD DEC 180 ; decay time in milliseconds
 LOAD REL 180 ; release time in milliseconds
 
 LOAD REG0 0 ; memory start address. try 8 for the second melody.
@@ -294,15 +289,13 @@ REST 2
 PLAY DRUMS 62 ; hi-hat
 REST 2`,
 	`; Core 2: offset piano
-; This part starts late, then repeats because programs wrap around.
 LOAD VOL 42
-LOAD ATK 10 ; try 200 for a slow fade in
-LOAD DEC 180 ; decay time in milliseconds
+LOAD ATK 10 ; try 100 for a slower fade in
 LOAD REL 180 ; try 500 for a longer tail
 
-REST 2 ; start offset before the note
+REST 2 ; wait before playing
 PLAY PIANO 60 2 ; pitch 60 is middle C, 2 is duration in ticks
-REST 2 ; space before this short program loops`,
+REST 2 ; wait before repeating loop`,
 ];
 
 export function getDefaultCode(coreID: number) {

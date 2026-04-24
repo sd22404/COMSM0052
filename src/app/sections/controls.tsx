@@ -29,7 +29,7 @@ export default function Controls({ running, parameters, onParameterChange, run, 
 	return (
 		<Card id="controls" variant="panel" className="flex flex-col gap-3">
 			<div className="flex items-center justify-between">
-				<Subheading tone="green">Master Controls</Subheading>
+				<Subheading tone="blue">Master Controls</Subheading>
 				<Help />
 			</div>
 

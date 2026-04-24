@@ -46,8 +46,6 @@ function createSynthSettings(registers: number[], parameters: number[]): SynthSe
 		volume: Math.max(0, (parameters[Parameter.VOL] * registers[Register.VOL]) / 100),
 		pan: registers[Register.PAN],
 		attack: registers[Register.ATK],
-		decay: registers[Register.DEC],
-		sustain: registers[Register.SUS],
 		release: registers[Register.REL],
 	};
 }
@@ -133,6 +131,11 @@ export class Core {
 
 		this.clearFault();
 		this.rewind(startTick);
+	}
+
+	resetPC() {
+		this._pc = 0;
+		this.zeroTimeSteps = 0;
 	}
 
 	reset(startTick?: number) {
@@ -286,8 +289,7 @@ export class Core {
 	}
 
 	private rewind(startTick = 0) {
-		this._pc = 0;
+		this.resetPC();
 		this._tick = clampTick(startTick);
-		this.zeroTimeSteps = 0;
 	}
 }

@@ -233,10 +233,7 @@ export class AudioEngine {
 		if (!this.ctx || !this.master) return undefined;
 
 		const attack = clamp(note.settings.attack, 0, 4000) / 1000;
-		const decay = clamp(note.settings.decay, 0, 4000) / 1000;
-		const sustain = clamp(note.settings.sustain, 0, 100) / 100;
 		const release = clamp(note.settings.release, 0, 4000) / 1000;
-		const sustainStart = when + attack + decay;
 		const releaseStart = when + Math.max(0.05, duration);
 		const stopTime = releaseStart + release + 0.05;
 
@@ -247,10 +244,7 @@ export class AudioEngine {
 		if (attack > 0) envelope.gain.linearRampToValueAtTime(1, when + attack);
 		else envelope.gain.setValueAtTime(1, when);
 
-		if (decay > 0) envelope.gain.linearRampToValueAtTime(Math.max(0.0001, sustain), sustainStart);
-		else envelope.gain.setValueAtTime(Math.max(0.0001, sustain), when);
-
-		envelope.gain.setValueAtTime(Math.max(0.0001, sustain), releaseStart);
+		envelope.gain.setValueAtTime(1, releaseStart);
 		if (release > 0) envelope.gain.linearRampToValueAtTime(0.0001, stopTime);
 		else envelope.gain.setValueAtTime(0.0001, releaseStart);
 
