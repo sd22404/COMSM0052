@@ -199,7 +199,7 @@ REST 4`,
 				bullets: [
 					"`LOAD REG0 REG2` copies the base pitch.",
 					"`ADD REG0 RAND` adds a newly generated random offset.",
-					"`PLAY SYNTH REG0 REG1` uses registers for pitch and duration.",
+					"`PLAY SYNTH REG0 LENGTH` uses a register value for the pitch.",
 				],
 			},
 			{
@@ -340,7 +340,6 @@ REST 2`,
 					"Syntax: `name:` declares a label.",
 					"Syntax: `JUMP label` always sends execution to that label.",
 					"Labels themselves do not play sound or advance time.",
-					"This lesson uses `loop:` and `restart:` as jump targets.",
 				],
 				code: `loop:
 REST 2
@@ -352,7 +351,7 @@ JUMP loop`,
 				body: "`JMPZ` is a conditional jump. It jumps only when a register currently holds zero.",
 				bullets: [
 					"Syntax: `JMPZ register label`.",
-					"`JMPZ REG1 restart` jumps to `restart` if `REG1` is zero.",
+					"`JMPZ REG1 reset` jumps to `reset` if `REG1` is zero.",
 					"If the register is not zero, the next instruction runs normally.",
 				],
 			},

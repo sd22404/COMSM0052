@@ -274,7 +274,7 @@ export class Core {
 
 		this.zeroTimeSteps++;
 		if (this.zeroTimeSteps >= ZERO_TIME_BUDGET)
-			this.raiseFault(`Exceeded ${ZERO_TIME_BUDGET} zero-time instructions.`, instr);
+			this.raiseFault(`Exceeded ${ZERO_TIME_BUDGET} zero-time instructions. Try adding a REST instruction.`, instr);
 
 		return event;
 	}

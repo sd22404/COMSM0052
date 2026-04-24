@@ -248,7 +248,7 @@ export interface TutorialStatus {
 
 const CORE_PROGRAMS = [
 	`; Core 0: melody
-; Try changing VOL for loudness, or ATK/DEC/REL for softer shapes.
+; Try changing VOL for loudness, or ATK/REL for softer shapes.
 top:
 LOAD VOL 54 ; core 0 volume (0-100)
 LOAD ATK 10 ; attack time in milliseconds

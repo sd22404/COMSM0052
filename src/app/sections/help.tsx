@@ -113,7 +113,7 @@ function SyntaxGuide() {
 				lines={[
 					<><strong>VOL</strong>: per-core volume.</>,
 					<><strong>PAN</strong>: negative left, positive right.</>,
-					<><strong>ATK DEC SUS REL</strong>: envelope shape.</>,
+					<><strong>ATK REL</strong>: envelope shape.</>,
 					<><strong>REG0-REG3</strong>: pitches, counters, addresses, durations.</>,
 					<><strong>RAND</strong>: write a bound; reads return <code>0</code> to bound minus one.</>,
 				]}
