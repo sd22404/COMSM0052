@@ -185,7 +185,7 @@ function ControlsGuide() {
 				title="Keyboard"
 				tone="blue"
 				lines={[
-					<><strong>Ctrl+Enter</strong> (<strong>Cmd+Enter</strong> on Mac): compile/load focused core, even during playback.</>,
+					<><strong>Ctrl+Enter</strong> (<strong>Cmd+Enter</strong> on Mac): load changed code for the focused core and enable it; audio starts only with <Accent tone="green">Start Audio</Accent>.</>,
 					<><strong>Escape</strong>: close Help.</>,
 					<>Tab and Shift+Tab move through controls.</>,
 				]}
@@ -193,7 +193,8 @@ function ControlsGuide() {
 			<HelpBlock
 				title="Master Controls"
 				lines={[
-					<><strong>Start / Stop</strong>: toggle playback; <Accent tone="green">Start Audio</Accent> resumes active cores.</>,
+					<><Accent tone="green">Start Audio</Accent>: starts enabled cores from the top.</>,
+					<><strong>Stop Audio</strong>: halts playback and resets playback position.</>,
 					<><strong>Reset</strong>: reset memory, registers, transport, and enabled cores; keep editor text.</>,
 					<><strong>BPM</strong>: global tempo.</>,
 					<><strong>VOL</strong>: global output, separate from core <code>VOL</code>.</>,
@@ -203,8 +204,8 @@ function ControlsGuide() {
 				title="Core Status"
 				tone="mauve"
 				lines={[
-					<><strong>Idle</strong>: stopped or no active program.</>,
-					<><Accent tone="green">Active</Accent>: loaded and running.</>,
+					<><strong>Idle</strong>: disabled or no active program.</>,
+					<><Accent tone="green">Active</Accent>: loaded and enabled.</>,
 					<><Accent tone="peach">Invalid</Accent>: compile errors.</>,
 					<><strong>Unloaded</strong>: editor changed since load.</>,
 					<><Accent tone="peach">Faulted</Accent>: runtime stopped that core.</>,

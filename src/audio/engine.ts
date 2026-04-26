@@ -237,6 +237,8 @@ export class AudioEngine {
 		const releaseStart = when + Math.max(0.05, duration);
 		const stopTime = releaseStart + release + 0.05;
 
+		if (!note.pitch) return { start: when, end: stopTime };
+
 		const { volume, panner } = createVolPan(this.ctx, this.master, note.settings.volume, note.settings.pan);
 		const envelope = this.ctx.createGain();
 		envelope.gain.setValueAtTime(0.0001, when);

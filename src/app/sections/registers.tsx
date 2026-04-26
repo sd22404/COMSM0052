@@ -2,7 +2,7 @@ import { Register, RegisterAccess } from "@/common/types";
 import { cn } from "../components/cn";
 import Input from "../components/input";
 import { Eyebrow } from "../components/text";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Card from "../components/card";
 
 interface RegisterProps {
@@ -13,7 +13,8 @@ interface RegisterProps {
 }
 
 export default function Registers({ id, registers, highlights, onRegisterChange }: RegisterProps) {
-	const [drafts, setDrafts] = useState<(number | string)[]>(registers);
+	const [drafts, setDrafts] = useState<Record<number, string>>({});
+	const [focusedIndex, setFocusedIndex] = useState<number | null>(null);
 	const highlightModes = new Map<Register, "read" | "write">();
 
 	for (const highlight of highlights) {
@@ -22,14 +23,11 @@ export default function Registers({ id, registers, highlights, onRegisterChange 
 		highlightModes.set(highlight.reg, highlight.mode);
 	}
 
-	useEffect(() => {
-		setDrafts(registers);
-	}, [registers]);
-
 	return (
 		<Card id={id} className="p-0 flex flex-col min-h-0 overflow-y-auto overflow-x-hidden">
-			{drafts.map((draft, i) => {
+			{registers.map((value, i) => {
 				const reg = i as Register;
+				const draft = focusedIndex === i ? drafts[i] ?? value.toString() : value;
 				const read = highlightModes.get(reg) === "read";
 				const write = highlightModes.get(reg) === "write";
 
@@ -61,12 +59,35 @@ export default function Registers({ id, registers, highlights, onRegisterChange 
 						)}
 						type="text"
 						value={draft}
+						onFocus={() => {
+							setFocusedIndex(i);
+							setDrafts((drafts) => ({ ...drafts, [i]: draft.toString() }));
+						}}
+						onBlur={() => {
+							const valInt = parseInt(draft.toString(), 10);
+							setFocusedIndex(null);
+							if (isNaN(valInt)) {
+								setDrafts((drafts) => {
+									const next = { ...drafts };
+									delete next[i];
+									return next;
+								});
+								return;
+							}
+
+							onRegisterChange(reg, valInt);
+							setDrafts((drafts) => {
+								const next = { ...drafts };
+								delete next[i];
+								return next;
+							});
+						}}
 						onChange={(e) => {
 							const valStr = e.target.value;
-							const valInt = parseInt(valStr);
+							const valInt = parseInt(valStr, 10);
 
 							if (!isNaN(valInt)) onRegisterChange(reg, valInt);
-							setDrafts((drafts) => drafts.map((draft, j) => (j === i ? valStr : draft)));
+							setDrafts((drafts) => ({ ...drafts, [i]: valStr }));
 						}}
 					/>
 				</div>

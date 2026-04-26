@@ -94,7 +94,7 @@ export default function Workspace({
 
 		storeCode(storageScope, coreID, code);
 		onCoreLoadRef.current?.({ coreID, code, result });
-		if (!running) run();
+		setEnabled(coreID, true);
 		return result;
 	}
 

@@ -34,7 +34,7 @@ export const CODE_LESSONS: CodeLesson[] = [
 				bullets: [
 					"Cores can be enabled or disabled by clicking the `IDLE` or `ACTIVE` badge next to their name.",
 					"A core's other badges show whether the code is unloaded (you've made changes), invalid (syntax error), or faulted (runtime error).",
-					"Press `Ctrl+Enter` inside a core's editor to apply your code changes, enable the core and start audio playback (`Cmd+Enter` on Mac).",
+					"Press `Ctrl+Enter` inside a core's editor to apply code changes and enable the core (`Cmd+Enter` on Mac). Use `Start Audio` when you're ready to hear enabled cores.",
 					"While a core is running, you can still edit its code. Just remember to load it again to apply your changes.",
 				],
 				spotlightTargets: ["core-0"],
@@ -46,8 +46,8 @@ export const CODE_LESSONS: CodeLesson[] = [
 				bullets: [
 					"BPM sets the speed of the global clock. The default is 120 BPM, which means 2 beats (or 8 ticks) per second.",
 					"VOL sets the master volume, a value from 0 to 100.",
-					"`Start Audio` starts all active cores.",
-					"`Stop Audio` halts all cores and resets them to the top of their program.",
+					"`Start Audio` starts all enabled cores from the top of their program.",
+					"`Stop Audio` halts playback and resets playback position to the top of each program.",
 					"`Reset` halts and disables all cores, resets the state of registers, and memory.",
 				],
 				spotlightTargets: ["controls"],

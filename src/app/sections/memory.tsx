@@ -3,7 +3,7 @@ import Input from "@/app/components/input";
 import { Eyebrow, Subheading } from "@/app/components/text";
 import { midiToNote, noteToMidi } from "@/audio/engine";
 import { MemoryAccess } from "@/common/types";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import Card from "../components/card";
 import { cn } from "../components/cn";
 
@@ -27,7 +27,8 @@ interface MemoryProps {
 
 export default function Memory({ memory, highlights, onMemoryChange }: MemoryProps) {
 	const [noteView, setNoteView] = useState(false);
-	const [drafts, setDrafts] = useState<(number | string)[]>(memory);
+	const [drafts, setDrafts] = useState<Record<number, string>>({});
+	const [focusedAddr, setFocusedAddr] = useState<number | null>(null);
 	const highlightModes = new Map<number, "read" | "write">();
 
 	for (const highlight of highlights) {
@@ -36,13 +37,9 @@ export default function Memory({ memory, highlights, onMemoryChange }: MemoryPro
 		highlightModes.set(highlight.addr, highlight.mode);
 	}
 
-	useEffect(() => {
-		setDrafts(memory);
-	}, [memory]);
-
 	const rowStarts = useMemo(
-		() => Array.from({ length: Math.ceil(drafts.length / STEPS_PER_ROW) }, (_, row) => row * STEPS_PER_ROW),
-		[drafts.length],
+		() => Array.from({ length: Math.ceil(memory.length / STEPS_PER_ROW) }, (_, row) => row * STEPS_PER_ROW),
+		[memory.length],
 	);
 
 	return (
@@ -58,8 +55,9 @@ export default function Memory({ memory, highlights, onMemoryChange }: MemoryPro
 					{rowStarts.map((startAddr) => (
 						<Card key={startAddr} className="p-0">
 							<div className="grid grid-cols-8">
-								{drafts.slice(startAddr, startAddr + STEPS_PER_ROW).map((draft, offset) => {
+								{memory.slice(startAddr, startAddr + STEPS_PER_ROW).map((value, offset) => {
 									const addr = startAddr + offset;
+									const draft = focusedAddr === addr ? drafts[addr] ?? value.toString() : value;
 									const draftText = draft.toString();
 									const parsed = parseMemory(draftText);
 									const valDisplay = noteView && parsed !== undefined ? midiToNote(parsed) : draftText;
@@ -102,12 +100,35 @@ export default function Memory({ memory, highlights, onMemoryChange }: MemoryPro
 												type="text"
 												value={valDisplay}
 												title={`Address ${addr}`}
+												onFocus={() => {
+													setFocusedAddr(addr);
+													setDrafts((drafts) => ({ ...drafts, [addr]: valDisplay }));
+												}}
+												onBlur={() => {
+													const nextValue = parseMemory(draft.toString());
+													setFocusedAddr(null);
+													if (nextValue === undefined) {
+														setDrafts((drafts) => {
+															const next = { ...drafts };
+															delete next[addr];
+															return next;
+														});
+														return;
+													}
+
+													onMemoryChange(addr, nextValue);
+													setDrafts((drafts) => {
+														const next = { ...drafts };
+														delete next[addr];
+														return next;
+													});
+												}}
 												onChange={(e) => {
 													const nextText = e.target.value;
 													const nextValue = parseMemory(nextText);
 
 													if (nextValue !== undefined) onMemoryChange(addr, nextValue);
-													setDrafts((drafts) => drafts.map((draft, i) => (i === addr ? nextText : draft)));
+													setDrafts((drafts) => ({ ...drafts, [addr]: nextText }));
 												}}
 											/>
 										</div>

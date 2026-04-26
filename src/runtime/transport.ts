@@ -2,6 +2,7 @@ import { TransportState } from "@/common/types";
 
 const MIN_BPM = 1;
 const MAX_BPM = 300;
+const DEFAULT_BPM = 120;
 const EPSILON = 1e-6;
 
 const TICKS_PER_BEAT = 4;
@@ -17,13 +18,13 @@ function clampTick(value: number) { return Math.max(0, value); }
 
 export function createDefaultTransport(): TransportState {
 	return {
-		bpm: 120,
+		bpm: DEFAULT_BPM,
 		horizon: 0,
 	};
 }
 
 export class Transport {
-	constructor(bpm = 120) {
+	constructor(bpm = DEFAULT_BPM) {
 		const initialBPM = clampBPM(bpm);
 		this.activeBPM = initialBPM;
 		this.targetBPM = initialBPM;
@@ -65,6 +66,7 @@ export class Transport {
 		this.anchorTime = audioTime;
 		this.anchorTick = clampTick(startTick);
 		this.horizonTick = this.anchorTick;
+		this.activeBPM = this.targetBPM;
 		this.pendingBPM = undefined;
 	}
 
@@ -83,7 +85,8 @@ export class Transport {
 		this.anchorTime = 0;
 		this.anchorTick = 0;
 		this.horizonTick = 0;
-		this.activeBPM = this.targetBPM;
+		this.targetBPM = DEFAULT_BPM;
+		this.activeBPM = DEFAULT_BPM;
 		this.pendingBPM = undefined;
 	}
 

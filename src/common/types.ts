@@ -250,9 +250,9 @@ const CORE_PROGRAMS = [
 	`; Core 0: melody
 ; Try changing VOL for loudness, or ATK/REL for softer shapes.
 top:
-LOAD VOL 54 ; core 0 volume (0-100)
-LOAD ATK 10 ; attack time in milliseconds
-LOAD REL 180 ; release time in milliseconds
+LOAD VOL 20 ; core 0 volume (0-100)
+LOAD ATK 100 ; attack time in milliseconds
+LOAD REL 300 ; release time in milliseconds
 
 LOAD REG0 0 ; memory start address. try 8 for the second melody.
 LOAD REG1 8 ; how many memory notes to play before restarting
@@ -267,29 +267,33 @@ JMPZ REG1 top
 JUMP loop`,
 	`; Core 1: drums
 ; drum notes use the Drum Note Map: 60 kick, 61 snare, 62 hi-hat.
-LOAD VOL 88 ;
+LOAD VOL 100 ;
 LOAD PAN -10 ; negative pans left, positive pans right
 
 PLAY DRUMS 60 ; kick
-REST 2 ; change REST values to reshape the groove
+REST 2 ; change REST values to adjust the groove
 PLAY DRUMS 62 ; hi-hat
 REST 2
 PLAY DRUMS 61 ; snare
 REST 2
 PLAY DRUMS 62 ; hi-hat
 REST 1
-PLAY DRUMS 62 ; a short extra hat hit
+PLAY DRUMS 61
 REST 1
-PLAY DRUMS 60 ; kick
+PLAY DRUMS 60
 REST 2
-PLAY DRUMS 62 ; hi-hat
+PLAY DRUMS 60
+PLAY DRUMS 62
 REST 2
-PLAY DRUMS 61 ; snare
+PLAY DRUMS 61
 REST 2
-PLAY DRUMS 62 ; hi-hat
-REST 2`,
+PLAY DRUMS 62
+PLAY DRUMS 61
+REST 1
+PLAY DRUMS 61
+REST 1`,
 	`; Core 2: offset piano
-LOAD VOL 42
+LOAD VOL 24
 LOAD ATK 10 ; try 100 for a slower fade in
 LOAD REL 180 ; try 500 for a longer tail
 

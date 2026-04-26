@@ -48,10 +48,10 @@ export class CPU {
 		core.setEnabled(enabled, startTick);
 	}
 
-	public load(coreID: number, program: Program, startTick?: number) {
+	public load(coreID: number, program: Program) {
 		const core = this.cores[coreID];
 		if (!core) return;
-		core.load(program, startTick);
+		core.load(program);
 	}
 
 	private nextCore(targetTick: number): Core | undefined {
@@ -98,9 +98,9 @@ export class CPU {
 		core.setRegister(register, value);
 	}
 
-	public resetPCs() {
+	public resetPlayback(startTick = 0) {
 		for (const core of this.cores)
-			core.resetPC();
+			core.resetPlayback(startTick);
 	}
 
 	public reset() {

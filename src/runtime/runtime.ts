@@ -54,6 +54,12 @@ export class Runtime {
 		this.broadcast?.(this.state);
 	}
 
+	private startTick() {
+		return this.running
+			? this.transport.downbeatAt(this.audio.time)
+			: 0;
+	}
+
 	private tick() {
 		const targetTick = this.transport.lookahead(this.audio.time, LOOKAHEAD_SECONDS);
 		if (!targetTick) return;
@@ -98,6 +104,7 @@ export class Runtime {
 		this.running = true;
 
 		this.audio.setMasterVolume(this.cpu.state.parameters[Parameter.VOL]);
+		this.cpu.resetPlayback();
 		this.transport.start(this.audio.time);
 		this.tick();
 		this.notify();
@@ -121,8 +128,8 @@ export class Runtime {
 			this.interval = undefined;
 		}
 
-		this.cpu.resetPCs();
-		this.transport.halt(this.audio.time);
+		this.cpu.resetPlayback();
+		this.transport.start(this.audio.time, 0);
 		this.audio.panic();
 		this.highlights.clear();
 		this.notify();
@@ -144,7 +151,7 @@ export class Runtime {
 			return result;
 		}
 
-		this.cpu.load(coreID, result.program, this.transport.downbeatAt(this.audio.time));
+		this.cpu.load(coreID, result.program);
 		this.highlights.clearCore(coreID, this.audio.time);
 		this.notify();
 		return result;
@@ -177,8 +184,7 @@ export class Runtime {
 	}
 
 	setEnabled(coreID: number, enabled: boolean) {
-		const startTick = !enabled || !this.running ? undefined
-			: this.transport.downbeatAt(this.audio.time);
+		const startTick = enabled ? this.startTick() : undefined;
 
 		this.cpu.setEnabled(coreID, enabled, startTick);
 		this.notify();

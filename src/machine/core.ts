@@ -108,33 +108,31 @@ export class Core {
 		};
 	}
 
-	load(program: Program, startTick = this._tick) {
-		const wasEnabled = this._enabled;
+	load(program: Program) {
 		this.program = program;
 		this.clearFault();
 
-		if (this._pc >= program.length)
-			this._pc = 0;
-
-		this._enabled = true;
-		if (!wasEnabled)
-			this._tick = clampTick(startTick);
+		this._pc = this.normalise(this._pc);
 	}
 
 	setRegister(reg: Register, val: number) {
+		console.log("setting reg", Register[reg], val);
 		this.registers.write(reg, val);
 	}
 
 	setEnabled(enabled: boolean, startTick = this._tick) {
+		const wasEnabled = this._enabled;
 		this._enabled = enabled;
 		if (!enabled) return;
 
 		this.clearFault();
-		this.rewind(startTick);
+		if (!wasEnabled)
+			this.resetPlayback(startTick);
 	}
 
-	resetPC() {
+	resetPlayback(startTick = 0) {
 		this._pc = 0;
+		this._tick = clampTick(startTick);
 		this.zeroTimeSteps = 0;
 	}
 
@@ -142,7 +140,7 @@ export class Core {
 		this.registers.reset();
 		this._enabled = false;
 		this.clearFault();
-		this.rewind(startTick);
+		this.resetPlayback(startTick);
 	}
 
 	private clearFault() {
@@ -181,7 +179,7 @@ export class Core {
 	}
 
 	private fetch(pc: number): Instruction {
-		return this.program[this.normalise(pc)];
+		return this.program[pc];
 	}
 
 	private execute(instr: Instruction): ExecEvent {
@@ -261,6 +259,8 @@ export class Core {
 	step(): ExecEvent | undefined {
 		if (!this._enabled || this._fault || this.program.length === 0) return undefined;
 
+		this._pc = this.normalise(this._pc);
+
 		const tickBefore = this._tick;
 		const instr = this.fetch(this._pc++);
 		const event = this.execute(instr);
@@ -288,8 +288,4 @@ export class Core {
 		};
 	}
 
-	private rewind(startTick = 0) {
-		this.resetPC();
-		this._tick = clampTick(startTick);
-	}
 }

@@ -63,7 +63,7 @@ export default function Core({
 									<Pill variant="danger" size="sm">invalid</Pill>
 								</Tooltip>}
 								{!state.fault && hasChanged &&
-								<Tooltip text="press Ctrl+Enter (Cmd+Enter on Mac) to load" align="start" className="shrink-0">
+								<Tooltip text="press Ctrl+Enter (Cmd+Enter on Mac) to load and enable" align="start" className="shrink-0">
 									<Pill variant="warning" size="sm">unloaded</Pill>
 								</Tooltip>}
 							</div>
@@ -86,6 +86,7 @@ export default function Core({
 						highlights={(hasChanged || invalid) ? [] : codeHighlights}
 						onChange={(code) => setDraftCode(code)}
 						onLoad={(code) => {
+							if (code === loadedCode && state.enabled && !state.fault) return;
 							const asm = onLoad(code);
 							if (asm.program) setLoadedCode(code);
 						}}
