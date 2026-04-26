@@ -22,8 +22,8 @@ export const CODE_LESSONS: CodeLesson[] = [
 				body: "A program is a list of instructions. They are read and executed one at a time, starting from the top. When the end of the program is reached, it starts again from the top.",
 				bullets: [
 					"Each instruction can play a note, change values, or control the execution of future instructions.",
-					"Instructions can have a number of `operands` that give more information about what the instruction should do. These are values that come after the instruction name, each separated by a space.",
-					"Comments start with a semicolon and are ignored by the program. Use them to write notes to yourself or explain your code.",
+					"Instructions start with an `opcode` (their name) and can have a number of `operands` that give more information about what the instruction should do. These are values that come after the opcode, each separated by a space.",
+					"Comments start with a semicolon and last the rest of the line. They are ignored by the program. Use them to write notes to yourself or explain your code.",
 				],
 				spotlightTargets: ["core-0-editor"],
 			},

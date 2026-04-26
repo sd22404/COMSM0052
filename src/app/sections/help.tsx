@@ -7,13 +7,16 @@ import { createPortal } from "react-dom";
 import { useEffect, useState } from "react";
 
 type HelpTab = "syntax" | "controls";
-type HelpTone = "blue" | "green" | "mauve" | "peach";
+type HelpTone = "blue" | "green" | "mauve" | "peach" | "yellow" | "teal" | "red";
 
 const HELP_TONE_CLASSES: Record<HelpTone, string> = {
 	blue: "[&_code]:border-ctp-blue/30 [&_code]:text-ctp-blue",
 	green: "[&_code]:border-ctp-green/30 [&_code]:text-ctp-green",
 	mauve: "[&_code]:border-ctp-mauve/30 [&_code]:text-ctp-mauve",
 	peach: "[&_code]:border-ctp-peach/30 [&_code]:text-ctp-peach",
+	yellow: "[&_code]:border-ctp-yellow/30 [&_code]:text-ctp-yellow",
+	teal: "[&_code]:border-ctp-teal/30 [&_code]:text-ctp-teal",
+	red: "[&_code]:border-ctp-red/30 [&_code]:text-ctp-red",
 };
 
 const ACCENT_TONE_CLASSES: Record<HelpTone, string> = {
@@ -21,6 +24,9 @@ const ACCENT_TONE_CLASSES: Record<HelpTone, string> = {
 	green: "text-ctp-green",
 	mauve: "text-ctp-mauve",
 	peach: "text-ctp-peach",
+	yellow: "text-ctp-yellow",
+	teal: "text-ctp-teal",
+	red: "text-ctp-red",
 };
 
 const CODE_TONE_CLASSES: Record<HelpTone, string> = {
@@ -28,6 +34,9 @@ const CODE_TONE_CLASSES: Record<HelpTone, string> = {
 	green: "!border-ctp-green/30 !text-ctp-green",
 	mauve: "!border-ctp-mauve/30 !text-ctp-mauve",
 	peach: "!border-ctp-peach/30 !text-ctp-peach",
+	yellow: "!border-ctp-yellow/30 !text-ctp-yellow",
+	teal: "!border-ctp-teal/30 !text-ctp-teal",
+	red: "!border-ctp-red/30 !text-ctp-red",
 };
 
 function Accent({ children, tone }: { children: ReactNode; tone: HelpTone }) {
@@ -102,75 +111,74 @@ function SyntaxGuide() {
 			<HelpBlock
 				title="Program Shape"
 				lines={[
-					<><strong>Comments</strong>: <code>;</code> runs to end of line.</>,
+					<><strong>Comments</strong>: <code>;</code> ignores text until end of line.</>,
 					<><strong>Instructions</strong>: opcode, then space-separated operands.</>,
-					<><strong>Labels</strong>: <HelpCode tone="mauve">name:</HelpCode> marks a jump target and takes no time.</>,
-					<><strong>Names</strong>: Opcodes, registers, and devices are uppercase: <code>PLAY</code>, <HelpCode tone="mauve">REG0</HelpCode>, <code>PIANO</code>.</>,
+					<><strong>Labels</strong>: <code>name:</code> marks a jump target.</>,
+					<><strong>Names</strong>: Opcodes, devices, and registers are uppercase: <HelpCode tone="mauve">PLAY</HelpCode>, <HelpCode tone="yellow">PIANO</HelpCode>, <HelpCode tone="teal">REG0</HelpCode>.</>,
 				]}
 			/>
 			<HelpBlock
 				title="Operands"
 				lines={[
-					<><strong>Numbers</strong>: <code>60</code>, <code>4</code>, <code>-1</code>.</>,
-					<><strong>Registers</strong>: <HelpCode tone="mauve">VOL</HelpCode>, <HelpCode tone="mauve">PAN</HelpCode>, <HelpCode tone="mauve">ATK</HelpCode>, <HelpCode tone="mauve">REL</HelpCode>, <HelpCode tone="mauve">REG0</HelpCode>-<HelpCode tone="mauve">REG3</HelpCode>, <HelpCode tone="mauve">RAND</HelpCode>.</>,
-					<><strong>Devices</strong>: <code>SYNTH</code>, <code>DRUMS</code>, <code>BASS</code>, <code>PIANO</code>.</>,
+					<><strong>Numbers</strong>: <HelpCode tone="peach">60</HelpCode>, <HelpCode tone="peach">4</HelpCode>, <HelpCode tone="peach">-1</HelpCode>.</>,
+					<><strong>Registers</strong>: <HelpCode tone="teal">VOL</HelpCode>, <HelpCode tone="teal">PAN</HelpCode>, <HelpCode tone="teal">ATK</HelpCode>, <HelpCode tone="teal">REL</HelpCode>, <HelpCode tone="teal">REG0</HelpCode>-<HelpCode tone="teal">REG3</HelpCode>, <HelpCode tone="teal">RAND</HelpCode>.</>,
+					<><strong>Devices</strong>: <HelpCode tone="yellow">SYNTH</HelpCode>, <HelpCode tone="yellow">DRUMS</HelpCode>, <HelpCode tone="yellow">BASS</HelpCode>, <HelpCode tone="yellow">PIANO</HelpCode>.</>,
 					<><strong>Values</strong>: number, register, or memory read.</>,
 				]}
 			/>
 			<HelpBlock
-				title="Memory Addressing"
+				title="Registers"
+				tone="teal"
+				lines={[
+					<><strong>VOL</strong>: per-core volume (0-100).</>,
+					<><strong>PAN</strong>: stereo panning left (-100) to right (100).</>,
+					<><strong>ATK REL</strong>: note attack / release time in milliseconds.</>,
+					<><strong>REG0-REG3</strong>: pitches, counters, addresses, durations.</>,
+					<><strong>RAND</strong>: writes change the upper bound; reads return a random number from <HelpCode tone="peach">0</HelpCode> to <code>RAND</code>.</>,
+				]}
+			/>
+			<HelpBlock
+				title="Sound and Time Instructions"
 				tone="peach"
 				lines={[
-					<><strong>Direct</strong>: <code>[12]</code> reads memory cell 12.</>,
-					<><strong>Register-held</strong>: <code>[REG0]</code> reads <code>REG0</code>, then uses it as the address.</>,
-					<><strong>STORE</strong>: <code>STORE 12 REG1</code> or <code>STORE REG0 REG1</code> writes to the first operand.</>,
-					<><strong>Range</strong>: addresses <code>0</code>-<code>31</code>; invalid access faults this core.</>,
+					<><strong><code><span className="text-ctp-mauve">PLAY</span> <span className="text-ctp-yellow">DEVICE</span> <span className="text-ctp-peach">pitch</span> (<span className="text-ctp-peach">ticks</span>)</code></strong>: play a MIDI note (0-127) on a device; duration defaults to <code>1</code>.</>,
+					<><strong><code><span className="text-ctp-mauve">REST</span> <span className="text-ctp-peach">ticks</span></code></strong>: wait this core for a number of ticks.</>,
+					<><strong><code><span className="text-ctp-mauve">PLAY</span> <span className="text-ctp-yellow">SYNTH</span> 64 2</code></strong>: plays MIDI pitch 64 for 2 ticks.</>,
+					<><strong>Ticks</strong>: 4 per beat; <code><span className="text-ctp-mauve">REST</span> <span className="text-ctp-peach">4</span></code> is one beat.</>,
 				]}
 			/>
 			<HelpBlock
-				title="Registers"
-				tone="mauve"
+				title="Memory Addressing"
+				tone="green"
 				lines={[
-					<><strong>VOL</strong>: per-core volume.</>,
-					<><strong>PAN</strong>: negative left, positive right.</>,
-					<><strong>ATK REL</strong>: envelope shape.</>,
-					<><strong>REG0-REG3</strong>: pitches, counters, addresses, durations.</>,
-					<><strong>RAND</strong>: write a bound; reads return <code>0</code> to bound minus one.</>,
-				]}
-			/>
-			<HelpBlock
-				title="Sound And Time"
-				lines={[
-					<><strong><code>PLAY DEVICE pitch (ticks)</code></strong>: play now; duration defaults to <code>1</code>.</>,
-					<><strong><code>REST ticks</code></strong>: move this core forward.</>,
-					<><strong>Ticks</strong>: 4 per beat; <code>REST 4</code> is one beat.</>,
-					<><strong>Duration</strong>: <code>PLAY SYNTH 64 2</code> plays pitch 64 for 2 ticks.</>,
+					<><strong>Direct</strong>: <code>[<span className="text-ctp-peach">12</span>]</code> reads memory cell 12.</>,
+					<><strong>Register-held</strong>: <code>[<span className="text-ctp-teal">REG0</span>]</code> reads <HelpCode tone="teal">REG0</HelpCode>, then uses it as memory address to read from.</>,
+					<><strong>Range</strong>: addresses <HelpCode tone="peach">0</HelpCode>-<HelpCode tone="peach">31</HelpCode>; outside this range will cause a runtime fault.</>,
 				]}
 			/>
 			<HelpBlock
 				title="Data Instructions"
-				tone="peach"
+				tone="mauve"
 				lines={[
-					<><strong><code>LOAD register value</code></strong>: write a register, e.g. <code>LOAD VOL 80</code>.</>,
-					<><strong><code>STORE address value</code></strong>: write memory, e.g. <code>STORE 12 REG0</code>.</>,
-					<><strong><code>ADD register value</code></strong>: add into a register, e.g. <code>ADD REG1 -1</code>.</>,
+					<><strong><code>LOAD <span className="text-ctp-teal">register</span> <span className="text-ctp-peach">value</span></code></strong>: write value to register.</>,
+					<><strong><code>STORE <span className="text-ctp-green">address</span> <span className="text-ctp-peach">value</span></code></strong>: write value to memory address. Address can be value, register or memory read.</>,
+					<><strong><code>ADD <span className="text-ctp-teal">register</span> <span className="text-ctp-peach">value</span></code></strong>: add value to register.</>,
 				]}
 			/>
 			<HelpBlock
-				title="Flow Instructions"
+				title="Control Instructions"
 				tone="mauve"
 				lines={[
-					<><strong><code>JUMP label</code></strong>: always move to a label or instruction index.</>,
-					<><strong><code>JMPZ register label</code></strong>: jump only when the register is zero.</>,
-					<><strong>Loops</strong>: label, timed work such as <code>REST</code>, then jump back.</>,
+					<><strong><code>JUMP <span className="text-ctp-blue">label</span></code></strong>: always skip to a label.</>,
+					<><strong><code>JMPZ <span className="text-ctp-teal">register</span> <span className="text-ctp-blue">label</span></code></strong>: skip to a label only when a register's value is zero.</>,
 				]}
 			/>
 			<HelpBlock
 				title="Runtime Faults"
-				tone="peach"
+				tone="mauve"
 				lines={[
 					<>Non-positive <code>PLAY</code> duration or <code>REST</code> length.</>,
-					<>Memory outside <code>0</code>-<code>31</code>.</>,
+					<>Memory outside <HelpCode tone="peach">0</HelpCode>-<HelpCode tone="peach">31</HelpCode>.</>,
 					<>Too many zero-time instructions without a <code>REST</code>.</>,
 				]}
 			/>
@@ -182,58 +190,55 @@ function ControlsGuide() {
 	return (
 		<div className="grid gap-6 lg:grid-cols-2">
 			<HelpBlock
-				title="Keyboard"
+				title="Editor Keybinds"
 				tone="blue"
 				lines={[
-					<><strong>Ctrl+Enter</strong> (<strong>Cmd+Enter</strong> on Mac): load changed code for the focused core and enable it; audio starts only with <Accent tone="green">Start Audio</Accent>.</>,
-					<><strong>Escape</strong>: close Help.</>,
-					<>Tab and Shift+Tab move through controls.</>,
+					<><strong>Ctrl+Enter (Cmd+Enter)</strong>: load changed code for the focused core and enable it. Doesn't start audio.</>,
+					<><strong>Ctrl+/</strong>: turn the current line into a comment.</>,
+					<><strong>Ctrl+Z</strong>: undo the last action.</>,
+					<><strong>Ctrl+Shift+Z (Ctrl+Y)</strong>: redo the last undone action.</>,
 				]}
 			/>
 			<HelpBlock
 				title="Master Controls"
 				lines={[
-					<><Accent tone="green">Start Audio</Accent>: starts enabled cores from the top.</>,
-					<><strong>Stop Audio</strong>: halts playback and resets playback position.</>,
-					<><strong>Reset</strong>: reset memory, registers, transport, and enabled cores; keep editor text.</>,
-					<><strong>BPM</strong>: global tempo.</>,
-					<><strong>VOL</strong>: global output, separate from core <code>VOL</code>.</>,
+					<><Accent tone="blue">Start Audio</Accent>: start enabled cores from the top.</>,
+					<><Accent tone="red">Stop Audio</Accent>: halt playback and resets position.</>,
+					<><strong>Reset</strong>: reset memory, registers, and enabled cores.</>,
+					<><Accent tone="peach">BPM</Accent>: master tempo.</>,
+					<><Accent tone="peach">VOL</Accent>: master volume.</>,
 				]}
 			/>
 			<HelpBlock
 				title="Core Status"
-				tone="mauve"
 				lines={[
-					<><strong>Idle</strong>: disabled or no active program.</>,
-					<><Accent tone="green">Active</Accent>: loaded and enabled.</>,
-					<><Accent tone="peach">Invalid</Accent>: compile errors.</>,
-					<><strong>Unloaded</strong>: editor changed since load.</>,
-					<><Accent tone="peach">Faulted</Accent>: runtime stopped that core.</>,
-				]}
-			/>
-			<HelpBlock
-				title="Highlights"
-				tone="blue"
-				lines={[
-					<>Code: recent instructions.</>,
-					<>Registers: reads and writes for that core.</>,
-					<>Memory: shared reads and writes.</>,
+					<><strong>Idle</strong>: disabled, doesn't play sound; click to enable.</>,
+					<><Accent tone="green">Active</Accent>: enabled, plays sound; click to disable.</>,
+					<><Accent tone="red">Invalid</Accent>: something is wrong with the code.</>,
+					<><Accent tone="yellow">Unloaded</Accent>: code has changed since load.</>,
+					<><Accent tone="red">Faulted</Accent>: a runtime fault has stopped the core.</>,
 				]}
 			/>
 			<HelpBlock
 				title="Memory Panel"
-				tone="peach"
 				lines={[
-					<>Edit cells live during playback.</>,
-					<><strong>Show notes</strong>: display MIDI values as note names.</>,
-					<><strong>Show numbers</strong>: display raw values.</>,
+					<><Accent tone="blue">Show notes</Accent>: display MIDI values as note names.</>,
+					<><Accent tone="blue">Show numbers</Accent>: display raw MIDI values.</>,
+				]}
+			/>
+			<HelpBlock
+				title="Highlights"
+				lines={[
+					<><strong>Code</strong>: currently executing instructions.</>,
+					<><strong>Registers</strong>: <Accent tone="blue">reads</Accent> and <Accent tone="peach">writes</Accent> for that core.</>,
+					<><strong>Memory</strong>: shared <Accent tone="blue">reads</Accent> and <Accent tone="peach">writes</Accent>.</>,
 				]}
 			/>
 			<HelpBlock
 				title="Drum Note Map"
 				tone="peach"
 				lines={[
-					<>Map MIDI notes to drum samples.</>,
+					<>Select the note and the sample, then click "Assign".</>,
 					<>Defaults: <code>60</code> kick, <code>61</code> snare, <code>62</code> hi-hat.</>,
 					<>Trigger with <code>PLAY DRUMS note</code>.</>,
 				]}
@@ -250,12 +255,12 @@ function HelpModal({ open, onClose }: { open: boolean; onClose: () => void }) {
 		<div onClick={onClose} className="fixed inset-0 z-50 flex items-center justify-center bg-ctp-crust/70 p-4 font-mono backdrop-blur-sm">
 			<Card
 				variant="panel"
-				className="flex max-h-[86vh] w-[min(960px,calc(100vw-2rem))] flex-col gap-5 overflow-hidden p-5"
+				className="flex max-h-[86vh] w-[min(960px,calc(100vw-2rem))] flex-col gap-8 overflow-hidden p-5"
 				onClick={(event) => event.stopPropagation()}
 			>
 				<div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
 					<div className="flex flex-col gap-1">
-						<Eyebrow tone="blue">Reference</Eyebrow>
+						<Eyebrow tone="peach">reference</Eyebrow>
 						<Subheading tone="blue">Help Guide</Subheading>
 					</div>
 					<div className="grid grid-cols-2 gap-2">
@@ -266,22 +271,15 @@ function HelpModal({ open, onClose }: { open: boolean; onClose: () => void }) {
 							Controls
 						</TabButton>
 					</div>
+					<div>
+						<Button variant="secondary" onClick={onClose}>
+							Close
+						</Button>
+					</div>
 				</div>
-
-				<Body tone="subtle" className="text-sm">
-					{activeTab === "syntax"
-						? "Instruction shapes, operands, memory, and faults."
-						: "Shortcuts, playback, status, memory, and samples."}
-				</Body>
 
 				<div className="min-h-0 overflow-y-auto pr-1">
 					{activeTab === "syntax" ? <SyntaxGuide /> : <ControlsGuide />}
-				</div>
-
-				<div className="flex justify-end">
-					<Button variant="secondary" onClick={onClose}>
-						Close
-					</Button>
 				</div>
 			</Card>
 		</div>,
