@@ -12,7 +12,7 @@ export const CODE_LESSONS: CodeLesson[] = [
 				bullets: [
 					"The status panel shows the lesson number, step number, and whether the lesson is complete.",
 					"`Continue` stays disabled until you reach the last step and load all required cores.",
-					"`Reset Lesson` restarts the current lesson and resets any changed code.",
+					"`Restart Lesson` restarts the current lesson and resets any changed code.",
 				],
 				spotlightTargets: ["tutorial-status"],
 			},
@@ -30,12 +30,12 @@ export const CODE_LESSONS: CodeLesson[] = [
 			{
 				title: "Music Machine Cores",
 				type: "concept",
-				body: "A core has its own program and registers.", // TODO: expand
+				body: "A core has its own program and registers which are independent of any other cores.",
 				bullets: [
 					"Cores can be enabled or disabled by clicking the `IDLE` or `ACTIVE` badge next to their name.",
 					"A core's other badges show whether the code is unloaded (you've made changes), invalid (syntax error), or faulted (runtime error).",
 					"Press `Ctrl+Enter` inside a core's editor to apply code changes and enable the core (`Cmd+Enter` on Mac). Use `Start Audio` when you're ready to hear enabled cores.",
-					"While a core is running, you can still edit its code. Just remember to load it again to apply your changes.",
+					"While a core is running, you can still edit its program. Just remember to load it again to apply your changes.",
 				],
 				spotlightTargets: ["core-0"],
 			},
@@ -49,6 +49,7 @@ export const CODE_LESSONS: CodeLesson[] = [
 					"`Start Audio` starts all enabled cores from the top of their program.",
 					"`Stop Audio` halts playback and resets playback position to the top of each program.",
 					"`Reset` halts and disables all cores, resets the state of registers, and memory.",
+					"`Help` opens the help panel with syntax references and controls.",
 				],
 				spotlightTargets: ["controls"],
 			},
@@ -71,8 +72,8 @@ PLAY SYNTH 64 2 ; play E4 for two ticks`,
 				body: "The `REST` instruction moves the current core forward by a positive number of ticks. Music Machine uses 4 ticks per beat.",
 				bullets: [
 					"Syntax: `REST duration`.",
-					"`duration` is a positive number of ticks to wait.",
-					"A rest length of 0 or less faults the current core.",
+					"`duration` is a positive number of ticks to wait before the next instruction.",
+					"A rest length of 0 or less raises a runtime fault in the current core.",
 				],
 				code: `REST 4 ; wait one beat before the next note
 REST 2 ; wait half a beat before the next note`,
@@ -84,7 +85,9 @@ REST 2 ; wait half a beat before the next note`,
 				bullets: [
 					"Replace `NOTE` with a MIDI note number from 0 to 127.",
 					"Replace `TICKS` with a positive duration.",
-					"Load the core with Ctrl+Enter (or Cmd+Enter) after both placeholders are filled in.",
+					"Load your program with Ctrl+Enter (or Cmd+Enter) after both placeholders are filled.",
+					"Use the master controls to start the audio and hear the result.",
+					"Experiment with different note values and rest durations while it's running and reload your program.",
 				],
 			},
 		],
@@ -119,7 +122,7 @@ REST TICKS ; replace TICKS with 4 for one beat`,
 				body: "Registers are small storage areas inside one core. Some registers control sound, and others are free for your own use.",
 				bullets: [
 					"`VOL` sets the volume of that core.",
-					"`PAN` moves the sound output to the left or right audio channels.",
+					"`PAN` moves the sound output more to the left or right audio channels.",
 					"`ATK` and `REL` change how smoothly notes begin and end.",
 					"`REG0` through `REG3` are general-purpose registers for your own program logic.",
 					"`RAND` is a special register that generates random numbers. You'll use it in Lesson 3.",
@@ -144,8 +147,9 @@ LOAD REG0 64 ; set general-purpose REG0 to 64`,
 				bullets: [
 					"Use `VOL` values between 0 and 100.",
 					"Use negative `PAN` values for left and positive values for right.",
-					"Try short ATK and REL values for a plucky sound, and longer values for a smoother sound.",
-					"Load Core 0 and listen to how the three devices respond.",
+					"Try small ATK and REL values for a plucky sound, and larger values for a smoother sound.",
+					"Load the program, start the audio, and listen to how the three devices respond.",
+					"Experiment with changing register values while the program is running to hear the effect.",
 				],
 			},
 		],
@@ -173,13 +177,13 @@ REST 4`,
 		title: "Lesson 3: Random Patterns And Durations",
 		steps: [
 			{
-				title: "RAND as a source value",
+				title: "The RAND Register",
 				type: "concept",
-				body: "`RAND` is a special register. Writing to it sets the range, and reading it produces a fresh random number.",
+				body: "`RAND` is a special register. Writing to it sets the range, and reading it produces a random number up to the bound.",
 				bullets: [
 					"`LOAD RAND 4` sets the random bound to 4.",
 					"Reading `RAND` then returns 0, 1, 2, 3, or 4.",
-					"If the bound is 0 or less, reading `RAND` returns 0.",
+					"If the upper bound is 0 or less, reading `RAND` returns 0.",
 				],
 			},
 			{
@@ -207,8 +211,9 @@ REST 4`,
 				type: "task",
 				body: "Choose a random range and note length, then load Core 0.",
 				bullets: [
-					"Replace `RANGE` with the number of random notes to choose from.",
+					"Replace `RANGE` with a maximum note offset.",
 					"Replace `LENGTH` with a positive note duration in ticks.",
+					"Load the program and start the audio.",
 					"Listen for the melody changing each time the program repeats.",
 				],
 			},
@@ -219,7 +224,7 @@ REST 4`,
 				coreID: 0,
 				starterCode: `; Lesson 3: random notes
 LOAD RAND RANGE ; replace RANGE with an upper bound, such as 4
-LOAD REG2 60 ; base pitch
+LOAD REG2 48 ; base pitch
 
 LOAD REG0 REG2
 ADD REG0 RAND ; add a fresh random offset to the base pitch
@@ -236,9 +241,9 @@ REST 4 ; one beat (4 ticks = 1 beat)
 			{
 				title: "The Memory panel",
 				type: "guide",
-				body: "This panel is where the machine's memory lives. It is divided into 32 numbered boxes that all cores can read and write to.",
+				body: "This panel is where the machine's memory lives. It's divided into 32 numbered cells that all cores can read and write to.",
 				bullets: [
-					"Each box is one memory address, and can hold a single value.",
+					"Each cell is one memory address, and can hold a single value.",
 					"Reads and writes will highlight here while the program runs.",
 					"You can type into memory cells while the program is running to change their values.",
 				],
@@ -251,7 +256,7 @@ REST 4 ; one beat (4 ticks = 1 beat)
 				bullets: [
 					"Syntax: `[address]`.",
 					"`[12]` reads the value stored in memory cell 12.",
-					"`PLAY PIANO [12]` plays whatever pitch number is currently stored at address 12.",
+					"`PLAY PIANO [12]` plays whatever pitch is currently stored at address 12.",
 				],
 				code: `PLAY PIANO [12]
 REST 2`,
@@ -284,9 +289,9 @@ PLAY SYNTH [REG0]`,
 				body: "Store a note in memory, then play it twice using both addressing forms.",
 				bullets: [
 					"Replace `ADDRESS` with 12 so the direct read and register-held read point at the same cell.",
-					"Replace `NOTE` with a MIDI note number such as 64.",
-					"Load Core 0 and watch the write and reads highlight as they happen.",
-					"While it plays, type a different number into address 12 to hear future reads change.",
+					"Replace `NOTE` with a MIDI note number such as 52.",
+					"Load the program, start the audio, and watch the write and reads highlight as they happen.",
+					"While it plays, comment out the `STORE` line and type a different number into address 12 to hear it change.",
 				],
 			},
 		],
@@ -296,7 +301,7 @@ PLAY SYNTH [REG0]`,
 				coreID: 0,
 				starterCode: `; Lesson 4: write and read shared memory
 LOAD REG0 ADDRESS ; replace ADDRESS with 12 for this exercise
-LOAD REG1 NOTE ; replace NOTE with a MIDI note, such as 64
+LOAD REG1 NOTE ; replace NOTE with a MIDI note, such as 52
 STORE REG0 REG1 ; writes the value in REG1 into the address held by REG0
 
 PLAY PIANO [12] ; direct memory read
@@ -324,7 +329,7 @@ REST 2`,
 			{
 				title: "ADD Syntax",
 				type: "syntax",
-				body: "`ADD` changes a register by adding another value to it.",
+				body: "`ADD` updates the value of a register by adding another value to it.",
 				bullets: [
 					"Syntax: `ADD register value`.",
 					"`ADD REG0 1` adds 1 to `REG0`.",
@@ -339,7 +344,7 @@ REST 2`,
 				bullets: [
 					"Syntax: `name:` declares a label.",
 					"Syntax: `JUMP label` always sends execution to that label.",
-					"Labels themselves do not play sound or advance time.",
+					"Labels do not affect a program's sound or timing.",
 				],
 				code: `loop:
 REST 2
@@ -369,9 +374,9 @@ JUMP loop`,
 				type: "task",
 				body: "Finish the stepping and loop target so the melody cycles through memory cells 8 to 11.",
 				bullets: [
-					"Replace `STEP` with the number of memory addresses to move each note.",
+					"Replace `STEP` with the number of memory addresses to move each cycle.",
 					"Replace `TARGET` with the label that keeps the loop running.",
-					"Load Core 0 after the program compiles.",
+					"Load the program and start the audio.",
 				],
 			},
 		],
@@ -408,18 +413,18 @@ JUMP top`,
 				body: "This lesson uses two cores at the same time. Core 1 handles the drum beat while Core 0 reads the shared melody note.",
 				bullets: [
 					"Core 1 has its own editor and registers, just like Core 0.",
-					"Both required cores must be loaded before this lesson can finish.",
+					"Both cores must be loaded without errors before this lesson can finish.",
 				],
 				spotlightTargets: ["core-1"],
 			},
 			{
 				title: "Core Coordination",
 				type: "concept",
-				body: "Each core has private registers, but all cores share memory. That makes memory useful for passing musical values between parts.",
+				body: "Each core has private registers, but all cores share memory. That makes memory useful for passing values between cores.",
 				bullets: [
 					"Core 1 writes a melody note into memory cell 12.",
 					"Core 0 reads memory cell 12 and plays it.",
-					"The two cores stay aligned because they both run on the same global tick clock.",
+					"The two cores stay aligned because they both run on the same global clock.",
 				],
 			},
 			{
@@ -434,10 +439,12 @@ JUMP top`,
 			{
 				title: "Drum Note Map",
 				type: "guide",
-				body: "This panel is where you map those samples to MIDI note numbers for use with `PLAY DRUMS`.",
+				body: "This panel is where you map samples to MIDI notes for use with `PLAY DRUMS`.",
 				bullets: [
-					"Assign a sample to the extra drum note that the task asks for.",
-					"After a note is mapped here, `PLAY DRUMS` with that note will trigger the chosen sample.",
+					"Choose a note, select a sample and then click `Assign` to map it.",
+					"You can update existing mappings by selecting a different sample.",
+					"After a note is mapped here, `PLAY DRUMS` with that note will trigger the sample.",
+					"Use `Remove` to delete a mapping. Playing that note will result in silence.",
 				],
 				spotlightTargets: ["samples"],
 			},
@@ -449,7 +456,8 @@ JUMP top`,
 					"Assign a sample to MIDI note 63 in the Drum Note Map.",
 					"Replace `LENGTH` with 2 in Core 0.",
 					"Replace `NOTE` with the MIDI pitch Core 0 should play.",
-					"Replace `DRUMNOTE` with 63, then load both cores.",
+					"Replace `DRUMNOTE` with 63.",
+					"Load both cores, and start the audio to hear your arrangement.",
 				],
 			},
 		],
